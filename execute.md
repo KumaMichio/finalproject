@@ -324,7 +324,7 @@ Chờ khoảng 15-30 giây cho đến khi CARLA server sẵn sàng.
 #### Cách 1: Dùng run.bat (đơn giản nhất)
 
 ```bash
-cd e:\finalproject\PythonAPI\custom_tracking_system
+cd e:\finalproject\AI_custom\custom_tracking_system
 
 # Chạy với cấu hình mặc định (1000 frames)
 run.bat

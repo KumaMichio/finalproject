@@ -119,3 +119,50 @@ ModuleNotFoundError: No module named 'utils.datasets'
 2026-04-16 10:25:53,355 - utils.metrics - INFO - MetricsCollector initialized
 2026-04-16 10:25:53,355 - __main__ - INFO - All modules initialized successfully
 2026-04-16 10:25:53,355 - __main__ - INFO - Starting tracking system...
+2026-04-20 14:12:40,549 - __main__ - INFO - CARLA client initialized successfully
+2026-04-20 14:12:40,584 - __main__ - INFO - Synchronous mode enabled
+2026-04-20 14:12:40,585 - __main__ - INFO - Initializing: CameraController
+2026-04-20 14:12:40,601 - modules.camera_controller - INFO - Configuration loaded successfully
+2026-04-20 14:12:40,602 - modules.camera_controller - INFO - CameraController initialized with config: config\camera_config.yaml
+2026-04-20 14:12:40,609 - modules.camera_controller - INFO - Camera CAM_001 spawned at [0, 0, 3]
+2026-04-20 14:12:40,610 - modules.camera_controller - INFO - Camera CAM_002 spawned at [50, 0, 3]
+2026-04-20 14:12:40,611 - modules.camera_controller - INFO - Camera CAM_003 spawned at [25, -30, 3]
+2026-04-20 14:12:40,612 - __main__ - INFO - Initializing: TrafficGenerator
+2026-04-20 14:12:40,612 - modules.traffic_generator - INFO - TrafficGenerator initialized: 10 vehicles, 5 pedestrians
+2026-04-20 14:12:42,171 - modules.traffic_generator - INFO - Spawned 10 vehicles and 5 pedestrians
+2026-04-20 14:12:42,172 - __main__ - INFO - Initializing: ObjectDetector
+2026-04-20 14:13:34,313 - yolov5 - INFO - YOLOv5  1d91afc torch 1.10.2+cpu CPU
+
+2026-04-20 14:13:34,406 - yolov5 - INFO - Fusing layers... 
+2026-04-20 14:13:34,729 - yolov5 - INFO - Model Summary: 213 layers, 7225885 parameters, 0 gradients, 16.4 GFLOPs
+2026-04-20 14:13:34,735 - yolov5 - INFO - Adding AutoShape... 
+2026-04-20 14:13:34,744 - modules.detector - INFO - Model loaded successfully: yolov5s
+2026-04-20 14:13:34,744 - modules.detector - INFO - ObjectDetector initialized with yolov5s on cpu
+2026-04-20 14:13:34,745 - __main__ - INFO - Initializing: SimpleTracker (per camera)
+2026-04-20 14:13:34,745 - modules.tracker - INFO - SimpleTracker initialized: max_age=30, min_hits=3
+2026-04-20 14:13:34,746 - modules.tracker - INFO - SimpleTracker initialized: max_age=30, min_hits=3
+2026-04-20 14:13:34,746 - modules.tracker - INFO - SimpleTracker initialized: max_age=30, min_hits=3
+2026-04-20 14:13:34,746 - __main__ - INFO - Initializing: ReIDExtractor
+2026-04-20 14:13:35,665 - modules.reid - WARNING - Using ResNet50-ImageNet fallback — ReID accuracy will be limited
+2026-04-20 14:13:35,666 - modules.reid - INFO - ReIDExtractor ready: model=resnet50_imagenet_fallback, device=cpu, feature_dim=2048
+2026-04-20 14:13:35,667 - __main__ - INFO - Initializing: GlobalTracker
+2026-04-20 14:13:35,667 - modules.global_tracking - INFO - GlobalTracker initialized with threshold=0.5
+2026-04-20 14:13:35,668 - __main__ - INFO - Initializing: TrajectoryPredictor
+2026-04-20 14:13:35,668 - modules.trajectory_predictor - INFO - TrajectoryPredictor initialized: window=10, steps=5
+2026-04-20 14:13:35,668 - __main__ - INFO - Initializing: AlertSystem
+2026-04-20 14:13:35,669 - modules.alert_system - INFO - AlertSystem initialized
+2026-04-20 14:13:35,669 - modules.alert_system - INFO - Set 3 ROIs for 3 cameras
+2026-04-20 14:13:35,670 - __main__ - INFO - Initializing: Visualizer
+2026-04-20 14:13:35,670 - utils.visualization - INFO - Visualizer initialized
+2026-04-20 14:13:35,672 - __main__ - INFO - Initializing: MetricsCollector
+2026-04-20 14:13:35,673 - utils.metrics - INFO - MetricsCollector initialized
+2026-04-20 14:13:35,673 - __main__ - INFO - All modules initialized successfully
+2026-04-20 14:13:35,673 - __main__ - INFO - Starting tracking system...
+2026-04-20 14:14:55,654 - __main__ - INFO - Interrupted by user
+2026-04-20 14:14:55,658 - __main__ - INFO - Cleaning up...
+2026-04-20 14:14:55,684 - modules.camera_controller - INFO - Camera destroyed
+2026-04-20 14:14:55,686 - modules.camera_controller - INFO - Camera destroyed
+2026-04-20 14:14:55,687 - modules.camera_controller - INFO - Camera destroyed
+2026-04-20 14:14:55,907 - modules.traffic_generator - INFO - Cleaning up traffic actors...
+2026-04-20 14:14:55,920 - modules.traffic_generator - INFO - Traffic cleanup completed
+2026-04-20 14:14:55,921 - __main__ - INFO - Cleanup completed
