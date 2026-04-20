@@ -1,0 +1,49 @@
+cameras:
+  camera_0:
+    position: [0, 0, 3]  # [x, y, z] - world coordinates
+    rotation: [0, 0, 0]  # [pitch, yaw, roll]
+    camera_id: "CAM_001"
+    view_angle: 90
+    resolution: [1920, 1080]
+    fps: 10
+
+  camera_1:
+    position: [50, 0, 3]
+    rotation: [0, 180, 0]
+    camera_id: "CAM_002"
+    view_angle: 120
+    resolution: [1920, 1080]
+    fps: 10
+
+  camera_2:
+    position: [25, -30, 3]
+    rotation: [0, 45, 0]
+    camera_id: "CAM_003"
+    view_angle: 100
+    resolution: [1920, 1080]
+    fps: 10
+
+# Regions of Interest (ROI) cho mỗi camera
+rois:
+  camera_0:
+    zones:
+      - name: "intersection_main"
+        polygon: [[100, 100], [500, 100], [500, 400], [100, 400]]
+  camera_1:
+    zones:
+      - name: "side_road"
+        polygon: [[0, 0], [300, 0], [300, 200], [0, 200]]
+  camera_2:
+    zones:
+      - name: "parking_area"
+        polygon: [[200, 200], [400, 200], [400, 300], [200, 300]]
+
+# System settings
+system:
+  synchronous_mode: true
+  fixed_delta_seconds: 0.1
+  max_age: 30  # frames
+  min_hits: 3   # frames
+  reid_threshold: 0.5
+  trajectory_window: 10
+  prediction_steps: 5

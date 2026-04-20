@@ -1,0 +1,211 @@
+1. Định nghĩa bài toán
+Input
+Nhiều camera CCTV đặt trong môi trường CARLA
+Stream video đồng thời (multi-view)
+Output
+Theo dõi object (vehicle, pedestrian) xuyên camera
+Gán ID toàn cục (global identity)
+Dự đoán quỹ đạo di chuyển trong tương lai
+Cảnh báo cho các camera hoặc khu vực phía trước
+2. Kiến trúc hệ thống (logic)
+
+Hệ thống gồm 5 lớp chính:
+
+1. Data Layer
+CARLA simulation (map, actor, camera)
+Multi-camera synchronized stream
+2. Perception Layer (per-camera)
+Object Detection
+Multi-object Tracking
+3. Cross-camera Fusion Layer
+Re-identification (ReID)
+Global ID assignment
+4. Behavior Modeling Layer
+Trajectory prediction
+Motion modeling
+5. Application Layer
+Alert system
+Visualization / monitoring
+3. Các module chính cần xây
+3.1 Simulation & Data Acquisition
+Mục tiêu
+Sinh dữ liệu đa camera có kiểm soát
+Nội dung
+Đặt nhiều camera tại các tuyến đường
+Gán metadata:
+camera ID
+vị trí (world coordinate)
+hướng nhìn (orientation)
+Đồng bộ frame (synchronous mode)
+Output
+Multi-stream video + timestamp
+3.2 Object Detection
+Mục tiêu
+Phát hiện object trong từng frame
+Model đề xuất
+YOLOv5 / YOLOv8
+Faster R-CNN (nếu cần chính xác cao hơn)
+Class quan tâm
+car
+truck
+bus
+pedestrian
+Output
+Bounding box + confidence + class
+3.3 Multi-Object Tracking (Single Camera)
+Mục tiêu
+Gán ID tạm thời trong từng camera
+Model / thuật toán
+ByteTrack (khuyến nghị)
+DeepSORT (dễ implement hơn)
+Output
+Track ID (local)
+Trajectory trong camera
+3.4 Cross-Camera Re-Identification (ReID)
+
+Đây là phần quan trọng nhất.
+
+Mục tiêu
+Nhận diện lại object khi chuyển giữa camera
+Input
+Crop ảnh object từ tracking
+Feature embedding
+Model đề xuất
+OSNet (nhẹ, hiệu quả)
+ResNet50 ReID
+FastReID (framework mạnh)
+Output
+Vector đặc trưng (embedding)
+Matching
+Cosine similarity
+Threshold-based matching
+3.5 Global Tracking
+Mục tiêu
+Hợp nhất ID từ nhiều camera thành 1 ID toàn cục
+Logic
+Khi object xuất hiện:
+So sánh embedding với database
+Nếu match → gán Global ID
+Nếu không → tạo ID mới
+Output
+Global ID
+Lịch sử di chuyển đa camera
+3.6 Trajectory Prediction
+Mục tiêu
+Dự đoán vị trí tương lai của object
+Input
+Chuỗi vị trí theo thời gian
+(Optional) map topology
+Model cơ bản
+Linear motion (baseline)
+Model nâng cao
+LSTM / GRU
+Social LSTM (có tương tác giữa object)
+Transformer-based trajectory model
+Model nâng cao hơn (khuyến nghị nếu có thời gian)
+Map-aware prediction
+Graph-based trajectory prediction
+Output
+Future positions (x, y)
+Hoặc distribution (multiple possible paths)
+3.7 Alert System
+Mục tiêu
+Cảnh báo khi object di chuyển đến khu vực khác
+Logic
+So sánh trajectory dự đoán với:
+vị trí camera khác
+vùng quan tâm (ROI)
+Output
+Danh sách camera bị ảnh hưởng
+Thời gian dự đoán đến
+3.8 Visualization / Interface
+Mục tiêu
+Hiển thị hệ thống cho người dùng
+Nội dung
+Bounding box + ID
+Trajectory (past + predicted)
+Camera switching
+Alert notification
+4. Dataset cần dùng
+4.1 Detection
+Dataset
+COCO
+BDD100K
+Mục đích
+Train / fine-tune detector
+4.2 Tracking
+Dataset
+MOT17
+MOT20
+Mục đích
+Evaluate tracking (MOTA, IDF1)
+4.3 ReID
+Dataset chính
+Market-1501
+DukeMTMC-reID
+Mục đích
+Train model nhận diện lại object
+4.4 Trajectory Prediction
+Dataset
+ETH / UCY
+Argoverse
+Waymo Open Motion Dataset
+Mục đích
+Train model dự đoán chuyển động
+4.5 Synthetic (quan trọng)
+
+Bạn có thể tự tạo dataset từ CARLA:
+
+Multi-camera tracking dataset
+ReID dataset (cross-view)
+Trajectory dataset
+5. Pipeline dữ liệu
+Camera → frame
+Detection → bounding box
+Tracking → local ID
+Crop object → feature embedding
+ReID → global ID
+Lưu trajectory
+Prediction → future path
+Alert → output
+6. Metric đánh giá
+Detection
+mAP
+Tracking
+MOTA
+IDF1
+ReID
+Rank-1 accuracy
+mAP
+Trajectory
+ADE (Average Displacement Error)
+FDE (Final Displacement Error)
+7. Thứ tự triển khai (quan trọng)
+Giai đoạn 1
+Single camera
+Detection + Tracking
+Giai đoạn 2
+Multi-camera (chưa cần ReID)
+Đồng bộ hệ thống
+Giai đoạn 3
+ReID + Global tracking
+Giai đoạn 4
+Trajectory prediction
+Giai đoạn 5
+Alert system
+Giai đoạn 6
+Tối ưu + scaling
+8. Thách thức chính
+1. ReID sai
+Camera khác góc → khó match
+2. Đồng bộ thời gian
+Lệch frame → sai trajectory
+3. Occlusion
+Object bị che
+4. Domain gap
+Model train trên dataset thật nhưng chạy trên CARLA
+9. Hướng nâng cao (nếu làm research)
+Multi-camera calibration (mapping giữa camera)
+Graph-based tracking
+Multi-agent trajectory prediction
+End-to-end learning (joint detection + tracking + ReID)

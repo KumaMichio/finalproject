@@ -1,0 +1,121 @@
+2026-04-16 09:57:45,968 - __main__ - INFO - CARLA client initialized successfully
+2026-04-16 09:57:45,975 - __main__ - INFO - Synchronous mode enabled
+2026-04-16 09:57:45,990 - modules.camera_controller - INFO - Configuration loaded successfully
+2026-04-16 09:57:45,991 - modules.camera_controller - INFO - CameraController initialized with config: config\camera_config.yaml
+2026-04-16 09:57:46,000 - modules.camera_controller - INFO - Camera CAM_001 spawned at [0, 0, 3]
+2026-04-16 09:57:46,001 - modules.camera_controller - INFO - Camera CAM_002 spawned at [50, 0, 3]
+2026-04-16 09:57:46,002 - modules.camera_controller - INFO - Camera CAM_003 spawned at [25, -30, 3]
+2026-04-16 09:57:46,003 - modules.traffic_generator - INFO - TrafficGenerator initialized: 10 vehicles, 5 pedestrians
+2026-04-16 09:57:47,517 - modules.traffic_generator - WARNING - Failed to spawn vehicle at Location(x=153.030273, y=-84.655762, z=8.305627)
+2026-04-16 10:07:07,735 - __main__ - INFO - CARLA client initialized successfully
+2026-04-16 10:07:17,737 - __main__ - INFO - Synchronous mode enabled
+2026-04-16 10:07:17,752 - modules.camera_controller - INFO - Configuration loaded successfully
+2026-04-16 10:07:17,752 - modules.camera_controller - INFO - CameraController initialized with config: config\camera_config.yaml
+2026-04-16 10:07:17,756 - modules.camera_controller - INFO - Camera CAM_001 spawned at [0, 0, 3]
+2026-04-16 10:07:17,759 - modules.camera_controller - INFO - Camera CAM_002 spawned at [50, 0, 3]
+2026-04-16 10:07:17,761 - modules.camera_controller - INFO - Camera CAM_003 spawned at [25, -30, 3]
+2026-04-16 10:07:17,762 - modules.traffic_generator - INFO - TrafficGenerator initialized: 10 vehicles, 5 pedestrians
+2026-04-16 10:09:57,890 - __main__ - INFO - CARLA client initialized successfully
+2026-04-16 10:10:07,891 - __main__ - INFO - Synchronous mode enabled
+2026-04-16 10:10:07,892 - __main__ - INFO - Initializing: CameraController
+2026-04-16 10:10:07,911 - modules.camera_controller - INFO - Configuration loaded successfully
+2026-04-16 10:10:07,912 - modules.camera_controller - INFO - CameraController initialized with config: config\camera_config.yaml
+2026-04-16 10:10:07,916 - modules.camera_controller - INFO - Camera CAM_001 spawned at [0, 0, 3]
+2026-04-16 10:10:07,918 - modules.camera_controller - INFO - Camera CAM_002 spawned at [50, 0, 3]
+2026-04-16 10:10:07,920 - modules.camera_controller - INFO - Camera CAM_003 spawned at [25, -30, 3]
+2026-04-16 10:10:07,920 - __main__ - INFO - Initializing: TrafficGenerator
+2026-04-16 10:10:07,921 - modules.traffic_generator - INFO - TrafficGenerator initialized: 10 vehicles, 5 pedestrians
+2026-04-16 10:10:08,153 - modules.traffic_generator - WARNING - Failed to spawn vehicle at Location(x=4.104583, y=-43.915955, z=0.275307)
+2026-04-16 10:13:07,988 - __main__ - INFO - CARLA client initialized successfully
+2026-04-16 10:13:07,994 - __main__ - INFO - Synchronous mode enabled
+2026-04-16 10:13:07,995 - __main__ - INFO - Initializing: CameraController
+2026-04-16 10:13:08,010 - modules.camera_controller - INFO - Configuration loaded successfully
+2026-04-16 10:13:08,011 - modules.camera_controller - INFO - CameraController initialized with config: config\camera_config.yaml
+2026-04-16 10:13:08,014 - modules.camera_controller - INFO - Camera CAM_001 spawned at [0, 0, 3]
+2026-04-16 10:13:08,015 - modules.camera_controller - INFO - Camera CAM_002 spawned at [50, 0, 3]
+2026-04-16 10:13:08,016 - modules.camera_controller - INFO - Camera CAM_003 spawned at [25, -30, 3]
+2026-04-16 10:13:08,017 - __main__ - INFO - Initializing: TrafficGenerator
+2026-04-16 10:13:08,017 - modules.traffic_generator - INFO - TrafficGenerator initialized: 10 vehicles, 5 pedestrians
+2026-04-16 10:13:09,319 - modules.traffic_generator - INFO - Spawned 10 vehicles and 5 pedestrians
+2026-04-16 10:13:09,320 - __main__ - INFO - Initializing: ObjectDetector
+2026-04-16 10:13:09,484 - modules.detector - ERROR - Failed to load model: No module named 'utils.datasets'
+2026-04-16 10:13:09,484 - __main__ - ERROR - Failed to initialize modules: No module named 'utils.datasets'
+Traceback (most recent call last):
+  File "main.py", line 85, in initialize_modules
+    self.modules['detector'] = ObjectDetector(model_type='yolov5s')
+  File "e:\finalproject\PythonAPI\custom_tracking_system\modules\detector.py", line 40, in __init__
+    self._load_model()
+  File "e:\finalproject\PythonAPI\custom_tracking_system\modules\detector.py", line 56, in _load_model
+    pretrained=True, force_reload=False)
+  File "C:\Users\hungp\anaconda3\envs\carla-sim\lib\site-packages\torch\hub.py", line 399, in load
+    model = _load_local(repo_or_dir, model, *args, **kwargs)
+  File "C:\Users\hungp\anaconda3\envs\carla-sim\lib\site-packages\torch\hub.py", line 428, in _load_local
+    model = entry(*args, **kwargs)
+  File "e:\finalproject\PythonAPI\custom_tracking_system\models\hub\ultralytics_yolov5_v6.1\hubconf.py", line 80, in yolov5s
+    return _create('yolov5s', pretrained, channels, classes, autoshape, verbose, device)
+  File "e:\finalproject\PythonAPI\custom_tracking_system\models\hub\ultralytics_yolov5_v6.1\hubconf.py", line 31, in _create
+    from models.common import AutoShape, DetectMultiBackend
+  File "e:\finalproject\PythonAPI\custom_tracking_system\models\hub\ultralytics_yolov5_v6.1\models\common.py", line 24, in <module>
+    from utils.datasets import exif_transpose, letterbox
+ModuleNotFoundError: No module named 'utils.datasets'
+2026-04-16 10:16:31,989 - __main__ - INFO - CARLA client initialized successfully
+2026-04-16 10:16:41,990 - __main__ - INFO - Synchronous mode enabled
+2026-04-16 10:16:41,991 - __main__ - INFO - Initializing: CameraController
+2026-04-16 10:16:42,002 - modules.camera_controller - INFO - Configuration loaded successfully
+2026-04-16 10:16:42,002 - modules.camera_controller - INFO - CameraController initialized with config: config\camera_config.yaml
+2026-04-16 10:16:42,006 - modules.camera_controller - INFO - Camera CAM_001 spawned at [0, 0, 3]
+2026-04-16 10:16:42,007 - modules.camera_controller - INFO - Camera CAM_002 spawned at [50, 0, 3]
+2026-04-16 10:16:42,009 - modules.camera_controller - INFO - Camera CAM_003 spawned at [25, -30, 3]
+2026-04-16 10:16:42,010 - __main__ - INFO - Initializing: TrafficGenerator
+2026-04-16 10:16:42,010 - modules.traffic_generator - INFO - TrafficGenerator initialized: 10 vehicles, 5 pedestrians
+2026-04-16 10:17:46,593 - __main__ - INFO - CARLA client initialized successfully
+2026-04-16 10:17:46,598 - __main__ - INFO - Synchronous mode enabled
+2026-04-16 10:17:46,598 - __main__ - INFO - Initializing: CameraController
+2026-04-16 10:17:46,606 - modules.camera_controller - INFO - Configuration loaded successfully
+2026-04-16 10:17:46,607 - modules.camera_controller - INFO - CameraController initialized with config: config\camera_config.yaml
+2026-04-16 10:17:46,609 - modules.camera_controller - INFO - Camera CAM_001 spawned at [0, 0, 3]
+2026-04-16 10:17:46,610 - modules.camera_controller - INFO - Camera CAM_002 spawned at [50, 0, 3]
+2026-04-16 10:17:46,611 - modules.camera_controller - INFO - Camera CAM_003 spawned at [25, -30, 3]
+2026-04-16 10:17:46,612 - __main__ - INFO - Initializing: TrafficGenerator
+2026-04-16 10:17:46,612 - modules.traffic_generator - INFO - TrafficGenerator initialized: 10 vehicles, 5 pedestrians
+2026-04-16 10:17:47,520 - modules.traffic_generator - WARNING - Failed to spawn pedestrian at Location(x=-118.079285, y=0.275539, z=0.275307)
+2026-04-16 10:17:47,521 - modules.traffic_generator - WARNING - Failed to spawn pedestrian at Location(x=-18.167728, y=9.451503, z=0.275307)
+2026-04-16 10:25:40,424 - __main__ - INFO - CARLA client initialized successfully
+2026-04-16 10:25:40,430 - __main__ - INFO - Synchronous mode enabled
+2026-04-16 10:25:40,430 - __main__ - INFO - Initializing: CameraController
+2026-04-16 10:25:40,438 - modules.camera_controller - INFO - Configuration loaded successfully
+2026-04-16 10:25:40,438 - modules.camera_controller - INFO - CameraController initialized with config: config\camera_config.yaml
+2026-04-16 10:25:40,441 - modules.camera_controller - INFO - Camera CAM_001 spawned at [0, 0, 3]
+2026-04-16 10:25:40,442 - modules.camera_controller - INFO - Camera CAM_002 spawned at [50, 0, 3]
+2026-04-16 10:25:40,443 - modules.camera_controller - INFO - Camera CAM_003 spawned at [25, -30, 3]
+2026-04-16 10:25:40,443 - __main__ - INFO - Initializing: TrafficGenerator
+2026-04-16 10:25:40,443 - modules.traffic_generator - INFO - TrafficGenerator initialized: 10 vehicles, 5 pedestrians
+2026-04-16 10:25:41,372 - modules.traffic_generator - INFO - Spawned 10 vehicles and 5 pedestrians
+2026-04-16 10:25:41,373 - __main__ - INFO - Initializing: ObjectDetector
+2026-04-16 10:25:42,716 - yolov5 - INFO - YOLOv5  2026-4-16 torch 1.10.2+cpu CPU
+
+2026-04-16 10:25:42,763 - yolov5 - INFO - Fusing layers... 
+2026-04-16 10:25:42,981 - yolov5 - INFO - Model Summary: 213 layers, 7225885 parameters, 0 gradients, 16.4 GFLOPs
+2026-04-16 10:25:42,983 - yolov5 - INFO - Adding AutoShape... 
+2026-04-16 10:25:42,989 - modules.detector - INFO - Model loaded successfully: yolov5s
+2026-04-16 10:25:42,990 - modules.detector - INFO - ObjectDetector initialized with yolov5s on cpu
+2026-04-16 10:25:42,990 - __main__ - INFO - Initializing: SimpleTracker (per camera)
+2026-04-16 10:25:42,990 - modules.tracker - INFO - SimpleTracker initialized: max_age=30, min_hits=3
+2026-04-16 10:25:42,990 - modules.tracker - INFO - SimpleTracker initialized: max_age=30, min_hits=3
+2026-04-16 10:25:42,990 - modules.tracker - INFO - SimpleTracker initialized: max_age=30, min_hits=3
+2026-04-16 10:25:42,991 - __main__ - INFO - Initializing: ReIDExtractor
+2026-04-16 10:25:53,349 - modules.reid - WARNING - Using ResNet50-ImageNet fallback — ReID accuracy will be limited
+2026-04-16 10:25:53,349 - modules.reid - INFO - ReIDExtractor ready: model=resnet50_imagenet_fallback, device=cpu, feature_dim=2048
+2026-04-16 10:25:53,350 - __main__ - INFO - Initializing: GlobalTracker
+2026-04-16 10:25:53,352 - modules.global_tracking - INFO - GlobalTracker initialized with threshold=0.5
+2026-04-16 10:25:53,352 - __main__ - INFO - Initializing: TrajectoryPredictor
+2026-04-16 10:25:53,352 - modules.trajectory_predictor - INFO - TrajectoryPredictor initialized: window=10, steps=5
+2026-04-16 10:25:53,353 - __main__ - INFO - Initializing: AlertSystem
+2026-04-16 10:25:53,353 - modules.alert_system - INFO - AlertSystem initialized
+2026-04-16 10:25:53,353 - modules.alert_system - INFO - Set 3 ROIs for 3 cameras
+2026-04-16 10:25:53,354 - __main__ - INFO - Initializing: Visualizer
+2026-04-16 10:25:53,354 - utils.visualization - INFO - Visualizer initialized
+2026-04-16 10:25:53,354 - __main__ - INFO - Initializing: MetricsCollector
+2026-04-16 10:25:53,355 - utils.metrics - INFO - MetricsCollector initialized
+2026-04-16 10:25:53,355 - __main__ - INFO - All modules initialized successfully
+2026-04-16 10:25:53,355 - __main__ - INFO - Starting tracking system...
