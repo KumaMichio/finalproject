@@ -66,6 +66,13 @@ class ObjectDetector:
                     del sys.modules[k]
                 sys.modules.update(_saved)
 
+            # Patch for PyTorch >=1.11: older YOLOv5 v6.1 checkpoints lack
+            # `recompute_scale_factor` on nn.Upsample, breaking forward().
+            import torch.nn as nn
+            for m in self.model.modules():
+                if isinstance(m, nn.Upsample) and not hasattr(m, 'recompute_scale_factor'):
+                    m.recompute_scale_factor = None
+
             self.model.to(self.device)
             self.model.conf = self.conf_threshold
             self.model.classes = list(self.classes_of_interest.keys())

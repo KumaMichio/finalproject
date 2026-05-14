@@ -1,0 +1,11 @@
+# Backend API Server dependencies
+fastapi>=0.100.0
+uvicorn[standard]>=0.23.0
+sqlalchemy>=2.0
+pydantic>=2.0
+python-multipart>=0.0.6
+aiofiles>=23.0
+websockets>=11.0
+
+# AI pipeline dependencies (cung can cai tu custom_tracking_system/requirements.txt)
+# numpy, opencv-python, torch, torchvision, scipy, PyYAML, ...

@@ -4,7 +4,7 @@ cameras:
     rotation: [0, 0, 0]  # [pitch, yaw, roll]
     camera_id: "CAM_001"
     view_angle: 90
-    resolution: [1920, 1080]
+    resolution: [960, 540]
     fps: 10
 
   camera_1:
@@ -12,7 +12,7 @@ cameras:
     rotation: [0, 180, 0]
     camera_id: "CAM_002"
     view_angle: 120
-    resolution: [1920, 1080]
+    resolution: [960, 540]
     fps: 10
 
   camera_2:
@@ -20,7 +20,7 @@ cameras:
     rotation: [0, 45, 0]
     camera_id: "CAM_003"
     view_angle: 100
-    resolution: [1920, 1080]
+    resolution: [960, 540]
     fps: 10
 
 # Regions of Interest (ROI) cho mỗi camera
