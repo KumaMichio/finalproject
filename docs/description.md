@@ -1,107 +1,126 @@
-# Mô tả Workspace CARLA 0.9.9.4
+# Mo Ta Cau Truc Du An — Multi-Camera CCTV Tracking System
 
-## Tổng quan
-Workspace này chứa phiên bản CARLA 0.9.9.4, một simulator mã nguồn mở cho việc phát triển và thử nghiệm xe tự lái (autonomous driving). CARLA cung cấp môi trường mô phỏng thực tế với các thành phố ảo, phương tiện, và cảm biến để hỗ trợ nghiên cứu AI và robot.
+## Tong quan
 
-## Cấu trúc Folder
+Du an he thong giam sat camera CCTV da kenh su dung AI, chay trong moi truong mo phong
+CARLA 0.9.9.4. He thong phat hien, theo doi, nhan dien lai doi tuong (xe, nguoi) va
+canh bao khi doi tuong vao vung ROI.
 
-### Root Files
-- **instruction.txt**: Tài liệu hướng dẫn sử dụng workspace này.
-- **plan.md**: Kế hoạch phát triển hoặc ghi chú về dự án.
-- **README.md**: Tài liệu giới thiệu tổng quan về CARLA và cách cài đặt/sử dụng.
+He thong duoc thiet ke de hoat dong voi **bat ky nguon video nao** (CARLA, camera IP,
+video file, webcam) thong qua lop abstract VideoSource.
 
-### PythonAPI/
-Thư mục chứa API Python để tương tác với CARLA simulator.
-- **custom_tracking_system/**: Hệ thống theo dõi tùy chỉnh.
-  - **__init__.py**: File khởi tạo module Python.
-  - **main.py**: File chính để chạy hệ thống theo dõi.
-  - **README.md**: Tài liệu hướng dẫn cho hệ thống theo dõi.
-  - **requirements.txt**: Danh sách các thư viện Python cần thiết.
-  - **run.bat**: Script batch để chạy trên Windows.
-  - **config/**: Thư mục cấu hình.
-    - **camera_config.yaml**: Cấu hình camera.
-  - **datasets/**: Dữ liệu cho hệ thống.
-    - **ground_truth/**: Dữ liệu ground truth.
-    - **synthetic_data/**: Dữ liệu tổng hợp.
-  - **models/**: Mô hình AI/ML.
-    - **detection/**: Mô hình phát hiện đối tượng.
-    - **reid/**: Mô hình nhận dạng lại (Re-identification).
-    - **tracking/**: Mô hình theo dõi.
-  - **modules/**: Các module chức năng.
-    - **alert_system.py**: Hệ thống cảnh báo.
-    - **camera_controller.py**: Điều khiển camera.
-    - **detector.py**: Module phát hiện.
-    - **global_tracking.py**: Theo dõi toàn cục.
-    - **reid.py**: Module Re-ID.
-    - **tracker.py**: Module theo dõi.
-    - **traffic_generator.py**: Tạo lưu lượng giao thông.
-    - **trajectory_predictor.py**: Dự đoán quỹ đạo.
-  - **utils/**: Các tiện ích.
-    - **data_writer.py**: Ghi dữ liệu.
-    - **metrics.py**: Tính toán metrics.
-    - **visualization.py**: Trực quan hóa dữ liệu.
-- **carla/**: Thư mục chứa thư viện CARLA Python API.
-- **examples/**: Các ví dụ sử dụng CARLA API.
-- **util/**: Các tiện ích bổ sung.
+## Cau truc thu muc
 
-### WindowsNoEditor/
-Thư mục chứa các file thực thi và cấu hình cho CARLA trên Windows (không có editor Unreal Engine).
-- **CHANGELOG**: Nhật ký thay đổi phiên bản.
-- **Dockerfile**: File để build Docker image.
-- **LICENSE**: Giấy phép sử dụng.
-- **README**: Tài liệu README cho phiên bản Windows.
-- **CarlaUE4/**: Dự án Unreal Engine cho CARLA.
-  - **CarlaUE4.uproject**: File dự án Unreal Engine.
-  - **Binaries/Win64/**: File thực thi nhị phân cho Windows 64-bit.
-  - **Config/**: Cấu hình game/engine.
-    - **DefaultEngine.ini**: Cấu hình engine mặc định.
-    - **DefaultGame.ini**: Cấu hình game mặc định.
-    - **DefaultGameUserSettings.ini**: Cài đặt người dùng game.
-    - **DefaultInput.ini**: Cấu hình input.
-  - **Content/Carla/**: Nội dung game CARLA.
-  - **Plugins/Carla/**: Plugin CARLA cho Unreal Engine.
-- **Co-Simulation/**: Tích hợp với các simulator khác.
-  - **PTV-Vissim/**: Tích hợp với PTV Vissim.
-    - **run_synchronization.py**: Script đồng bộ hóa.
-    - **data/**: Dữ liệu cho tích hợp.
-    - **examples/**: Ví dụ sử dụng.
-    - **vissim_integration/**: Module tích hợp Vissim.
-  - **Sumo/**: Tích hợp với SUMO (Simulation of Urban MObility).
-    - **requirements.txt**: Thư viện cần thiết.
-    - **run_synchronization.py**: Script đồng bộ hóa.
-    - **spawn_npc_sumo.py**: Script tạo NPC từ SUMO.
-    - **data/**: Dữ liệu.
-    - **examples/**: Ví dụ.
-    - **sumo_integration/**: Module tích hợp SUMO.
-    - **util/**: Tiện ích.
-- **Engine/**: Engine Unreal Engine.
-  - **Binaries/ThirdParty/**: Thư viện bên thứ ba.
-  - **Config/**: Cấu hình engine.
-    - **Base*.ini**: Các file cấu hình cơ bản.
-    - **Layouts/**: Bố cục.
-    - **Windows/**: Cấu hình Windows-specific.
-  - **Content/**: Nội dung engine (materials, meshes, sounds, etc.).
-    - **Animation/**: Animation assets.
-    - **ArtTools/**: Công cụ nghệ thuật.
-    - **BasicShapes/**: Hình dạng cơ bản.
-    - **Editor*/**: Tài nguyên editor.
-    - **Engine*/**: Tài nguyên engine.
-    - **Functions/**: Hàm.
-    - **Internationalization/**: Quốc tế hóa.
-    - **Localization/**: Địa phương hóa.
-    - **Maps/**: Bản đồ.
-    - **MapTemplates/**: Mẫu bản đồ.
-    - **MobileResources/**: Tài nguyên mobile.
-    - **Slate/**: UI framework.
-    - **Tutorial/**: Hướng dẫn.
-    - **VREditor/**: VR Editor.
-  - **Plugins/**: Các plugin engine (2D, AI, Blendables, Developer, Editor, Enterprise, Experimental, MagicLeap, Media, etc.).
+```
+E:\finalproject\
+|
+|-- AI_custom\                              # Phan code tu phat trien
+|   |
+|   |-- custom_tracking_system\             # AI Pipeline
+|   |   |-- config\
+|   |   |   +-- camera_config.yaml          # Cau hinh 3 camera + 3 ROI + system params
+|   |   |-- modules\
+|   |   |   |-- camera_controller.py        # Dieu khien camera trong CARLA, dong bo frame
+|   |   |   |-- traffic_generator.py        # Spawn xe + nguoi voi autopilot trong CARLA
+|   |   |   |-- detector.py                # Phat hien doi tuong (YOLOv5s, COCO pretrained)
+|   |   |   |-- tracker.py                 # Theo doi trong 1 camera (IoU greedy matching)
+|   |   |   |-- reid.py                    # ReID xuyen camera (OSNet/torchreid + ResNet50 fallback)
+|   |   |   |-- global_tracking.py         # Gan Global ID xuyen camera bang ReID gallery
+|   |   |   |-- trajectory_predictor.py    # Du doan quy dao (linear extrapolation)
+|   |   |   |-- alert_system.py            # Canh bao vung ROI (point-in-polygon)
+|   |   |   |-- video_source.py            # Abstract video source (CARLA/RTSP/File/Webcam)
+|   |   |   +-- ground_truth.py            # Ground truth cho evaluation (tach biet khoi AI)
+|   |   |-- utils\
+|   |   |   |-- visualization.py           # Ve bbox, trajectory, ROI, multi-camera grid
+|   |   |   |-- metrics.py                 # Thu thap FPS, detection/tracking counts
+|   |   |   +-- data_writer.py             # Xuat du lieu JSON, CSV, summary report
+|   |   |-- models\
+|   |   |   |-- hub\                       # YOLOv5 model cache + ResNet50 checkpoint
+|   |   |   |-- detection\                 # (trong — chua fine-tune)
+|   |   |   |-- reid\                      # (trong — chua fine-tune)
+|   |   |   +-- tracking\                  # (trong — chua fine-tune)
+|   |   |-- datasets\
+|   |   |   |-- ground_truth\              # (trong — chua co du lieu)
+|   |   |   +-- synthetic_data\            # (trong — chua co du lieu)
+|   |   |-- main.py                        # Entry point chay truc tiep (khong qua server)
+|   |   |-- requirements.txt               # Dependencies: torch, yolov5, opencv, torchreid
+|   |   +-- run.bat                        # Script chay tren Windows
+|   |
+|   |-- server\                             # Backend API Server (FastAPI)
+|   |   |-- models\
+|   |   |   |-- database.py                # SQLAlchemy ORM, 5 bang, SQLite backend
+|   |   |   +-- schemas.py                 # Pydantic v2 request/response schemas
+|   |   |-- routers\
+|   |   |   |-- cameras.py                 # CRUD camera (GET/POST/PUT/DELETE)
+|   |   |   |-- tracks.py                  # Query doi tuong + quy dao
+|   |   |   |-- alerts.py                  # Query + filter + xac nhan canh bao
+|   |   |   |-- rois.py                    # CRUD vung ROI
+|   |   |   |-- stats.py                   # Thong ke he thong (FPS, counts, uptime)
+|   |   |   |-- websocket.py               # WebSocket push real-time (alerts, tracks, stats)
+|   |   |   +-- stream.py                  # MJPEG video streaming
+|   |   |-- services\
+|   |   |   |-- ai_processor.py            # Tich hop AI pipeline vao server (background thread)
+|   |   |   |-- camera_service.py          # CRUD camera trong DB
+|   |   |   |-- alert_service.py           # Logic nghiep vu canh bao
+|   |   |   |-- tracking_service.py        # Logic nghiep vu tracking
+|   |   |   +-- stream_service.py          # FrameBuffer cho MJPEG streaming (async)
+|   |   |-- middleware\                     # (du tru — chua implement)
+|   |   |-- app.py                         # FastAPI app + CLI entry point
+|   |   |-- config.py                      # Paths, CARLA host/port, AI params, streaming params
+|   |   |-- requirements.txt               # Dependencies: fastapi, uvicorn, sqlalchemy, pydantic
+|   |   +-- run_server.bat                 # Script chay server tren Windows
+|   |
+|   +-- docs\                               # Tai lieu du an
+|       |-- description.md                 # Mo ta cau truc du an (file nay)
+|       |-- plan.md                        # Ke hoach phat trien 10 phases (ban goc)
+|       |-- workflow.md                    # Quy trinh trien khai 6 giai doan
+|       |-- execute.md                     # Huong dan chay + 6 kich ban test
+|       |-- development_roadmap.md         # Lo trinh phat trien (8 phan)
+|       |-- report.md                      # Bao cao du an
+|       +-- project_context.md             # Context doc cho prompt tren mobile
+|
++-- WindowsNoEditor\                        # CARLA Simulator 0.9.9.4 (khong chinh sua)
+    |-- CarlaUE4.exe                       # File thuc thi CARLA server
+    |-- PythonAPI\
+    |   |-- carla\                         # CARLA Python package (.egg)
+    |   |-- examples\                      # Vi du su dung CARLA API
+    |   +-- util\                          # Tien ich
+    |-- Engine\                            # Unreal Engine 4 runtime
+    |-- Co-Simulation\                     # Tich hop SUMO, PTV-Vissim
+    +-- HDMaps\                            # Ban do do phan giai cao
+```
 
-### HDMaps/
-- **README**: Tài liệu về High Definition Maps.
+## Mo ta cac thanh phan chinh
 
-### Co-Simulation/
-(Tương tự như trong WindowsNoEditor, có thể là duplicate hoặc symlink).
+### AI Pipeline (`custom_tracking_system/`)
 
-### Engine/
-(Tương tự như trong WindowsNoEditor).
+Luong xu ly 8 buoc:
+1. **Camera Source** — lay frame tu CARLA (hoac RTSP/File/Webcam qua VideoSource)
+2. **Detection** — YOLOv5s phat hien person, car, bus, truck
+3. **Tracking** — IoU greedy matching theo doi trong 1 camera
+4. **Feature Extraction** — OSNet (512D) hoac ResNet50 (2048D), L2-normalized
+5. **ReID Matching** — cosine similarity voi gallery, threshold 0.5
+6. **Global ID** — gan ID duy nhat xuyen camera
+7. **Trajectory Prediction** — linear extrapolation 5 buoc tuong lai
+8. **Alert** — point-in-polygon kiem tra doi tuong vao vung ROI
+
+**video_source.py**: Abstract layer tach AI pipeline khoi nguon video cu the.
+AI pipeline chi thay raw frames (numpy array), khong biet nguon la CARLA hay camera that.
+Ho tro: CARLAVideoSource, RTSPVideoSource, FileVideoSource, WebcamVideoSource.
+
+**ground_truth.py**: Thu thap ground truth tu CARLA (actor_id, location, velocity)
+hoac tu file MOT format. TACH BIET hoan toan khoi AI pipeline, chi dung cho evaluation.
+
+### Backend Server (`server/`)
+
+- **17 REST endpoints**: CRUD camera, query tracks/alerts/ROIs, system stats
+- **3 WebSocket channels**: push alerts, tracking updates, stats real-time
+- **MJPEG streaming**: video live tu camera den browser
+- **Database**: SQLite voi 5 bang (cameras, alerts, tracked_objects, tracking_history, rois)
+- **AI Processor**: chay AI pipeline trong background thread, push ket qua qua WebSocket + DB
+
+### 3 che do chay
+
+1. **API-only** (`python app.py`): Server hoat dong, khong can CARLA. Dung de phat trien frontend.
+2. **API + AI** (`python app.py --with-ai`): Full system voi CARLA. AI pipeline chay background.
+3. **Direct** (`python main.py`): Hien thi qua OpenCV window, khong co server.

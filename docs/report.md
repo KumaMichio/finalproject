@@ -53,7 +53,9 @@ finalproject/
 |   |   |   |-- reid.py                # Nhan dien lai xuyen camera (OSNet/ResNet50)
 |   |   |   |-- global_tracking.py     # Gan Global ID xuyen camera
 |   |   |   |-- trajectory_predictor.py # Du doan quy dao
-|   |   |   +-- alert_system.py        # Canh bao vung ROI
+|   |   |   |-- alert_system.py        # Canh bao vung ROI
+|   |   |   |-- video_source.py        # Abstract video source (CARLA/RTSP/File/Webcam)
+|   |   |   +-- ground_truth.py        # Ground truth cho evaluation (tach khoi AI pipeline)
 |   |   |-- utils/
 |   |   |   |-- visualization.py       # Ve bounding box, trajectory, ROI
 |   |   |   |-- metrics.py             # Thu thap chi so hieu suat
@@ -100,7 +102,8 @@ finalproject/
 |       |-- workflow.md                # Quy trinh trien khai tung giai doan
 |       |-- execute.md                 # Huong dan chay + cac kich ban test
 |       |-- development_roadmap.md     # Lo trinh phat trien tiep theo
-|       +-- report.md                  # Bao cao du an (file nay)
+|       |-- report.md                  # Bao cao du an (file nay)
+|       +-- project_context.md         # Context doc cho prompt tren mobile
 |
 +-- WindowsNoEditor/                    # CARLA Simulator 0.9.9.4
     |-- CarlaUE4.exe                   # File thuc thi CARLA server
@@ -163,8 +166,8 @@ finalproject/
 ### 4.1 AI Pipeline — Luong xu ly chinh
 
 ```
-CARLA Camera Frames
-        |
+Video Source (CARLA / RTSP / File / Webcam)
+        |  chi tra ve raw frames (numpy array)
         v
   [1] Object Detection (YOLOv5s)
         |  Output: bounding boxes + class + confidence
@@ -234,7 +237,9 @@ Client (Browser / App)
   AI Pipeline (detector -> tracker -> reid -> global -> predict -> alert)
         |
         v
-  CARLA Simulator (camera sensors, actors)
+  Video Source (CARLA Simulator / Camera IP / Video File / Webcam)
+        |
+  Ground Truth (CARLA actor data / MOT file) — TACH BIET, chi dung evaluation
 ```
 
 ### 4.3 Database — 5 bang chinh
@@ -459,17 +464,22 @@ Hien tai he thong cau hinh 3 camera (CAM_001, CAM_002, CAM_003) voi 3 vung ROI t
 - Backend API server voi 17 REST endpoints, 3 WebSocket channels, MJPEG streaming.
 - Database 5 bang luu tru camera, alerts, tracks, history, ROIs.
 - AI processor tich hop pipeline vao server, chay trong background thread.
-- 2 che do chay: API-only (dev frontend) va API + AI (full system voi CARLA).
+- 3 che do chay: API-only, API + AI (CARLA), Direct (OpenCV window).
+- Abstract VideoSource layer — tach AI pipeline khoi nguon video cu the (CARLA/RTSP/File/Webcam).
+- Ground Truth module — thu thap du lieu CARLA (actor_id, location, velocity) TACH BIET khoi AI pipeline, chi dung cho evaluation. Ho tro doc file MOT Challenge format.
 
 ### 6.2 Han che hien tai
 
 | Han che | Chi tiet |
 |--------|---------|
-| Tracker don gian | Su dung IoU greedy matching, chua co Kalman filter hoac appearance matching |
-| Trajectory prediction co ban | Chi dung linear extrapolation (noi suy tuyen tinh) |
-| ReID chua toi uu cho vehicle | OSNet/Market-1501 duoc train cho person, chua co model rieng cho xe |
+| Tracker don gian | Su dung IoU greedy matching, chua co Kalman filter hoac appearance matching. Khi 2 doi tuong di sat nhau roi tach ra, tracker co the hoan doi ID |
+| Trajectory prediction co ban | Chi dung linear extrapolation (noi suy tuyen tinh), chua co Kalman filter hoac LSTM |
+| ReID chua toi uu cho vehicle | OSNet/Market-1501 duoc train cho person, chua co model rieng cho xe. Voi 2 xe giong mau va hinh dang, ReID khong phan biet duoc |
+| Chua co spatio-temporal reasoning | Chua dung thoi gian + khoang cach giua camera de loc match sai khi ReID khong du chinh xac |
 | Chua co web dashboard | Frontend chua duoc xay dung, chi co API |
-| Chua co anomaly detection | Chi phat hien doi tuong vao ROI, chua co overspeed, wrong-way, crowd... |
+| Chua co anomaly detection | Chi phat hien doi tuong vao ROI, chua co overspeed, wrong-way, crowd, loitering... |
 | Chua co recording/playback | Chua ghi video, chua cat clip su co |
-| Chua co ground truth evaluation | Chua tinh MOTA, IDF1, mAP thuc su |
+| Chua co ground truth evaluation | Module ground_truth.py da co nhung chua tich hop de tinh MOTA, IDF1, mAP thuc su |
 | Datasets trong | Chua co du lieu ground truth hoac synthetic data |
+| VideoSource chua tich hop | video_source.py da viet nhung main.py va ai_processor.py van dung camera_controller truc tiep |
+| CARLA khong ho tro bien so xe | Khong the dung LPR (phuong phap chinh xac nhat) de phan biet xe giong nhau |

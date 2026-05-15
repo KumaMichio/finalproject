@@ -9,7 +9,7 @@ thanh mot he thong giam sat camera hoan chinh voi giao dien server, AI bao dong 
 
 ## Trang Thai Hien Tai
 
-### Da hoan thanh (~65%)
+### Da hoan thanh (~70%)
 - [x] CARLA simulator setup (WindowsNoEditor)
 - [x] Camera controller — dat nhieu camera trong CARLA, dong bo frame
 - [x] Traffic generator — spawn vehicle + pedestrian voi autopilot
@@ -24,17 +24,22 @@ thanh mot he thong giam sat camera hoan chinh voi giao dien server, AI bao dong 
 - [x] Data writer — export JSON, CSV, summary report
 - [x] Camera config — YAML (3 cameras, 3 ROIs)
 - [x] Documentation — plan, workflow, execute guide
+- [x] Backend API server — FastAPI, 17 REST endpoints, 3 WebSocket channels
+- [x] Database & persistence — SQLAlchemy ORM, SQLite, 5 bang
+- [x] Video streaming pipeline — MJPEG over HTTP
+- [x] AI Processor — tich hop AI pipeline vao server (background thread)
+- [x] Abstract VideoSource — tach AI pipeline khoi nguon video (CARLA/RTSP/File/Webcam)
+- [x] Ground Truth module — tach biet khoi AI pipeline, dung cho evaluation
 
 ### Chua hoan thanh
 - [ ] Web dashboard (frontend)
-- [ ] Backend API server
-- [ ] Video streaming pipeline
-- [ ] Database & persistence
 - [ ] Anomaly detection (phat hien su co thong minh)
-- [ ] Nang cap AI pipeline (DeepSORT, Kalman, VehicleReID)
+- [ ] Nang cap AI pipeline (DeepSORT/ByteTrack, Kalman, VehicleReID)
+- [ ] Spatio-temporal reasoning (phan biet xe giong nhau xuyen camera)
 - [ ] Camera management UI
 - [ ] Recording & playback
-- [ ] Testing & evaluation voi ground truth
+- [ ] Testing & evaluation voi ground truth (MOTA, IDF1, mAP)
+- [ ] Tich hop VideoSource vao pipeline (thay camera_controller truc tiep)
 
 ---
 
@@ -78,11 +83,19 @@ thanh mot he thong giam sat camera hoan chinh voi giao dien server, AI bao dong 
 
 ---
 
-## PHAN 1: Backend API Server
+## PHAN 1: Backend API Server ✅ DA HOAN THANH
 
 ### 1.1 Muc tieu
 Tach he thong tu 1 script Python monolithic thanh kien truc client-server.
 Frontend (browser) giao tiep voi backend qua REST API + WebSocket.
+
+> **Trang thai:** Da implement day du. Xem `server/` folder.
+> - 7 routers (cameras, tracks, alerts, rois, stats, websocket, stream)
+> - 5 services (ai_processor, camera_service, alert_service, tracking_service, stream_service)
+> - Database ORM 5 bang (SQLAlchemy + SQLite)
+> - Pydantic v2 schemas
+> - MJPEG streaming voi async FrameBuffer
+> - AI processor chay pipeline trong background thread
 
 ### 1.2 Cong nghe
 - **Framework:** FastAPI (Python) — async, nhanh, auto-generate docs
@@ -1029,28 +1042,31 @@ finalproject/
 ## Thu Tu Uu Tien Phat Trien
 
 ```
-UU TIEN 1 (tuan 1-3):
-  Backend API + Database + Video streaming
-  --> Tao nen tang server truoc
+DA XONG - UU TIEN 1:
+  ✅ Backend API + Database + Video streaming
+  ✅ Abstract VideoSource + Ground Truth module
 
-UU TIEN 2 (tuan 3-6):
+TIEP THEO - UU TIEN 2:
   Web Dashboard co ban (camera grid + alert panel)
+  Tich hop VideoSource vao pipeline (thay camera_controller)
   --> Operator bat dau dung duoc
 
-UU TIEN 3 (tuan 5-8):
+UU TIEN 3:
   Nang cap Alert system + Anomaly detection
-  --> Phat hien su co thong minh
+  Spatio-temporal reasoning cho cross-camera matching
+  --> Phat hien su co thong minh + phan biet doi tuong giong nhau
 
-UU TIEN 4 (tuan 7-10):
+UU TIEN 4:
   Nang cap AI pipeline (ByteTrack, Kalman, VehicleReID)
   --> Tracking chinh xac hon
 
-UU TIEN 5 (tuan 10-12):
+UU TIEN 5:
   Camera management + Recording + Playback
   --> Tinh nang nang cao
 
-UU TIEN 6 (tuan 12-15):
-  Testing + toi uu + polish UI
+UU TIEN 6:
+  Testing + evaluation (MOTA, IDF1, mAP) voi ground truth
+  Toi uu + polish UI
   --> Production-ready
 ```
 

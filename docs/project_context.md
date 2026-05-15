@@ -36,6 +36,8 @@ E:\finalproject\
         global_tracking.py          # Gan Global ID xuyen camera bang ReID gallery matching
         trajectory_predictor.py     # Linear extrapolation (chua co Kalman/LSTM)
         alert_system.py             # Canh bao khi doi tuong vao ROI (point-in-polygon)
+        video_source.py             # Abstract video source (CARLA/RTSP/File/Webcam)
+        ground_truth.py             # Ground truth cho evaluation (tach biet khoi AI pipeline)
       utils\
         visualization.py            # Ve bbox, trajectory, ROI, multi-camera grid (OpenCV)
         metrics.py                  # Thu thap FPS, counts (chua co MOTA/IDF1 thuc)
@@ -161,7 +163,8 @@ GET /stream/{camera_id}    — MJPEG stream (dung trong <img src="...">)
 ## AI Pipeline — luong xu ly 1 frame
 
 ```
-1. camera_controller.get_synchronized_frames()
+1. camera_controller.get_synchronized_frames()  (hien tai)
+   hoac MultiVideoSource.get_synchronized_frames()  (video_source.py, chua tich hop)
    -> {camera_id: {frame: np.array(H,W,3), timestamp, frame_number}}
 
 2. detector.detect(frame)
@@ -231,8 +234,10 @@ Resolution: 960x540, FPS: 10, synchronous mode.
 2. Backend API server: 17 REST endpoints, 3 WebSocket channels, MJPEG streaming
 3. Database 5 bang (cameras, alerts, tracked_objects, tracking_history, rois)
 4. AI processor tich hop pipeline vao FastAPI background thread
-5. 2 che do chay: API-only va API+AI
+5. 3 che do chay: API-only, API+AI (CARLA), Direct (OpenCV window)
 6. Camera config YAML, logging, data export (JSON/CSV)
+7. Abstract VideoSource layer — tach AI pipeline khoi nguon video (CARLA/RTSP/File/Webcam)
+8. Ground Truth module — thu thap CARLA actor data + doc file MOT format, TACH BIET khoi AI pipeline
 
 ## Nhung gi CHUA lam (theo development_roadmap.md)
 
@@ -240,10 +245,38 @@ Resolution: 960x540, FPS: 10, synchronous mode.
 2. **Anomaly detection** — overspeed, wrong-way, stopped vehicle, crowd density, loitering (hien chi co ROI entry)
 3. **Nang cap tracker** — ByteTrack hoac DeepSORT thay SimpleTracker
 4. **Nang cap trajectory** — Kalman filter hoac LSTM thay linear extrapolation
-5. **Vehicle ReID** — model rieng cho xe (hien chi co person ReID)
-6. **Recording & playback** — ghi video lien tuc, cat clip su co
-7. **Camera management UI** — them/xoa camera runtime, health check
-8. **Ground truth evaluation** — tinh MOTA, IDF1, mAP thuc voi CARLA actor ID
+5. **Vehicle ReID** — model rieng cho xe (hien chi co person ReID, OSNet/Market-1501)
+6. **Spatio-temporal reasoning** — dung thoi gian + khoang cach giua camera de phan biet doi tuong giong nhau
+7. **Recording & playback** — ghi video lien tuc, cat clip su co
+8. **Camera management UI** — them/xoa camera runtime, health check
+9. **Ground truth evaluation** — module ground_truth.py da co nhung chua tich hop tinh MOTA, IDF1, mAP
+10. **Tich hop VideoSource** — video_source.py da viet, can thay camera_controller trong main.py va ai_processor.py
+
+---
+
+## Kien truc VideoSource va GroundTruth
+
+**VideoSource** (`modules/video_source.py`): Abstract layer de AI pipeline chi thay raw frames,
+khong biet nguon la CARLA hay camera that. 4 implementations:
+- `CARLAVideoSource` — wrap CARLA sensor, chi tra ve raw pixels
+- `RTSPVideoSource` — doc tu camera IP (rtsp://...)
+- `FileVideoSource` — doc tu video file (.mp4, .avi)
+- `WebcamVideoSource` — doc tu webcam
+
+**GroundTruth** (`modules/ground_truth.py`): TACH BIET khoi AI pipeline.
+- `GroundTruthCollector` — doc actor_id, location, velocity tu CARLA World
+- `FileGroundTruth` — doc tu file MOT Challenge format
+- AI pipeline KHONG DUOC import module nay. Chi dung cho evaluation.
+
+**Ly do**: CARLA cung cap oracle knowledge (actor.id) ma camera that khong co.
+Neu AI pipeline truy cap thong tin nay, he thong se khong hoat dong khi chuyen sang camera that.
+
+---
+
+## Han che quan trong
+
+- **Xe giong nhau**: Khi 2 xe cung mau + hinh dang, ReID (OSNet) khong phan biet duoc. Can spatio-temporal reasoning (thoi gian + khoang cach giua camera) hoac LPR (bien so xe, CARLA khong ho tro).
+- **VideoSource chua tich hop**: video_source.py da viet nhung main.py va ai_processor.py van dung camera_controller truc tiep.
 
 ---
 
