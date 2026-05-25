@@ -929,11 +929,264 @@ GIAI ĐOẠN 3 — Web Dashboard ✅ XONG (2026-05-24)
 GIAI ĐOẠN 4 — Nâng cấp độ chính xác AI ⏳ CHƯA LÀM
   11. Nâng cấp tracker → ByteTrack + Kalman filter
   12. Vehicle ReID (model riêng cho xe)
+  13. Tích hợp VideoSource vào pipeline — hỗ trợ real CCTV footage
 
 GIAI ĐOẠN 5 — Hoàn thiện ⏳ CHƯA LÀM
-  13. Recording liên tục + quản lý storage
-  14. Playback clip sự cố từ dashboard
-  15. Đánh giá định lượng MOTA / IDF1
+  14. Recording liên tục + quản lý storage
+  15. Playback clip sự cố từ dashboard (API + UI)
+  16. Đánh giá định lượng MOTA / IDF1 / mAP
+  17. Settings page: camera management + ROI editor trên UI
+  18. Spatio-temporal reasoning cho cross-camera matching
+```
+
+---
+
+## Phân Tích Chi Tiết Phần Chưa Hoàn Thành (2026-05-26)
+
+### A. AI — Dataset & Model
+
+#### A1. Vehicle ReID — Sai dataset, sai model
+
+**Vấn đề cụ thể:**
+`reid.py` dùng OSNet được pretrain trên **Market-1501** — một dataset chứa toàn người đi bộ
+quay từ camera an ninh. Khi áp dụng cho xe ô tô, feature vector được học từ đặc trưng
+người (quần áo, dáng đi), không phải từ xe (màu sơn, hình dạng cabin, đèn), dẫn đến
+hai xe cùng màu xuyên camera gần như không phân biệt được.
+
+**Giải pháp:**
+```
+Option A (nhanh): Dùng model Vehicle ReID pretrained sẵn
+  - Dataset: VeRi-776 (37.778 ảnh / 776 xe / 20 camera)
+  - Model: VehicleNet hoặc ResNet50 fine-tuned trên VeRi-776
+  - Nguồn: https://vehiclereid.github.io/VeRi/
+
+Option B (chính xác hơn): Dual-branch ReID
+  - 1 model cho person  (OSNet / Market-1501) — giữ nguyên
+  - 1 model cho vehicle (VehicleNet / VeRi-776) — thêm mới
+  - reid.py phân nhánh theo track['class']
+```
+
+**File cần sửa:** `custom_tracking_system/modules/reid.py`
+
+```python
+class DualReIDExtractor:
+    def __init__(self):
+        self.person_model  = self._load_osnet()          # Market-1501
+        self.vehicle_model = self._load_vehicle_net()    # VeRi-776
+
+    def extract(self, frame, box, object_class):
+        if object_class == 'person':
+            return self._run(self.person_model, frame, box)
+        else:  # car, bus, truck
+            return self._run(self.vehicle_model, frame, box)
+```
+
+#### A2. Chưa có đánh giá định lượng (MOTA / IDF1 / mAP)
+
+**Vấn đề cụ thể:**
+`ground_truth.py` thu thập actor ID + bounding box từ CARLA nhưng chưa kết nối với
+`motmetrics` để tính số liệu. Hiện chỉ đánh giá định tính qua quan sát mắt thường.
+
+**Giải pháp:**
+```python
+# utils/metrics.py — thêm class MOTEvaluator
+import motmetrics as mm
+
+class MOTEvaluator:
+    def __init__(self):
+        self.acc = mm.MOTAccumulator(auto_id=True)
+
+    def update(self, gt_objects, pred_tracks):
+        # gt_objects: từ CARLA world.get_actors()
+        # pred_tracks: output của GlobalTracker
+        gt_ids   = [o.id for o in gt_objects]
+        pred_ids = [t['global_id'] for t in pred_tracks]
+        distances = mm.distances.iou_matrix(gt_boxes, pred_boxes, max_iou=0.5)
+        self.acc.update(gt_ids, pred_ids, distances)
+
+    def report(self):
+        mh = mm.metrics.create()
+        return mh.compute(self.acc,
+            metrics=['mota', 'idf1', 'precision', 'recall'])
+```
+
+**Dependencies cần thêm:** `motmetrics>=1.4`
+
+#### A3. Speed calibration — px/s chưa ra km/h thực
+
+**Vấn đề cụ thể:**
+`tracker.py` tính speed theo pixel/giây. `incident_detector.py` dùng ngưỡng pixel/giây
+để phát hiện overspeed. Chưa có ma trận hiệu chỉnh camera (homography) để chuyển
+đổi pixel sang mét, nên ngưỡng hiện tại là ước lượng không có cơ sở.
+
+**Giải pháp (với CARLA):** Lấy vị trí thế giới thực từ CARLA actor để tính m/s → km/h thực.
+**Giải pháp (với real CCTV):** Tính homography từ điểm tham chiếu thực trên mặt đường,
+dùng `cv2.getPerspectiveTransform` để map pixel → mét.
+
+---
+
+### B. AI — Modules Chưa Implement
+
+#### B1. Tracker — ByteTrack + Kalman filter
+
+**Vấn đề cụ thể:**
+`SimpleTracker` dùng IoU greedy matching một vòng. Khi 2 đối tượng đi sát rồi tách ra
+(occlusion), tracker hoán đổi ID vì không có cơ chế dự đoán vị trí và không dùng
+appearance feature. Kết quả: Global ID không bền, một đối tượng thực bị gán 2-3 ID khác nhau.
+
+**Giải pháp — ByteTrack:**
+```
+Vòng 1: match detection confidence cao (>0.6) với tracks hiện có (IoU)
+Vòng 2: match detection confidence thấp (0.1–0.6) với tracks chưa khớp
+Kalman: predict vị trí cho tracks không có detection (bị che khuất)
+```
+
+**File cần viết:** `custom_tracking_system/modules/tracker_byte.py`
+**Dependencies cần thêm:** `filterpy>=1.4`
+
+#### B2. Tích hợp VideoSource vào pipeline — Real CCTV Footage
+
+**Vấn đề cụ thể:**
+`video_source.py` đã viết đủ 4 class: `CARLAVideoSource`, `RTSPVideoSource`,
+`FileVideoSource`, `WebcamVideoSource`. Tuy nhiên `ai_processor.py` (server) và
+`main.py` vẫn gọi trực tiếp `CameraController` (CARLA-only) trong vòng lặp chính.
+Kết quả: hệ thống **không thể chạy với real CCTV footage** mà không sửa code thủ công.
+
+**Giải pháp — thay thế camera_controller bằng VideoSource trong ai_processor.py:**
+
+```python
+# Thay:
+self.camera_controller = CameraController(config, carla_client)
+frames = self.camera_controller.get_frames()
+
+# Bằng:
+from modules.video_source import RTSPVideoSource, FileVideoSource
+sources = {
+    cam_id: RTSPVideoSource(cam_id, rtsp_url)   # hoặc FileVideoSource
+    for cam_id, rtsp_url in config['cameras'].items()
+}
+frames = {sid: src.get_frame() for sid, src in sources.items()}
+```
+
+**Điều kiện để chạy real footage:** Chỉ cần đổi nguồn video trong config YAML.
+Pipeline AI (detector → tracker → reid → global tracker → incident detector) không cần
+sửa vì chúng chỉ nhận numpy array.
+
+#### B3. Spatio-temporal reasoning cho cross-camera matching
+
+**Vấn đề cụ thể:**
+`global_tracking.py` match xuyên camera chỉ bằng cosine similarity của ReID feature.
+Không xem xét: thời gian di chuyển giữa 2 camera có hợp lý không, khoảng cách địa lý
+giữa các camera. Kết quả: xe ở CAM_001 có thể bị ghép nhầm với xe ở CAM_003 dù
+không có đủ thời gian để đi từ CAM_001 đến CAM_003.
+
+**Giải pháp:**
+```python
+def is_feasible_transition(cam_a, cam_b, time_a, time_b, config):
+    """Kiểm tra xem đối tượng có đủ thời gian di chuyển từ cam_a sang cam_b không."""
+    travel_time = config['travel_times'][cam_a][cam_b]  # giây, đo trước
+    elapsed = (time_b - time_a).total_seconds()
+    return travel_time * 0.5 < elapsed < travel_time * 3.0
+
+# Trong GlobalTracker.match():
+# Nếu transition không khả thi → set similarity = 0 (không match)
+```
+
+---
+
+### C. Backend + Frontend — Tích Hợp Chưa Hoàn Chỉnh
+
+#### C1. Không có API và UI để xem lại clip sự cố
+
+**Vấn đề cụ thể:**
+`evidence_package.py` lưu clip MP4 vào `evidence/<incident_id>/clip_pre.mp4` và
+`clip_post.mp4`. Tuy nhiên:
+- Server không có endpoint nào để stream file clip này về browser.
+- FE không có UI để xem clip (trang `IncidentDetail.jsx` chỉ hiện thông tin text đơn giản).
+
+**Giải pháp:**
+
+Backend — thêm endpoint vào `server/routers/alerts.py`:
+```python
+@router.get("/{alert_id}/clip")
+async def stream_clip(alert_id: int, db: Session = Depends(get_db)):
+    alert = db.query(Alert).filter(Alert.id == alert_id).first()
+    clip_path = alert.clip_path  # lưu path khi capture evidence
+    return FileResponse(clip_path, media_type="video/mp4")
+```
+
+Frontend — thêm `<video>` tag vào `IncidentDetail.jsx`:
+```jsx
+<video controls className="w-full rounded-lg">
+  <source src={`/api/alerts/${id}/clip`} type="video/mp4" />
+</video>
+```
+
+**Cần làm thêm:** Khi `_save_incident()` trong `ai_processor.py` lưu Alert vào DB,
+phải đồng thời lưu `clip_path` vào trường `Alert.clip_path`.
+
+#### C2. Settings page — Camera management và ROI editor chưa có
+
+**Vấn đề cụ thể:**
+Roadmap mô tả trang Settings với khả năng thêm/xóa camera và vẽ ROI trực tiếp trên
+camera feed. Hiện chưa implement. `App.jsx` không có route `/settings`.
+
+**Những gì cần xây dựng:**
+```
+Trang Settings (/settings):
+  - Danh sách camera: thêm (nhập RTSP URL), xóa, bật/tắt
+  - ROI Editor: click lên camera feed để vẽ polygon, đặt tên, chọn alert type
+  - Alert thresholds: chỉnh ngưỡng overspeed, loiter time, proximity distance
+  - Gọi API: POST/DELETE /api/cameras, POST/PUT/DELETE /api/rois
+```
+
+#### C3. IncidentDetail page thiếu dữ liệu incident cụ thể
+
+**Vấn đề cụ thể:**
+`IncidentDetail.jsx` nhận `id` từ URL (format `TYPE_gid_timestamp`), tự parse `global_id`
+rồi gọi `/api/tracks/{global_id}`. Không có endpoint `/api/alerts/{id}` trả về chi tiết
+incident bao gồm: loại sự cố, severity, message, details, timestamp, đường dẫn clip.
+
+**Giải pháp:**
+```python
+# server/routers/alerts.py — endpoint đã có, cần FE gọi đúng
+GET /api/alerts/{id}  →  trả về Alert object đầy đủ
+```
+
+`IncidentDetail.jsx` cần sửa để:
+1. Nhận `alert_id` (integer) thay vì string tổng hợp.
+2. Gọi `api.getAlertById(id)` thay vì `api.getTrackById(globalId)`.
+3. Hiển thị severity, message, details, clip player.
+
+#### C4. Recording liên tục chưa implement
+
+**Vấn đề cụ thể:**
+`EvidencePackage` chỉ lưu clip khi có sự cố (event-triggered). Không có cơ chế ghi
+video liên tục từ tất cả camera theo segment 1 giờ như roadmap đề ra.
+
+**Giải pháp — thêm `ContinuousRecorder`:**
+```python
+# modules/recorder.py (file mới)
+class ContinuousRecorder:
+    def __init__(self, output_dir, segment_minutes=60, fps=10):
+        self.writers = {}     # {camera_id: cv2.VideoWriter}
+        self.segment_start = {}
+
+    def write(self, camera_id, frame, timestamp):
+        writer = self._get_writer(camera_id, timestamp)
+        writer.write(frame)
+
+    def _get_writer(self, camera_id, timestamp):
+        # Tạo file mới mỗi segment_minutes phút
+        key = timestamp.strftime('%Y%m%d_%H')
+        if self.writers.get(camera_id, {}).get('key') != key:
+            self._close(camera_id)
+            path = f"{self.output_dir}/{camera_id}_{key}.mp4"
+            self.writers[camera_id] = {
+                'key': key,
+                'writer': cv2.VideoWriter(path, ...)
+            }
+        return self.writers[camera_id]['writer']
 ```
 
 ---
@@ -998,4 +1251,4 @@ recharts: ^2            # biểu đồ stats
 
 ---
 
-*Tài liệu cập nhật: 2026-05-23*
+*Tài liệu cập nhật: 2026-05-26*
