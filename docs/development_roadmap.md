@@ -9,7 +9,7 @@ thanh mot he thong giam sat camera hoan chinh voi giao dien server, AI bao dong 
 
 ## Trang Thai Hien Tai
 
-### Da hoan thanh (~70%)
+### Da hoan thanh (~85%)
 - [x] CARLA simulator setup (WindowsNoEditor)
 - [x] Camera controller — dat nhieu camera trong CARLA, dong bo frame
 - [x] Traffic generator — spawn vehicle + pedestrian voi autopilot
@@ -31,13 +31,20 @@ thanh mot he thong giam sat camera hoan chinh voi giao dien server, AI bao dong 
 - [x] Abstract VideoSource — tach AI pipeline khoi nguon video (CARLA/RTSP/File/Webcam)
 - [x] Ground Truth module — tach biet khoi AI pipeline, dung cho evaluation
 
+### Da hoan thanh them (cap nhat 2026-05-24)
+- [x] Tracker nang cap — them timestamp + speed history (px/s) moi frame
+- [x] Incident Detector — phat hien 10 loai su co real-time (SUDDEN_STOP, SUDDEN_ACCEL, OVERSPEED, VEHICLE_PROXIMITY, PEDESTRIAN_DANGER, STOPPED_VEHICLE, LOITERING, CROWD_DENSITY, WRONG_WAY, CAMERA_TRANSITION)
+- [x] Evidence Package — ring buffer 30s, tu dong luu crop anh + clip truoc/sau su co + metadata JSON
+- [x] Tich hop vao ai_processor.py (server) va main.py — push WebSocket + luu DB khi co su co
+- [x] Web Dashboard (React + Tailwind + Vite) — camera grid, incident panel, alert management
+- [x] Real-time notification — WebSocket push, am thanh canh bao, flash man hinh do khi CRITICAL
+- [x] Scenario Controller — 5 kich ban tai nan trong CARLA (hit_and_run, pedestrian_hit, red_light_crash, rear_end, sudden_stop)
+
 ### Chua hoan thanh
-- [ ] Web dashboard (frontend)
-- [ ] Anomaly detection (phat hien su co thong minh)
-- [ ] Nang cap AI pipeline (DeepSORT/ByteTrack, Kalman, VehicleReID)
+- [ ] Nang cap AI pipeline (DeepSORT/ByteTrack, Kalman filter, VehicleReID)
 - [ ] Spatio-temporal reasoning (phan biet xe giong nhau xuyen camera)
-- [ ] Camera management UI
-- [ ] Recording & playback
+- [ ] Camera management UI (them/xoa camera khi dang chay)
+- [ ] Recording lien tuc + playback (ghi video + xem lai clip su co)
 - [ ] Testing & evaluation voi ground truth (MOTA, IDF1, mAP)
 - [ ] Tich hop VideoSource vao pipeline (thay camera_controller truc tiep)
 

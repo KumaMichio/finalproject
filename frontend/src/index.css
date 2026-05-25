@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Flash đỏ khi có CRITICAL alert */
+@keyframes flash-red {
+  0%, 100% { background-color: transparent; }
+  50%       { background-color: rgba(239,68,68,0.15); }
+}
+.alert-flash {
+  animation: flash-red 0.5s ease-in-out;
+}
+
+/* Scrollbar tối */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #111827; }
+::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }

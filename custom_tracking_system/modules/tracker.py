@@ -6,6 +6,7 @@ Implements simple tracking algorithm for single camera
 import numpy as np
 from scipy.spatial.distance import cdist
 from collections import defaultdict
+from datetime import datetime
 import logging
 
 logger = logging.getLogger(__name__)
@@ -64,7 +65,21 @@ class SimpleTracker:
                 track['box'] = det['box']
                 track['age'] = 0
                 track['hits'] += 1
-                track['positions'].append(self._box_center(det['box']))
+                now = datetime.now()
+                new_pos = self._box_center(det['box'])
+                track['positions'].append(new_pos)
+                track['timestamps'].append(now)
+
+                # Tính speed (pixels/second)
+                if len(track['positions']) >= 2:
+                    dt = (track['timestamps'][-1] - track['timestamps'][-2]).total_seconds()
+                    if dt > 1e-6:
+                        d = np.linalg.norm(
+                            np.array(track['positions'][-1]) - np.array(track['positions'][-2])
+                        )
+                        track['speeds'].append(d / dt)
+                        if len(track['speeds']) > 30:
+                            track['speeds'].pop(0)
 
                 matched_tracks.add(track_idx)
                 matched_detections.add(det_idx)
@@ -83,7 +98,9 @@ class SimpleTracker:
                     'class': det['class'],
                     'age': 0,
                     'hits': 1,
-                    'positions': [self._box_center(det['box'])]
+                    'positions': [self._box_center(det['box'])],
+                    'timestamps': [datetime.now()],
+                    'speeds': [],
                 }
                 self.next_id += 1
 
@@ -95,7 +112,9 @@ class SimpleTracker:
                     'track_id': track['track_id'] if 'track_id' in track else track['id'],
                     'box': track['box'],
                     'class': track['class'],
-                    'positions': track['positions']
+                    'positions': track['positions'],
+                    'timestamps': track.get('timestamps', []),
+                    'speeds': track.get('speeds', []),
                 })
 
         logger.debug(f"Updated {len(output)} active tracks")

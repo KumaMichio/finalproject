@@ -92,11 +92,29 @@ Dự án xây dựng một hệ thống giám sát đa camera có khả năng:
 | API + AI | `python app.py --with-ai` | Full system với CARLA, AI pipeline chạy nền. |
 | Direct | `python main.py` | Hiển thị kết quả qua cửa sổ OpenCV, không qua server. |
 
-### 3.5 Tài liệu
+### 3.5 Nâng Cấp Hướng Thực Tế (cập nhật 2026-05-24)
 
-Đã viết đầy đủ 7 tài liệu trong thư mục `docs/`:
+Sau khi phân tích mục tiêu "sát thực tế — phát hiện sự cố real-time", đã implement thêm:
+
+| STT | Mô-đun | Trạng thái | Mô tả |
+|-----|--------|-----------|-------|
+| 9  | `tracker.py` (nâng cấp) | Hoàn thành | Thêm `timestamps` + `speeds` (px/s) vào mỗi track để tính velocity. |
+| 10 | `incident_detector.py` | Hoàn thành | Phát hiện 10 loại sự cố real-time (sudden stop, fleeing, overspeed, proximity, loitering...). |
+| 11 | `evidence_package.py` | Hoàn thành | Ring buffer 30s — tự động lưu crop ảnh + clip trước/sau + metadata JSON khi sự cố. |
+| 12 | `scenario_controller.py` | Hoàn thành | Script 5 kịch bản tai nạn trong CARLA (hit-and-run, đâm người, vượt đèn đỏ, đâm từ sau, dừng đột ngột). |
+| 13 | Web Dashboard (React) | Hoàn thành | Camera grid live, incident panel real-time, alert management, object history. |
+| 14 | Real-time Notification | Hoàn thành | WebSocket push, âm thanh cảnh báo, flash màn hình đỏ khi CRITICAL. |
+
+**Tích hợp vào pipeline:**
+- `ai_processor.py` (server) và `main.py` đã gọi `IncidentDetector` và `EvidencePackage` trong vòng lặp chính.
+- Incident CRITICAL → push WebSocket `/ws/alerts` → Dashboard nhận ngay lập tức.
+- Evidence tự động lưu vào thư mục `evidence/<incident_id>/`.
+
+### 3.6 Tài liệu
+
+Đã viết đầy đủ 8 tài liệu trong thư mục `docs/`:
 `description.md`, `plan.md`, `workflow.md`, `execute.md`,
-`development_roadmap.md`, `report.md`, `project_context.md`.
+`development_roadmap.md`, `report.md`, `project_context.md`, `upgrade.md`.
 
 ---
 
@@ -111,27 +129,31 @@ Dự án xây dựng một hệ thống giám sát đa camera có khả năng:
 - Lớp trừu tượng VideoSource (sẵn sàng cho camera thực tế).
 - Module Ground Truth tách biệt phục vụ đánh giá.
 - Hệ thống cấu hình, logging, xuất dữ liệu.
+- **[MỚI]** Tracker nâng cấp: lưu timestamp + tốc độ (px/s) mỗi frame.
+- **[MỚI]** Incident Detector: phát hiện 10 loại sự cố real-time.
+- **[MỚI]** Evidence Package: tự động lưu clip + ảnh crop + JSON khi sự cố.
+- **[MỚI]** Scenario Controller: tạo kịch bản tai nạn có kiểm soát trong CARLA.
+- **[MỚI]** Web Dashboard (React): camera grid, incident panel, alert management.
+- **[MỚI]** Real-time notification: âm thanh + flash khi CRITICAL alert.
 
 ### 4.2 Hạng mục đang/chưa triển khai
 
 | Hạng mục | Trạng thái | Ghi chú |
 |---------|-----------|---------|
-| Web Dashboard (frontend) | Chưa làm | Hiện chỉ có API, chưa có giao diện người dùng. |
-| Anomaly Detection | Chưa làm | Mới có cảnh báo ROI; cần thêm overspeed, wrong-way, loitering, crowd. |
-| Nâng cấp Tracker | Chưa làm | Cần thay IoU matching bằng DeepSORT/ByteTrack + Kalman filter. |
-| Vehicle Re-ID | Chưa làm | Hiện chỉ có OSNet train cho person, chưa có model riêng cho xe. |
-| Spatio-temporal Reasoning | Chưa làm | Cần dùng thời gian + khoảng cách giữa camera để phân biệt xe giống nhau. |
-| Recording & Playback | Chưa làm | Chưa ghi video, chưa cắt clip sự cố. |
-| Camera Management UI | Chưa làm | Chưa có giao diện thêm/xóa camera khi đang chạy. |
+| Nâng cấp Tracker (ByteTrack/Kalman) | Chưa làm | IoU greedy hiện đủ chạy nhưng bị swap ID khi occlusion. |
+| Vehicle Re-ID | Chưa làm | OSNet (Market-1501) chỉ cho người — xe giống nhau dễ nhầm. |
+| Spatio-temporal Reasoning | Chưa làm | Cần dùng thời gian + khoảng cách giữa camera để phân biệt xe. |
+| Recording liên tục | Chưa làm | Evidence Package chỉ lưu clip khi có sự cố, chưa ghi liên tục. |
+| Camera Management UI | Chưa làm | Chưa có giao diện thêm/xóa camera runtime. |
 | Ground Truth Evaluation | Chưa làm | Module đã có, chưa tích hợp tính MOTA, IDF1, mAP. |
-| Tích hợp VideoSource | Chưa làm | `video_source.py` đã viết nhưng pipeline vẫn dùng `camera_controller` trực tiếp. |
+| Tích hợp VideoSource | Chưa làm | `video_source.py` đã viết nhưng pipeline vẫn dùng `camera_controller`. |
 
 ### 4.3 Tóm tắt
 
-Dự án đã hoàn thành **phần lõi xử lý AI** và **phần backend API**.
-Hệ thống đã có khả năng phát hiện, theo dõi, nhận diện lại đối tượng và
-cảnh báo cơ bản. Phần còn lại là **giao diện người dùng**, **các thuật toán
-phát hiện bất thường nâng cao**, và **đánh giá hiệu năng định lượng**.
+Dự án đã hoàn thành **~85%**. Hệ thống có đầy đủ vòng khép kín:
+**tạo kịch bản tai nạn trong CARLA → AI phát hiện sự cố → push thông báo real-time → Dashboard hiển thị → lưu bằng chứng tự động**.
+Phần còn lại là nâng cấp độ chính xác AI (ByteTrack, Vehicle ReID) và
+tính năng quản lý nâng cao (recording liên tục, camera management UI).
 
 ---
 
@@ -203,24 +225,21 @@ IDF1, và mAP. Hiện chỉ đánh giá định tính qua quan sát.
 
 ## 6. Kế Hoạch Tiếp Theo
 
-Dựa trên `development_roadmap.md`, các công việc dự kiến triển khai trong
-thời gian tới được sắp xếp theo thứ tự ưu tiên:
+Các hạng mục còn lại theo thứ tự ưu tiên:
 
-1. **Tích hợp đánh giá định lượng** — kết nối module `ground_truth.py` vào
-   pipeline để tính MOTA, IDF1, mAP, có số liệu cụ thể đánh giá chất lượng AI.
-2. **Nâng cấp Tracker** — thay thuật toán IoU greedy bằng DeepSORT hoặc
-   ByteTrack để giảm hiện tượng hoán đổi ID.
-3. **Xây dựng Web Dashboard** — frontend React/Vue hiển thị camera grid,
-   panel cảnh báo, bản đồ vị trí đối tượng, trình chỉnh sửa ROI.
-4. **Bổ sung Anomaly Detection** — phát hiện overspeed, đi ngược chiều,
-   loitering, mật độ đám đông cao.
-5. **Spatio-temporal reasoning** — dùng thời gian và khoảng cách giữa các
-   camera để phân biệt phương tiện giống nhau xuyên camera.
-6. **Recording & Playback** — ghi video liên tục, tự động cắt clip khi xảy
-   ra cảnh báo.
-7. **Tích hợp VideoSource** — thay `camera_controller` bằng `video_source`
-   trong pipeline chính, sẵn sàng cho camera IP thực tế.
+1. **Nâng cấp Tracker → ByteTrack + Kalman filter** — giảm swap ID khi hai
+   đối tượng che khuất nhau, tăng độ bền track.
+2. **Vehicle ReID** — thêm model riêng cho xe (VehicleID/VeRi-776 dataset)
+   để phân biệt xe xuyên camera chính xác hơn.
+3. **Recording liên tục** — ghi video tất cả camera theo segment 1 giờ,
+   tự động xoay vòng khi đầy dung lượng.
+4. **Spatio-temporal reasoning** — dùng thời gian + khoảng cách giữa camera
+   để tăng độ chính xác cross-camera matching.
+5. **Ground Truth Evaluation** — kết nối `ground_truth.py` + `motmetrics`
+   để có số liệu MOTA, IDF1, mAP định lượng.
+6. **Tích hợp VideoSource** — thay `camera_controller` bằng `video_source`
+   trong pipeline, sẵn sàng cho camera IP thực tế.
 
 ---
 
-*Báo cáo được lập ngày 17/05/2026.*
+*Báo cáo cập nhật ngày 2026-05-24.*

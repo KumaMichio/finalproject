@@ -22,6 +22,8 @@ from modules.reid import ReIDExtractor
 from modules.global_tracking import GlobalTracker
 from modules.trajectory_predictor import TrajectoryPredictor
 from modules.alert_system import AlertSystem
+from modules.incident_detector import IncidentDetector
+from modules.evidence_package import EvidencePackage
 from utils.visualization import Visualizer
 from utils.metrics import MetricsCollector
 
@@ -102,6 +104,13 @@ class TrackingSystem:
             self.modules['alert_system'] = AlertSystem(self.modules['trajectory_predictor'])
             self.modules['alert_system'].set_rois(self.modules['camera_controller'].config['rois'])
 
+            step("IncidentDetector")
+            self.modules['incident_detector'] = IncidentDetector()
+
+            step("EvidencePackage")
+            self.modules['evidence'] = EvidencePackage(
+                output_dir='evidence', buffer_seconds=30, fps=10)
+
             step("Visualizer")
             self.modules['visualizer'] = Visualizer()
 
@@ -176,6 +185,22 @@ class TrackingSystem:
                             for alert in alerts:
                                 self.modules['alert_system'].log_alert(alert)
 
+                    # Incident detection
+                    incidents = self.modules['incident_detector'].update(
+                        global_tracks, camera_id)
+                    for incident in incidents:
+                        print(f"[INCIDENT] {incident['severity']} | {incident['type']} "
+                              f"| obj={incident['global_id']} | {incident['message']}")
+                        if incident['severity'] == 'CRITICAL':
+                            self.modules['evidence'].capture(
+                                incident=incident,
+                                frames_dict={camera_id: frame},
+                                global_tracks=global_tracks,
+                            )
+
+                    # Buffer frame cho evidence ring buffer
+                    self.modules['evidence'].buffer_frame(camera_id, frame)
+
                     # Visualization
                     vis_frame = self.modules['visualizer'].draw_tracks(frame, global_tracks)
 
@@ -218,6 +243,9 @@ class TrackingSystem:
 
         if 'camera_controller' in self.modules:
             self.modules['camera_controller'].cleanup()
+
+        if 'evidence' in self.modules:
+            self.modules['evidence'].flush()
 
         if 'traffic_generator' in self.modules:
             self.modules['traffic_generator'].cleanup()

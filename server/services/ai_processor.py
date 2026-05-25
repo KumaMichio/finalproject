@@ -101,6 +101,8 @@ class AIProcessor:
         from modules.global_tracking import GlobalTracker
         from modules.trajectory_predictor import TrajectoryPredictor
         from modules.alert_system import AlertSystem
+        from modules.incident_detector import IncidentDetector
+        from modules.evidence_package import EvidencePackage
         from utils.visualization import Visualizer
 
         # Khoi tao modules
@@ -125,6 +127,11 @@ class AIProcessor:
         self.alert_system = AlertSystem(self.trajectory_predictor)
         if "rois" in self.camera_controller.config:
             self.alert_system.set_rois(self.camera_controller.config["rois"])
+
+        self.incident_detector = IncidentDetector(
+            config=self.camera_controller.config.get("incident_detection", {})
+        )
+        self.evidence = EvidencePackage(output_dir="evidence", buffer_seconds=30, fps=10)
 
         self.visualizer = Visualizer()
 
@@ -237,10 +244,29 @@ class AIProcessor:
                                 db, gid, camera_id, self.frame_count, box
                             )
 
-                    # 5. Ve visualization len frame
+                    # 5. Incident detection
+                    incidents = self.incident_detector.update(global_tracks, camera_id)
+                    for incident in incidents:
+                        self._save_incident(db, incident)
+                        self._push_incident_ws(incident)
+
+                    # 6. Evidence capture cho incident nghiêm trọng
+                    if incidents:
+                        critical = [i for i in incidents if i['severity'] == 'CRITICAL']
+                        if critical:
+                            self.evidence.capture(
+                                incident=critical[0],
+                                frames_dict={camera_id: frame},
+                                global_tracks=global_tracks,
+                            )
+
+                    # 7. Buffer frame cho evidence ring buffer
+                    self.evidence.buffer_frame(camera_id, frame)
+
+                    # 8. Ve visualization len frame
                     vis_frame = self.visualizer.draw_tracks(frame, global_tracks)
 
-                    # 6. Day frame vao buffer cho MJPEG streaming
+                    # 9. Day frame vao buffer cho MJPEG streaming
                     frame_buffer.put_frame(camera_id, vis_frame)
 
                 db.commit()
@@ -256,6 +282,41 @@ class AIProcessor:
 
             # Tick CARLA
             self.world.tick()
+
+    def _save_incident(self, db, incident: dict):
+        """Lưu incident vào bảng alerts trong database."""
+        from models.database import Alert
+        db.add(Alert(
+            type=incident['type'],
+            severity=incident['severity'],
+            global_id=incident['global_id'],
+            camera_id=incident['camera_id'],
+            message=incident['message'],
+            details=json.dumps(incident.get('details', {}), default=str),
+            created_at=incident['timestamp'],
+        ))
+
+    def _push_incident_ws(self, incident: dict):
+        """Push incident qua WebSocket /ws/alerts."""
+        try:
+            from routers.websocket import ws_manager
+            if ws_manager.get_count("alerts") > 0:
+                msg = {
+                    "event":     "incident",
+                    "type":      incident['type'],
+                    "severity":  incident['severity'],
+                    "global_id": incident['global_id'],
+                    "camera_id": incident['camera_id'],
+                    "message":   incident['message'],
+                    "details":   incident.get('details', {}),
+                    "timestamp": incident['timestamp'].isoformat(),
+                }
+                asyncio.run_coroutine_threadsafe(
+                    ws_manager.broadcast("alerts", msg),
+                    self._event_loop,
+                )
+        except Exception:
+            pass
 
     def _save_alert(self, db, alert_dict: dict):
         """Luu 1 alert vao database."""
@@ -306,6 +367,8 @@ class AIProcessor:
     def _cleanup(self):
         """Don dep khi dung."""
         try:
+            if hasattr(self, "evidence"):
+                self.evidence.flush()
             if hasattr(self, "camera_controller"):
                 self.camera_controller.cleanup()
             if hasattr(self, "traffic_generator"):
