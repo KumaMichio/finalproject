@@ -927,9 +927,15 @@ GIAI ĐOẠN 3 — Web Dashboard ✅ XONG (2026-05-24)
   10. ✅ Trang AlertManagement + ObjectHistory
 
 GIAI ĐOẠN 4 — Nâng cấp độ chính xác AI ⏳ CHƯA LÀM
-  11. Nâng cấp tracker → ByteTrack + Kalman filter
-  12. Vehicle ReID (model riêng cho xe)
-  13. Tích hợp VideoSource vào pipeline — hỗ trợ real CCTV footage
+  11. YOLOv5s → YOLOv8s (đổi model, 1 giờ, mAP +20%)
+  12. IoU Greedy → ByteTrack (Kalman built-in, giảm ID swap)
+  13. Sửa FPS-normalized speed + proactive incident (dùng predicted positions)
+  14. Thêm Spatio-Temporal Filter cho cross-camera matching
+  15. Sửa TrajectoryPredictor dùng timestamp thay frame_idx
+  16. Fine-tune YOLOv8s trên dataset giao thông VN (thêm motorcycle)
+  17. Fine-tune OSNet trên VeRi-776 (xe thay người)
+  18. Tích hợp VideoSource vào pipeline — hỗ trợ real CCTV footage
+  → Xem chi tiết: docs/production_model_stack.md
 
 GIAI ĐOẠN 5 — Hoàn thiện ⏳ CHƯA LÀM
   14. Recording liên tục + quản lý storage

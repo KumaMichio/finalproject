@@ -41,7 +41,9 @@ thanh mot he thong giam sat camera hoan chinh voi giao dien server, AI bao dong 
 - [x] Scenario Controller — 5 kich ban tai nan trong CARLA (hit_and_run, pedestrian_hit, red_light_crash, rear_end, sudden_stop)
 
 ### Chua hoan thanh
-- [ ] Nang cap AI pipeline (DeepSORT/ByteTrack, Kalman filter, VehicleReID)
+- [ ] Nang cap AI pipeline: YOLOv8s + ByteTrack + OSNet VeRi-776
+      (xem chi tiet: docs/production_model_stack.md)
+- [ ] Fix TrajectoryPredictor: timestamp-based velocity, proactive incident alert
 - [ ] Spatio-temporal reasoning (phan biet xe giong nhau xuyen camera)
 - [ ] Camera management UI (them/xoa camera khi dang chay)
 - [ ] Recording lien tuc + playback (ghi video + xem lai clip su co)

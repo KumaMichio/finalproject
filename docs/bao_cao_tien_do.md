@@ -102,13 +102,25 @@ Lõi trí tuệ nhân tạo của hệ thống, xử lý video từ nhiều came
 
 ##### Tóm tắt so sánh mô hình
 
-| Thành phần | Hiện tại | Nâng cấp khuyến nghị | Độ ưu tiên |
-|-----------|---------|---------------------|-----------|
-| Detection | YOLOv5s (COCO) | YOLOv8s | Trung bình |
-| Tracker | IoU Greedy | ByteTrack + Kalman | **Cao** |
-| Re-ID | OSNet (Market-1501) | OSNet + VeRi-776 fine-tune + Spatio-Temporal | **Cao** |
-| Trajectory | Linear Extrapolation | Kalman Filter | Trung bình |
-| Incident | Rule-based | Rule-based + Anomaly Detection | Thấp |
+| Thành phần | Hiện tại | Production Stack | VRAM | Độ ưu tiên |
+|-----------|---------|-----------------|------|-----------|
+| Detection | YOLOv5s (COCO, 4 class) | **YOLOv8s** fine-tune VN (6 class + motorcycle) | ~1.8 GB | **Cao** |
+| Tracker | IoU Greedy Matching | **ByteTrack** (Kalman built-in) | CPU only | **Cao** |
+| Re-ID | OSNet Market-1501 (người) | **OSNet VeRi-776** (xe) + Spatio-Temporal Filter | ~0.4 GB | **Cao** |
+| Trajectory | Linear Extrapolation (có lỗi đơn vị) | **Kalman từ ByteTrack** + timestamp-based | CPU only | Trung bình |
+| Incident | Rule-based threshold cứng | **FPS-normalized** + **Proactive (dùng predicted pos)** | CPU only | Trung bình |
+
+> ⚠️ **Lỗi đã phát hiện trong `trajectory_predictor.py`:**
+> - `window_size=10` không có tác dụng — `_linear_prediction` chỉ dùng 2 điểm cuối
+> - Velocity tính bằng `pixels/frame` (phụ thuộc FPS), không phải `pixels/giây`
+> - Prediction horizon chỉ 5 frames (~0.17s) — quá ngắn để cảnh báo sớm
+> - Không kết nối với `IncidentDetector` → không có proactive alert
+>
+> → Xem phân tích đầy đủ và hướng sửa tại `docs/production_model_stack.md`
+
+> 📋 **Tài liệu chi tiết production stack:** [`docs/production_model_stack.md`](production_model_stack.md)
+> — bao gồm: ràng buộc phần cứng (4 GB VRAM), kiến trúc batch 6 camera,
+> fine-tune guide, migration CARLA → RTSP thực tế.
 
 ---
 
