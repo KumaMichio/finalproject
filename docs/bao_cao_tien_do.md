@@ -9,9 +9,160 @@ Môi trường mô phỏng: CARLA Simulator phiên bản 0.9.9.4.
 
 ---
 
-## 2. Mục Tiêu Của Dự Án
+## 2. Tổng Quan Dự Án
 
-### 2.1 Vấn đề dự án hướng tới
+Dự án được tổ chức thành **4 thành phần chính**, mỗi thành phần nằm trong một thư mục riêng biệt và có thể hoạt động độc lập hoặc kết hợp với nhau:
+
+```
+finalproject/
+├── custom_tracking_system/   # AI Pipeline — xử lý video và nhận diện đối tượng
+├── server/                   # Backend API — REST, WebSocket, MJPEG streaming
+├── frontend/                 # Web Dashboard — giao diện giám sát real-time (React)
+└── WindowsNoEditor/          # CARLA Simulator — môi trường mô phỏng đô thị
+```
+
+### 2.1 AI Pipeline (`custom_tracking_system/`)
+
+Lõi trí tuệ nhân tạo của hệ thống, xử lý video từ nhiều camera theo pipeline 8+ bước:
+
+| Mô-đun | Chức năng |
+|--------|-----------|
+| `camera_controller.py` | Kết nối và đồng bộ nhiều camera trong CARLA |
+| `traffic_generator.py` | Sinh phương tiện và người đi bộ tự động trong môi trường mô phỏng |
+| `detector.py` | Phát hiện đối tượng (xe, người) bằng YOLOv5s |
+| `tracker.py` | Theo dõi đối tượng trong từng camera (IoU matching) |
+| `reid.py` | Trích xuất đặc trưng hình ảnh bằng OSNet/ResNet50 cho Re-ID |
+| `global_tracking.py` | Gán Global ID duy nhất xuyên camera bằng cosine similarity |
+| `trajectory_predictor.py` | Dự đoán 5 vị trí tương lai của đối tượng |
+| `alert_system.py` | Cảnh báo khi đối tượng xâm nhập vùng ROI (Region of Interest) |
+| `incident_detector.py` | Phát hiện 10 loại sự cố real-time (đâm xe, tốc độ cao, lảng vảng...) |
+| `evidence_package.py` | Ring buffer 30s — tự động lưu clip + ảnh + metadata khi có sự cố |
+| `scenario_controller.py` | Tạo kịch bản tai nạn có kiểm soát trong CARLA (5 kịch bản) |
+| `video_source.py` | Lớp trừu tượng VideoSource hỗ trợ CARLA / RTSP / File / Webcam |
+| `ground_truth.py` | Thu thập ground truth từ CARLA để phục vụ đánh giá độ chính xác |
+
+#### Các mô hình AI đang sử dụng — Ưu/Nhược điểm và Hướng nâng cấp
+
+---
+
+##### Mô hình 1 — Phát hiện đối tượng: **YOLOv5s** (v6.1, pretrained COCO)
+
+| | |
+|---|---|
+| **Cấu hình hiện tại** | `yolov5s`, confidence ≥ 0.4, 4 lớp: `person / car / bus / truck` |
+| **Ưu điểm** | Nhẹ (~14 MB), tốc độ cao (~30–60 FPS trên GPU), dễ tích hợp qua `torch.hub`, không cần fine-tune |
+| **Nhược điểm** | Độ chính xác thấp hơn các biến thể lớn (YOLOv5m/l/x); đôi khi bỏ sót xe nhỏ hoặc bị khuất; COCO không có nhãn xe máy / xe đạp phù hợp với giao thông Việt Nam |
+| **Hướng nâng cấp** | **YOLOv8n/s** (Ultralytics mới, cùng tốc độ nhưng chính xác hơn) hoặc **YOLO11** (2024); hoặc **RT-DETR-L** nếu cần độ chính xác cao hơn với cơ chế attention |
+
+---
+
+##### Mô hình 2 — Theo dõi trong từng camera: **IoU Greedy Matching** (tự cài đặt)
+
+| | |
+|---|---|
+| **Cấu hình hiện tại** | `max_age=30`, `min_hits=3`, `iou_threshold=0.3`; so khớp tham lam theo thứ tự track |
+| **Ưu điểm** | Không phụ thuộc thêm thư viện, hoàn toàn kiểm soát được logic, đủ ổn định khi đối tượng di chuyển tốt |
+| **Nhược điểm** | Không có bộ lọc Kalman → không dự đoán vị trí khi bị che khuất; không dùng appearance → hai đối tượng giống nhau dễ bị hoán đổi ID khi chồng lên nhau (occlusion swap); greedy matching không tối ưu toàn cục |
+| **Hướng nâng cấp** | **ByteTrack** (2022) — kết hợp Kalman filter + hai ngưỡng score thấp/cao, xử lý tốt occlusion; hoặc **StrongSORT** (Kalman + ReID appearance) nếu muốn dùng chung đặc trưng với mô hình ReID |
+
+---
+
+##### Mô hình 3 — Nhận diện lại xuyên camera (Re-ID): **OSNet** / **ResNet50 fallback**
+
+| | |
+|---|---|
+| **Cấu hình hiện tại** | **Chính:** `osnet_x1_0` (torchreid), pretrained Market-1501, output 512D; **Dự phòng:** ResNet50 ImageNet, output 2048D. So khớp bằng cosine similarity, ngưỡng ≥ 0.5 |
+| **Ưu điểm** | OSNet được thiết kế riêng cho Re-ID, nhẹ hơn ResNet50 (1M params vs 25M), feature chuẩn hóa L2 giúp so khớp ổn định |
+| **Nhược điểm** | Market-1501 là tập dữ liệu **người đi bộ** — mô hình không được huấn luyện cho **xe cộ**, nên hai xe cùng màu/kiểu dễ bị nhầm; ResNet50-ImageNet fallback không phải ReID model (feature không phân biệt cá thể tốt); không dùng thông tin thời gian/không gian để lọc kết quả khớp phi thực tế |
+| **Hướng nâng cấp** | **VehicleNet / VeRi-776** — model Re-ID chuyên cho xe; **CLIP** (ViT-B/32) — zero-shot matching theo mô tả; thêm **Spatio-Temporal Reasoning** (lọc match bằng khoảng cách camera + delta thời gian) để loại bỏ các ID khớp phi thực tế |
+
+---
+
+##### Mô hình 4 — Dự đoán quỹ đạo: **Nội suy tuyến tính** (Linear Extrapolation)
+
+| | |
+|---|---|
+| **Cấu hình hiện tại** | Velocity = `pos[-1] − pos[-2]`; dự đoán 5 bước tiếp theo bằng `pos + velocity × step`; window 10 vị trí gần nhất |
+| **Ưu điểm** | Không cần huấn luyện, tính toán cực nhanh, không có dependency bổ sung |
+| **Nhược điểm** | Giả định đối tượng đi thẳng → sai khi rẽ, dừng đèn đỏ, hoặc đổi hướng đột ngột; không mô hình hóa được gia tốc; sai số tích lũy nhanh sau 2–3 bước |
+| **Hướng nâng cấp** | **Kalman Filter** — mô hình chuyển động hằng vận tốc/gia tốc, chống nhiễu tốt; **LSTM** — học được pattern rẽ từ lịch sử dài hơn; **Social Force Model** — xét tương tác giữa các đối tượng |
+
+---
+
+##### Mô hình 5 — Phát hiện sự cố: **Rule-based Threshold** (heuristic)
+
+| | |
+|---|---|
+| **Cấu hình hiện tại** | 10 loại sự cố, mỗi loại là một tập quy tắc ngưỡng cứng (ví dụ: `speed > 120 px/s` → OVERSPEED; tốc độ giảm còn 30% trong 1 frame → SUDDEN_STOP); cooldown 4 giây chống duplicate |
+| **Ưu điểm** | Hoạt động ngay không cần data training, dễ giải thích, dễ điều chỉnh ngưỡng theo môi trường cụ thể |
+| **Nhược điểm** | Ngưỡng cứng nhạy cảm với noise từ tracker (FPS thay đổi → tốc độ px/s dao động); không tự thích nghi với môi trường khác nhau; dễ false positive khi tracker bị swap ID |
+| **Hướng nâng cấp** | **Anomaly Detection** (Isolation Forest / Autoencoder) học phân phối hành vi bình thường; **GCN / Transformer** mô hình hóa tương tác không gian giữa nhiều đối tượng đồng thời |
+
+---
+
+##### Tóm tắt so sánh mô hình
+
+| Thành phần | Hiện tại | Nâng cấp khuyến nghị | Độ ưu tiên |
+|-----------|---------|---------------------|-----------|
+| Detection | YOLOv5s (COCO) | YOLOv8s | Trung bình |
+| Tracker | IoU Greedy | ByteTrack + Kalman | **Cao** |
+| Re-ID | OSNet (Market-1501) | OSNet + VeRi-776 fine-tune + Spatio-Temporal | **Cao** |
+| Trajectory | Linear Extrapolation | Kalman Filter | Trung bình |
+| Incident | Rule-based | Rule-based + Anomaly Detection | Thấp |
+
+---
+
+### 2.2 Backend API Server (`server/`)
+
+Server FastAPI cung cấp giao diện lập trình chuẩn cho toàn hệ thống:
+
+| Thành phần | Chức năng |
+|-----------|-----------|
+| **REST API** (17 endpoints) | Quản lý camera, tracks, alerts, ROIs, thống kê |
+| **WebSocket** (3 kênh) | Push cảnh báo, tracking update, thống kê real-time |
+| **MJPEG Streaming** | Truyền video trực tiếp tới trình duyệt qua HTTP |
+| **Database SQLite** | 5 bảng: `cameras`, `alerts`, `tracked_objects`, `tracking_history`, `rois` |
+| **AI Processor** | Chạy AI pipeline trong background thread, push kết quả lên WebSocket |
+
+### 2.3 Web Dashboard (`frontend/`)
+
+Giao diện giám sát real-time được xây dựng bằng React + Tailwind CSS:
+
+| Tính năng | Mô tả |
+|-----------|-------|
+| Camera Grid | Hiển thị live video từ nhiều camera đồng thời |
+| Incident Panel | Bảng sự cố real-time, phân loại theo mức độ (INFO / WARNING / CRITICAL) |
+| Alert Management | Xem, lọc, xác nhận các cảnh báo |
+| Object History | Tra cứu lịch sử di chuyển của đối tượng theo Global ID |
+| Real-time Notification | Âm thanh cảnh báo + flash màn hình đỏ khi CRITICAL |
+
+### 2.4 Môi Trường Mô Phỏng (`WindowsNoEditor/`)
+
+CARLA Simulator 0.9.9.4 — engine mô phỏng đô thị 3D chạy trên Unreal Engine 4, đóng vai trò thay thế cho hệ thống camera IP thực tế trong giai đoạn phát triển và thử nghiệm.
+
+### 2.5 Luồng Hoạt Động Tổng Thể
+
+```
+CARLA Simulator
+      │  (frame video từ camera ảo)
+      ▼
+AI Pipeline (custom_tracking_system/)
+  Detect → Track → ReID → Global ID → Trajectory → Incident Detection
+      │  (kết quả xử lý: tracks, alerts, incidents, evidence)
+      ▼
+Backend Server (server/)
+  REST API + WebSocket + MJPEG
+      │  (HTTP / WebSocket)
+      ▼
+Web Dashboard (frontend/)
+  Camera Grid · Incident Panel · Alert Management
+```
+
+---
+
+## 3. Mục Tiêu Của Dự Án
+
+### 3.1 Vấn đề dự án hướng tới
 
 Các hệ thống camera giám sát truyền thống hiện nay chủ yếu chỉ ghi hình thụ động,
 việc theo dõi đối tượng phải dựa vào sức người. Khi hệ thống có nhiều camera trải
@@ -25,7 +176,7 @@ trên một khu vực rộng, các vấn đề thường gặp gồm:
 - Khó tích hợp với các ứng dụng giám sát khác (web dashboard, mobile app)
   do thiếu giao diện lập trình (API) chuẩn.
 
-### 2.2 Mục tiêu cụ thể của dự án
+### 3.2 Mục tiêu cụ thể của dự án
 
 Dự án xây dựng một hệ thống giám sát đa camera có khả năng:
 
@@ -45,9 +196,9 @@ Dự án xây dựng một hệ thống giám sát đa camera có khả năng:
 
 ---
 
-## 3. Công Việc Đã Hoàn Thành
+## 4. Công Việc Đã Hoàn Thành
 
-### 3.1 AI Pipeline (`custom_tracking_system/`)
+### 4.1 AI Pipeline (`custom_tracking_system/`)
 
 Đã hoàn thành đầy đủ luồng xử lý 8 bước cho một frame video:
 
@@ -64,7 +215,7 @@ Dự án xây dựng một hệ thống giám sát đa camera có khả năng:
 | + | `video_source.py` | Hoàn thành | Lớp trừu tượng hỗ trợ CARLA / RTSP / File / Webcam. |
 | + | `ground_truth.py` | Hoàn thành | Thu thập ground truth từ CARLA để phục vụ đánh giá (tách biệt khỏi AI). |
 
-### 3.2 Backend API Server (`server/`)
+### 4.2 Backend API Server (`server/`)
 
 Đã hoàn thành backend FastAPI bao gồm:
 
@@ -76,7 +227,7 @@ Dự án xây dựng một hệ thống giám sát đa camera có khả năng:
 - **AI Processor** chạy pipeline AI trong background thread của server,
   push kết quả qua WebSocket và lưu vào database.
 
-### 3.3 Cấu hình và công cụ phụ trợ
+### 4.3 Cấu hình và công cụ phụ trợ
 
 - File cấu hình YAML cho 3 camera (CAM_001, CAM_002, CAM_003) với 3 vùng ROI.
 - Module visualization vẽ bounding box, quỹ đạo, lưới đa camera bằng OpenCV.
@@ -84,7 +235,7 @@ Dự án xây dựng một hệ thống giám sát đa camera có khả năng:
 - Module xuất dữ liệu ra JSON, CSV và báo cáo tổng kết.
 - Logging hệ thống đầy đủ (file `tracking_system.log`).
 
-### 3.4 Ba chế độ chạy
+### 4.4 Ba chế độ chạy
 
 | Chế độ | Lệnh | Mục đích |
 |--------|------|---------|
@@ -92,7 +243,7 @@ Dự án xây dựng một hệ thống giám sát đa camera có khả năng:
 | API + AI | `python app.py --with-ai` | Full system với CARLA, AI pipeline chạy nền. |
 | Direct | `python main.py` | Hiển thị kết quả qua cửa sổ OpenCV, không qua server. |
 
-### 3.5 Nâng Cấp Hướng Thực Tế (cập nhật 2026-05-24)
+### 4.5 Nâng Cấp Hướng Thực Tế (cập nhật 2026-05-24)
 
 Sau khi phân tích mục tiêu "sát thực tế — phát hiện sự cố real-time", đã implement thêm:
 
@@ -110,7 +261,7 @@ Sau khi phân tích mục tiêu "sát thực tế — phát hiện sự cố rea
 - Incident CRITICAL → push WebSocket `/ws/alerts` → Dashboard nhận ngay lập tức.
 - Evidence tự động lưu vào thư mục `evidence/<incident_id>/`.
 
-### 3.6 Tài liệu
+### 4.6 Tài liệu
 
 Đã viết đầy đủ 8 tài liệu trong thư mục `docs/`:
 `description.md`, `plan.md`, `workflow.md`, `execute.md`,
@@ -118,9 +269,9 @@ Sau khi phân tích mục tiêu "sát thực tế — phát hiện sự cố rea
 
 ---
 
-## 4. Tiến Độ Hiện Tại
+## 5. Tiến Độ Hiện Tại
 
-### 4.1 Hạng mục đã hoàn thành
+### 5.1 Hạng mục đã hoàn thành
 
 - AI Pipeline đầy đủ 8 bước, chạy ổn định trên môi trường CARLA.
 - Backend API Server (FastAPI) với REST + WebSocket + MJPEG streaming.
@@ -136,7 +287,7 @@ Sau khi phân tích mục tiêu "sát thực tế — phát hiện sự cố rea
 - **[MỚI]** Web Dashboard (React): camera grid, incident panel, alert management.
 - **[MỚI]** Real-time notification: âm thanh + flash khi CRITICAL alert.
 
-### 4.2 Hạng mục đang/chưa triển khai
+### 5.2 Hạng mục đang/chưa triển khai
 
 | Hạng mục | Trạng thái | Ghi chú |
 |---------|-----------|---------|
@@ -148,7 +299,7 @@ Sau khi phân tích mục tiêu "sát thực tế — phát hiện sự cố rea
 | Ground Truth Evaluation | Chưa làm | Module đã có, chưa tích hợp tính MOTA, IDF1, mAP. |
 | Tích hợp VideoSource | Chưa làm | `video_source.py` đã viết nhưng pipeline vẫn dùng `camera_controller`. |
 
-### 4.3 Tóm tắt
+### 5.3 Tóm tắt
 
 Dự án đã hoàn thành **~85%**. Hệ thống có đầy đủ vòng khép kín:
 **tạo kịch bản tai nạn trong CARLA → AI phát hiện sự cố → push thông báo real-time → Dashboard hiển thị → lưu bằng chứng tự động**.
@@ -157,9 +308,9 @@ tính năng quản lý nâng cao (recording liên tục, camera management UI).
 
 ---
 
-## 5. Khó Khăn Gặp Phải
+## 6. Khó Khăn Gặp Phải
 
-### 5.1 Khó khăn về mặt kỹ thuật
+### 6.1 Khó khăn về mặt kỹ thuật
 
 **(1) Nhận diện lại các phương tiện có hình dạng giống nhau**
 
@@ -194,7 +345,7 @@ các trường hợp đối tượng đổi hướng đột ngột (rẽ, dừng
 
 → Hướng giải quyết: thay bằng Kalman filter hoặc mô hình LSTM.
 
-### 5.2 Khó khăn về môi trường và công cụ
+### 6.2 Khó khăn về môi trường và công cụ
 
 **(5) CARLA Simulator nặng và đòi hỏi GPU mạnh**
 
@@ -213,7 +364,7 @@ torchreid không cài được.
 CARLA 0.9.9.4 chỉ cung cấp file `.egg` cho Python 3.7, gây khó khăn khi tích
 hợp với các thư viện AI mới hơn (yêu cầu Python 3.8+).
 
-### 5.3 Khó khăn về đánh giá
+### 6.3 Khó khăn về đánh giá
 
 **(8) Chưa có ground truth để đo định lượng**
 
@@ -223,7 +374,7 @@ IDF1, và mAP. Hiện chỉ đánh giá định tính qua quan sát.
 
 ---
 
-## 6. Kế Hoạch Tiếp Theo
+## 7. Kế Hoạch Tiếp Theo
 
 Các hạng mục còn lại theo thứ tự ưu tiên:
 
