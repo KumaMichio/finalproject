@@ -12,7 +12,7 @@ Day la du an he thong giam sat camera CCTV da kenh, su dung AI de phat hien,
 theo doi va nhan dien lai doi tuong (xe, nguoi) trong moi truong mo phong CARLA 0.9.9.4.
 
 He thong gom 2 phan chinh:
-- **AI Pipeline** — xu ly video: detect (YOLOv5) -> track (IoU) -> ReID (OSNet) -> global ID -> predict trajectory -> alert ROI.
+- **AI Pipeline** — xu ly video: detect (YOLOv8s) -> track (ByteTrack/Kalman) -> ReID (OSNet) -> global ID (+ Spatio-Temporal Filter) -> predict trajectory (exp-weighted px/s) -> incident detection (12 loai) -> alert ROI.
 - **Backend API Server** — FastAPI cung cap REST API, WebSocket real-time, MJPEG video streaming. AI pipeline chay trong background thread cua server.
 
 Chua co frontend/web dashboard. Dang trong giai doan phat trien.
@@ -22,75 +22,82 @@ Chua co frontend/web dashboard. Dang trong giai doan phat trien.
 ## Cau truc thu muc hien tai
 
 ```
-E:\finalproject\
-  AI_custom\
-    custom_tracking_system\         # AI Pipeline
-      config\
-        camera_config.yaml          # 3 cameras (CAM_001/002/003), 3 ROIs, system params
-      modules\
-        camera_controller.py        # Dat camera trong CARLA, dong bo frame
-        traffic_generator.py        # Spawn xe + nguoi voi autopilot
-        detector.py                 # YOLOv5s pretrained COCO (person,car,bus,truck)
-        tracker.py                  # SimpleTracker — IoU greedy matching, khong co Kalman
-        reid.py                     # OSNet (torchreid, Market-1501) hoac fallback ResNet50
-        global_tracking.py          # Gan Global ID xuyen camera bang ReID gallery matching
-        trajectory_predictor.py     # Linear extrapolation (chua co Kalman/LSTM)
-        alert_system.py             # Canh bao khi doi tuong vao ROI (point-in-polygon)
-        video_source.py             # Abstract video source (CARLA/RTSP/File/Webcam)
-        ground_truth.py             # Ground truth cho evaluation (tach biet khoi AI pipeline)
-      utils\
-        visualization.py            # Ve bbox, trajectory, ROI, multi-camera grid (OpenCV)
-        metrics.py                  # Thu thap FPS, counts (chua co MOTA/IDF1 thuc)
-        data_writer.py              # Export JSON, CSV, summary report
-      models\
-        hub\                        # YOLOv5 model cache (tu dong tai lan dau)
-        detection\                  # (trong — chua fine-tune)
-        reid\                       # (trong — chua fine-tune)
-        tracking\                   # (trong — chua fine-tune)
-      datasets\
-        ground_truth\               # (trong)
-        synthetic_data\             # (trong)
-      main.py                       # Entry point chay truc tiep (khong qua server)
-      requirements.txt
-      run.bat
+E:\School_project\finalproject\
+  custom_tracking_system\           # AI Pipeline
+    config\
+      camera_config.yaml            # 3 cameras (CAM_001/002/003), 3 ROIs, system params
+    modules\
+      camera_controller.py          # Dat camera trong CARLA, dong bo frame
+      traffic_generator.py          # Spawn xe + nguoi voi autopilot
+      detector.py                   # YOLOv8s pretrained COCO (person,car,motorcycle,bus,truck) — detect_batch()
+      tracker.py                    # ByteTrackWrapper (boxmot.ByteTrack, Kalman + Hungarian) + SimpleTracker legacy
+      reid.py                       # ReIDExtractor (OSNet Market-1501) + DualReIDExtractor (person + vehicle)
+      global_tracking.py            # Gan Global ID xuyen camera + Spatio-Temporal Filter
+      trajectory_predictor.py       # Exp-weighted velocity (px/s, timestamp-based), horizons 0.5-3s
+      alert_system.py               # Canh bao khi doi tuong vao ROI (point-in-polygon)
+      incident_detector.py          # Phat hien 12 loai su co (10 reactive + 2 proactive)
+      evidence_package.py           # Ring buffer 30s — luu clip + crop + JSON khi su co
+      scenario_controller.py        # 5 kich ban tai nan trong CARLA
+      video_source.py               # Abstract video source (CARLA/RTSP/File/Webcam)
+      ground_truth.py               # Ground truth cho evaluation (tach biet khoi AI pipeline)
+    utils\
+      visualization.py              # Ve bbox, trajectory, ROI, multi-camera grid (OpenCV)
+      metrics.py                    # Thu thap FPS, counts
+      data_writer.py                # Export JSON, CSV, summary report
+    models\                         # (chua fine-tune)
+    weights\                        # Weights sau khi fine-tune (VeRi-776, etc.)
+    train_veri.py                   # Script fine-tune OSNet tren VeRi-776 (Vehicle ReID)
+    main.py                         # Entry point chay truc tiep (khong qua server)
+    requirements.txt
+    run.bat
 
-    server\                          # Backend API Server (FastAPI)
-      app.py                        # FastAPI app, lifespan khoi dong AI, CLI entry point
-      config.py                     # Paths, CARLA host/port, streaming params
-      models\
-        database.py                 # SQLAlchemy ORM, 5 bang, SQLite backend
-        schemas.py                  # Pydantic request/response schemas
-      routers\
-        cameras.py                  # GET/POST/PUT/DELETE /api/cameras
-        tracks.py                   # GET /api/tracks, /api/tracks/{id}/trajectory
-        alerts.py                   # GET /api/alerts, PUT /api/alerts/{id}/acknowledge
-        rois.py                     # GET/POST/PUT/DELETE /api/rois
-        stats.py                    # GET /api/stats
-        websocket.py                # WS /ws/alerts, /ws/tracks, /ws/stats
-        stream.py                   # GET /stream/{camera_id} (MJPEG)
-      services\
-        ai_processor.py             # Wrap AI pipeline thanh background thread
-        camera_service.py           # CRUD camera trong DB
-        alert_service.py            # Query + filter + acknowledge alerts
-        tracking_service.py         # Query tracks + trajectory + upsert
-        stream_service.py           # FrameBuffer singleton cho MJPEG streaming
-      middleware\                    # (du tru, chua implement)
-      requirements.txt
-      run_server.bat
+  server\                           # Backend API Server (FastAPI)
+    app.py                          # FastAPI app, lifespan khoi dong AI, CLI entry point
+    config.py                       # Paths, CARLA host/port, streaming params
+    models\
+      database.py                   # SQLAlchemy ORM, 5 bang, SQLite backend
+      schemas.py                    # Pydantic request/response schemas
+    routers\
+      cameras.py                    # GET/POST/PUT/DELETE /api/cameras
+      tracks.py                     # GET /api/tracks, /api/tracks/{id}/trajectory
+      alerts.py                     # GET /api/alerts, PUT /api/alerts/{id}/acknowledge
+      rois.py                       # GET/POST/PUT/DELETE /api/rois
+      stats.py                      # GET /api/stats
+      websocket.py                  # WS /ws/alerts, /ws/tracks, /ws/stats
+      stream.py                     # GET /stream/{camera_id} (MJPEG)
+    services\
+      ai_processor.py               # Wrap AI pipeline thanh background thread
+      camera_service.py             # CRUD camera trong DB
+      alert_service.py              # Query + filter + acknowledge alerts
+      tracking_service.py           # Query tracks + trajectory + upsert
+      stream_service.py             # FrameBuffer singleton cho MJPEG streaming
+    requirements.txt
+    run_server.bat
 
-    docs\
-      description.md
-      plan.md                       # Plan goc 10 phases
-      workflow.md                   # Quy trinh trien khai 6 giai doan
-      execute.md                    # Huong dan chay + 6 kich ban test
-      development_roadmap.md        # Lo trinh phat trien con lai (8 phan)
-      report.md                     # Bao cao du an (muc tieu, cau truc, tech, cach dung)
-      project_context.md            # File nay
+  frontend\                         # Web Dashboard (React + Tailwind + Vite)
+    src\                            # Components, pages, hooks, services
+    index.html
+    package.json
+    vite.config.js
+
+  VeRi\                             # VeRi-776 dataset — cho fine-tune Vehicle ReID
+  deep-person-reid\                 # torchreid library (cai tu source)
+
+  docs\
+    description.md
+    plan.md
+    workflow.md
+    execute.md
+    development_roadmap.md
+    report.md
+    bao_cao_tien_do.md              # Bao cao tien do tong the (doc nay)
+    production_model_stack.md       # Phan tich rang buoc phan cung + production stack
+    project_context.md              # File nay
+    upgrade.md                      # Lo trinh nang cap huong thuc te
 
   WindowsNoEditor\                   # CARLA 0.9.9.4 (khong chinh sua)
     CarlaUE4.exe
     PythonAPI\carla\
-    PythonAPI\examples\
     ...
 ```
 
@@ -163,32 +170,34 @@ GET /stream/{camera_id}    — MJPEG stream (dung trong <img src="...">)
 ## AI Pipeline — luong xu ly 1 frame
 
 ```
-1. camera_controller.get_synchronized_frames()  (hien tai)
-   hoac MultiVideoSource.get_synchronized_frames()  (video_source.py, chua tich hop)
+1. camera_controller.get_synchronized_frames()
    -> {camera_id: {frame: np.array(H,W,3), timestamp, frame_number}}
 
-2. detector.detect(frame)
-   -> [{box:[x1,y1,x2,y2], confidence:float, class:str, class_id:int}]
+2. detector.detect_batch(frames)   # 1 GPU forward pass cho tat ca camera
+   -> [[{box, confidence, class, class_id}, ...], ...]   # per camera
 
-3. tracker.update(detections)
-   -> [{track_id:int, box:[x1,y1,x2,y2], class:str, positions:[[x,y],...]}]
+3. tracker[camera_id].update(detections, frame)   # ByteTrackWrapper (Kalman + Hungarian)
+   -> [{track_id, box, class, positions, timestamps, speeds}, ...]
 
-4. reid_extractor.extract_feature(frame, box)
-   -> np.array(1, 512) L2-normalized   (OSNet)
-   -> np.array(1, 2048) L2-normalized  (ResNet50 fallback)
-
-5. reid_extractor.match_with_gallery(feature, threshold=0.5)
-   -> matched_global_id (int) hoac None
-
-6. global_tracker.process_camera_tracks(camera_id, frame, local_tracks)
+4. global_tracker.process_camera_tracks(camera_id, frame, local_tracks)
+   # OSNet extract feature -> cosine match -> Spatio-Temporal Filter
    -> [{global_id, camera_id, box, class, local_track_id}]
 
-7. trajectory_predictor.update_trajectory(global_id, center, frame_idx)
+5. trajectory_predictor.update_trajectory(global_id, center, unix_timestamp)
    trajectory_predictor.predict(global_id)
-   -> [[x,y], [x,y], ...] (5 buoc tuong lai) hoac None
+   -> {'t+0.5s': [x,y], 't+1.0s': [x,y], 't+1.5s': [x,y], 't+2.0s': [x,y], 't+3.0s': [x,y]}
+   trajectory_predictor.predict_list(global_id)
+   -> [[x,y], [x,y], ...]   # cho AlertSystem
 
-8. alert_system.check_alerts(global_id, camera_id, predicted_positions, current_box)
-   -> [{type:"ROI_WARNING", global_id, camera_id, roi_name, eta_frames, timestamp}]
+6. alert_system.check_alerts(global_id, camera_id, predicted_positions, current_box)
+   -> [{type:"ROI_WARNING", global_id, camera_id, roi_name, timestamp}]
+
+7. incident_detector.update(global_tracks, camera_id, predictions, rois)
+   # 10 reactive + 2 proactive (PREDICTED_COLLISION, PREDICTED_ROI_ENTRY)
+   -> [{type, severity, global_id, camera_id, message, details}]
+
+8. evidence.capture(incident, frames_dict, global_tracks)   # khi CRITICAL
+   # Luu crop anh + clip 30s truoc/sau + metadata JSON -> evidence/<id>/
 ```
 
 ---
@@ -222,7 +231,7 @@ Resolution: 960x540, FPS: 10, synchronous mode.
 ## Tech stack
 
 - **Simulator**: CARLA 0.9.9.4 (Unreal Engine 4)
-- **AI**: Python, PyTorch >= 1.10, YOLOv5s v6.1 (COCO pretrained), OSNet (Market-1501 via torchreid), OpenCV 4.5.4, NumPy, SciPy
+- **AI**: Python, PyTorch >= 2.0, YOLOv8s (Ultralytics, COCO pretrained), OSNet (Market-1501 via torchreid), OpenCV 4.5.4, NumPy, SciPy
 - **Server**: FastAPI >= 0.100, Uvicorn, SQLAlchemy >= 2.0, SQLite, Pydantic >= 2.0, WebSocket
 - **Streaming**: MJPEG over HTTP
 
@@ -230,27 +239,33 @@ Resolution: 960x540, FPS: 10, synchronous mode.
 
 ## Nhung gi DA hoan thanh
 
-1. AI pipeline day du 8 buoc (detect -> track -> reid -> global -> predict -> alert -> visualize -> stream)
+1. AI pipeline day du: detect (YOLOv8s batch) -> track (ByteTrack/Kalman) -> ReID (OSNet) -> global ID (Spatio-Temporal Filter) -> trajectory (exp-weighted px/s) -> incident (12 loai) -> alert ROI -> evidence
 2. Backend API server: 17 REST endpoints, 3 WebSocket channels, MJPEG streaming
 3. Database 5 bang (cameras, alerts, tracked_objects, tracking_history, rois)
 4. AI processor tich hop pipeline vao FastAPI background thread
 5. 3 che do chay: API-only, API+AI (CARLA), Direct (OpenCV window)
 6. Camera config YAML, logging, data export (JSON/CSV)
 7. Abstract VideoSource layer — tach AI pipeline khoi nguon video (CARLA/RTSP/File/Webcam)
-8. Ground Truth module — thu thap CARLA actor data + doc file MOT format, TACH BIET khoi AI pipeline
+8. Ground Truth module — TACH BIET khoi AI pipeline, dung cho evaluation
+9. Web Dashboard (React + Tailwind + Vite) — camera grid, incident panel, alert management
+10. IncidentDetector — 12 loai su co (10 reactive + 2 proactive: PREDICTED_COLLISION, PREDICTED_ROI_ENTRY)
+11. EvidencePackage — ring buffer 30s, tu dong luu clip + crop + JSON
+12. ScenarioController — 5 kich ban tai nan trong CARLA
+13. ByteTrackWrapper — Kalman + Hungarian matching + dual-threshold (thay IoU greedy)
+14. TrajectoryPredictor — exp-weighted velocity (px/s, timestamp-based), horizons 0.5-3s (da sua loi)
+15. GlobalTracker — Spatio-Temporal Filter (logic da co, cho cau hinh camera_topology)
+16. DualReIDExtractor — 2 model rieng: person + vehicle (cho VeRi-776 weights)
+17. train_veri.py + VeRi/ dataset san sang fine-tune Vehicle ReID
 
 ## Nhung gi CHUA lam (theo development_roadmap.md)
 
-1. **Web Dashboard (frontend)** — React/Vue, camera grid, alert panel, object detail, map view, ROI editor
-2. **Anomaly detection** — overspeed, wrong-way, stopped vehicle, crowd density, loitering (hien chi co ROI entry)
-3. **Nang cap tracker** — ByteTrack hoac DeepSORT thay SimpleTracker
-4. **Nang cap trajectory** — Kalman filter hoac LSTM thay linear extrapolation
-5. **Vehicle ReID** — model rieng cho xe (hien chi co person ReID, OSNet/Market-1501)
-6. **Spatio-temporal reasoning** — dung thoi gian + khoang cach giua camera de phan biet doi tuong giong nhau
-7. **Recording & playback** — ghi video lien tuc, cat clip su co
-8. **Camera management UI** — them/xoa camera runtime, health check
-9. **Ground truth evaluation** — module ground_truth.py da co nhung chua tich hop tinh MOTA, IDF1, mAP
-10. **Tich hop VideoSource** — video_source.py da viet, can thay camera_controller trong main.py va ai_processor.py
+1. **Vehicle ReID hoan thien** — train xong VeRi-776, kich hoat DualReIDExtractor trong pipeline
+2. **Cau hinh camera_topology** — do khoang cach thuc te giua cac camera de bat Spatio-Temporal Filter
+3. **Fine-tune YOLOv8s** — tren BDD100K + Vietnam Traffic Dataset (motorcycle VN chinh xac hon)
+4. **Recording lien tuc** — ghi video lien tuc, cat clip su co (hien chi co ring buffer 30s khi su co)
+5. **Camera management UI** — them/xoa camera runtime, health check
+6. **Ground truth evaluation** — tich hop ground_truth.py + motmetrics (MOTA, IDF1, mAP)
+7. **Tich hop VideoSource** — thay camera_controller bang video_source trong main.py + ai_processor.py
 
 ---
 

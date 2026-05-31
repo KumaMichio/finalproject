@@ -6,8 +6,10 @@ Main entry point for the tracking system
 
 import sys
 import os
+import time
 import argparse
 import logging
+import cv2
 from pathlib import Path
 
 # Add project root to path
@@ -17,7 +19,7 @@ sys.path.append(str(project_root))
 from modules.camera_controller import CameraController
 from modules.traffic_generator import TrafficGenerator
 from modules.detector import ObjectDetector
-from modules.tracker import SimpleTracker
+from modules.tracker import ByteTrackWrapper
 from modules.reid import ReIDExtractor
 from modules.global_tracking import GlobalTracker
 from modules.trajectory_predictor import TrajectoryPredictor
@@ -27,7 +29,6 @@ from modules.evidence_package import EvidencePackage
 from utils.visualization import Visualizer
 from utils.metrics import MetricsCollector
 
-# Setup logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -38,45 +39,56 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# CARLA fixed_delta_seconds = 0.1 → effective simulation FPS = 10
+_CARLA_FPS = 10
+
+
 class TrackingSystem:
-    def __init__(self, config_path):
+    def __init__(self, config_path, half: bool = False):
         self.config_path = config_path
+        self.half = half        # FP16 inference — saves ~800 MB VRAM alongside CARLA
         self.carla_client = None
         self.world = None
         self.modules = {}
 
+    # ------------------------------------------------------------------
+    # CARLA setup
+    # ------------------------------------------------------------------
+
     def initialize_carla(self):
-        """Initialize CARLA client and world"""
         try:
             import carla
             self.carla_client = carla.Client('localhost', 2000)
             self.carla_client.set_timeout(10.0)
             self.world = self.carla_client.get_world()
-            logger.info("CARLA client initialized successfully")
+            logger.info("CARLA client initialized")
             return True
         except Exception as e:
-            logger.error(f"Failed to initialize CARLA: {e}")
+            logger.error("Failed to initialize CARLA: %s", e)
             return False
 
     def setup_synchronous_mode(self):
-        """Enable synchronous mode for deterministic simulation"""
         settings = self.world.get_settings()
         settings.synchronous_mode = True
-        settings.fixed_delta_seconds = 0.1
+        settings.fixed_delta_seconds = 1.0 / _CARLA_FPS
         self.world.apply_settings(settings)
-        logger.info("Synchronous mode enabled")
+        logger.info("Synchronous mode enabled at %d fps", _CARLA_FPS)
+
+    # ------------------------------------------------------------------
+    # Module initialisation
+    # ------------------------------------------------------------------
 
     def initialize_modules(self):
-        """Initialize all tracking modules"""
         def step(name):
             print(f"[INIT] {name}...", flush=True)
-            logger.info(f"Initializing: {name}")
+            logger.info("Initializing: %s", name)
 
         try:
             step("CameraController")
             self.modules['camera_controller'] = CameraController(
                 self.carla_client, self.world, self.config_path)
             self.modules['camera_controller'].setup_cameras()
+            cam_ids = list(self.modules['camera_controller'].cameras.keys())
 
             step("TrafficGenerator")
             self.modules['traffic_generator'] = TrafficGenerator(
@@ -84,21 +96,38 @@ class TrackingSystem:
             self.modules['traffic_generator'].spawn_actors()
 
             step("ObjectDetector")
-            self.modules['detector'] = ObjectDetector(model_type='yolov5s')
+            self.modules['detector'] = ObjectDetector(
+                model_type='yolov8s',
+                conf_threshold=0.35,
+                half=self.half,   # FP16 when running alongside CARLA
+            )
 
-            step("SimpleTracker (per camera)")
-            self.modules['trackers'] = {}
-            for cam_id in self.modules['camera_controller'].cameras.keys():
-                self.modules['trackers'][cam_id] = SimpleTracker(max_age=30, min_hits=3)
+            step("ByteTrackWrapper (per camera)")
+            self.modules['trackers'] = {
+                cam_id: ByteTrackWrapper(
+                    track_activation_threshold=0.25,
+                    lost_track_buffer=30,
+                    minimum_matching_threshold=0.8,
+                    frame_rate=_CARLA_FPS,   # 10 fps, not 30
+                )
+                for cam_id in cam_ids
+            }
 
             step("ReIDExtractor")
-            self.modules['reid_extractor'] = ReIDExtractor(model_name='resnet50')
+            # osnet_x1_0 (Market-1501) — proper ReID model, not ImageNet ResNet50
+            self.modules['reid_extractor'] = ReIDExtractor(model_name='osnet_x1_0')
 
             step("GlobalTracker")
-            self.modules['global_tracker'] = GlobalTracker(self.modules['reid_extractor'])
+            self.modules['global_tracker'] = GlobalTracker(
+                self.modules['reid_extractor'],
+                match_threshold=0.5,
+                # camera_topology — leave empty for CARLA (no real physical distances).
+                # For real CCTV, set: {('CAM_001','CAM_002'): (5, 60), ...}
+                camera_topology={},
+            )
 
             step("TrajectoryPredictor")
-            self.modules['trajectory_predictor'] = TrajectoryPredictor(window_size=10, pred_steps=5)
+            self.modules['trajectory_predictor'] = TrajectoryPredictor(window_size=10)
 
             step("AlertSystem")
             self.modules['alert_system'] = AlertSystem(self.modules['trajectory_predictor'])
@@ -109,7 +138,7 @@ class TrackingSystem:
 
             step("EvidencePackage")
             self.modules['evidence'] = EvidencePackage(
-                output_dir='evidence', buffer_seconds=30, fps=10)
+                output_dir='evidence', buffer_seconds=30, fps=_CARLA_FPS)
 
             step("Visualizer")
             self.modules['visualizer'] = Visualizer()
@@ -117,29 +146,37 @@ class TrackingSystem:
             step("MetricsCollector")
             self.modules['metrics'] = MetricsCollector()
 
-            print("[INIT] All modules OK", flush=True)
-            logger.info("All modules initialized successfully")
+            print(f"[INIT] All modules OK — {len(cam_ids)} cameras: {cam_ids}", flush=True)
+            logger.info("All modules initialised successfully")
             return True
 
         except Exception as e:
             print(f"[INIT ERROR] {e}", flush=True)
-            logger.error(f"Failed to initialize modules: {e}", exc_info=True)
+            logger.error("Failed to initialize modules: %s", e, exc_info=True)
             return False
 
+    # ------------------------------------------------------------------
+    # Main loop
+    # ------------------------------------------------------------------
+
     def run(self, max_frames=None):
-        """Main processing loop"""
         frame_count = 0
+        _fps_t0     = time.perf_counter()
+        _fps_count  = 0
         logger.info("Starting tracking system...")
 
         try:
             while True:
                 if max_frames and frame_count >= max_frames:
-                    logger.info(f"Reached maximum frames ({max_frames}), stopping...")
+                    logger.info("Reached max frames (%d), stopping.", max_frames)
                     break
 
                 frame_count += 1
+                _fps_count  += 1
 
-                # Get synchronized frames
+                # ----------------------------------------------------------
+                # Grab frames from all cameras
+                # ----------------------------------------------------------
                 sync_frames = self.modules['camera_controller'].get_synchronized_frames()
 
                 if not sync_frames:
@@ -147,110 +184,127 @@ class TrackingSystem:
                     self.world.tick()
                     continue
 
+                cam_ids = list(sync_frames.keys())
+                frames  = [sync_frames[c]['frame'] for c in cam_ids]
+
+                # ----------------------------------------------------------
+                # Phase 1 — Batch detection (1 GPU forward pass for all cameras)
+                # Replaces N separate detect() calls → N× faster on GPU
+                # ----------------------------------------------------------
+                batch_detections = self.modules['detector'].detect_batch(frames)
+
+                # ----------------------------------------------------------
+                # Phase 2 — Per-camera CPU processing
+                # Single timestamp for the whole frame so all cameras are
+                # consistent when TrajectoryPredictor computes velocity.
+                # ----------------------------------------------------------
                 all_global_tracks = []
+                now_ts = time.time()
 
-                # Process each camera
-                for camera_id, frame_data in sync_frames.items():
-                    frame = frame_data['frame']
+                for camera_id, frame, detections in zip(cam_ids, frames, batch_detections):
 
-                    # Detection
-                    detections = self.modules['detector'].detect(frame)
+                    # Single-camera tracking (Kalman + Hungarian via ByteTrack)
+                    local_tracks = self.modules['trackers'][camera_id].update(
+                        detections, frame)
 
-                    # Single-camera tracking
-                    local_tracks = self.modules['trackers'][camera_id].update(detections)
-
-                    # Global tracking (cross-camera)
+                    # Cross-camera Re-ID → assign Global ID
                     global_tracks = self.modules['global_tracker'].process_camera_tracks(
                         camera_id, frame, local_tracks)
 
                     all_global_tracks.extend(global_tracks)
 
-                    # Update trajectories
-                    for g_track in global_tracks:
-                        global_id = g_track['global_id']
-                        box = g_track['box']
-                        center = [(box[0] + box[2])/2, (box[1] + box[3])/2]
+                    # Trajectory update (real unix time, not frame index)
+                    for g in global_tracks:
+                        box = g['box']
                         self.modules['trajectory_predictor'].update_trajectory(
-                            global_id, center, frame_count)
+                            g['global_id'],
+                            [(box[0] + box[2]) / 2, (box[1] + box[3]) / 2],
+                            now_ts,
+                        )
 
-                    # Trajectory prediction & alerts
-                    for g_track in global_tracks:
-                        global_id = g_track['global_id']
-                        predicted = self.modules['trajectory_predictor'].predict(global_id)
+                    # Build predictions dict once — reused by both alert checks below
+                    predictions = {}
+                    for g in global_tracks:
+                        pred = self.modules['trajectory_predictor'].predict(g['global_id'])
+                        if pred is not None:
+                            predictions[g['global_id']] = pred
 
-                        if predicted is not None:
-                            alerts = self.modules['alert_system'].check_alerts(
-                                global_id, camera_id, predicted, g_track['box'])
+                    # ROI entry alerts (AlertSystem expects plain list of [x,y])
+                    for g in global_tracks:
+                        pred_list = self.modules['trajectory_predictor'].predict_list(
+                            g['global_id'])
+                        for alert in self.modules['alert_system'].check_alerts(
+                                g['global_id'], camera_id, pred_list, g['box']):
+                            self.modules['alert_system'].log_alert(alert)
 
-                            for alert in alerts:
-                                self.modules['alert_system'].log_alert(alert)
-
-                    # Incident detection
+                    # Incident detection — reactive + proactive (predicted collision/ROI)
                     incidents = self.modules['incident_detector'].update(
-                        global_tracks, camera_id)
+                        global_tracks, camera_id,
+                        predictions=predictions,
+                        rois=self.modules['alert_system'].rois,
+                    )
+
                     for incident in incidents:
-                        print(f"[INCIDENT] {incident['severity']} | {incident['type']} "
-                              f"| obj={incident['global_id']} | {incident['message']}")
+                        logger.warning(
+                            "[INCIDENT] %s | %s | obj=%d | %s",
+                            incident['severity'], incident['type'],
+                            incident['global_id'], incident['message'],
+                        )
                         if incident['severity'] == 'CRITICAL':
+                            # Capture evidence from ALL cameras, not just the triggering one
                             self.modules['evidence'].capture(
                                 incident=incident,
-                                frames_dict={camera_id: frame},
-                                global_tracks=global_tracks,
+                                frames_dict={cid: sync_frames[cid]['frame']
+                                             for cid in cam_ids},
+                                global_tracks=all_global_tracks,
                             )
 
-                    # Buffer frame cho evidence ring buffer
+                    # Ring-buffer frame for evidence pre-event clip
                     self.modules['evidence'].buffer_frame(camera_id, frame)
 
-                    # Visualization
+                    # Visualisation
                     vis_frame = self.modules['visualizer'].draw_tracks(frame, global_tracks)
+                    cv2.imshow(camera_id, vis_frame)
 
-                    # Display (optional - comment out for headless operation)
-                    import cv2
-                    cv2.imshow(f'{camera_id}', vis_frame)
-
-                # Collect metrics
+                # ----------------------------------------------------------
+                # End-of-frame housekeeping
+                # ----------------------------------------------------------
                 self.modules['metrics'].update(frame_count, all_global_tracks)
-
-                # Advance CARLA simulation
                 self.world.tick()
 
-                # Check for exit (optional)
-                import cv2
                 if cv2.waitKey(1) & 0xFF == ord('q'):
-                    logger.info("Exit signal received, stopping...")
+                    logger.info("Exit signal received, stopping.")
                     break
 
-                # Log progress
-                if frame_count % 100 == 0:
-                    logger.info(f"Processed {frame_count} frames")
+                # FPS report every 100 frames
+                if _fps_count == 100:
+                    elapsed = time.perf_counter() - _fps_t0
+                    logger.info("Pipeline FPS: %.1f  (frame %d)", 100 / elapsed, frame_count)
+                    _fps_t0    = time.perf_counter()
+                    _fps_count = 0
 
         except KeyboardInterrupt:
             logger.info("Interrupted by user")
         except Exception as e:
-            logger.error(f"Error in main loop: {e}")
+            logger.error("Error in main loop: %s", e, exc_info=True)
         finally:
             self.cleanup()
 
-    def cleanup(self):
-        """Clean up resources"""
-        logger.info("Cleaning up...")
+    # ------------------------------------------------------------------
+    # Cleanup
+    # ------------------------------------------------------------------
 
-        try:
-            import cv2
-            cv2.destroyAllWindows()
-        except:
-            pass
+    def cleanup(self):
+        logger.info("Cleaning up...")
+        cv2.destroyAllWindows()
 
         if 'camera_controller' in self.modules:
             self.modules['camera_controller'].cleanup()
-
         if 'evidence' in self.modules:
             self.modules['evidence'].flush()
-
         if 'traffic_generator' in self.modules:
             self.modules['traffic_generator'].cleanup()
 
-        # Disable synchronous mode
         if self.world:
             settings = self.world.get_settings()
             settings.synchronous_mode = False
@@ -258,23 +312,26 @@ class TrackingSystem:
 
         logger.info("Cleanup completed")
 
+
+# ------------------------------------------------------------------
+# Entry point
+# ------------------------------------------------------------------
+
 def main():
     parser = argparse.ArgumentParser(description='Multi-Camera CCTV Tracking System')
-    parser.add_argument('--config', type=str, default='config/camera_config.yaml',
-                       help='Path to configuration file')
+    parser.add_argument('--config', default='config/camera_config.yaml',
+                        help='Path to configuration file')
     parser.add_argument('--max-frames', type=int, default=None,
-                       help='Maximum number of frames to process')
-    parser.add_argument('--log-level', type=str, default='INFO',
-                       choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'],
-                       help='Logging level')
-
+                        help='Stop after N frames (default: run until Ctrl-C or q)')
+    parser.add_argument('--half', action='store_true',
+                        help='FP16 inference — saves ~800 MB VRAM when running with CARLA')
+    parser.add_argument('--log-level', default='INFO',
+                        choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'])
     args = parser.parse_args()
 
-    # Set log level
     logging.getLogger().setLevel(getattr(logging, args.log_level))
 
-    # Initialize system
-    system = TrackingSystem(args.config)
+    system = TrackingSystem(args.config, half=args.half)
 
     if not system.initialize_carla():
         sys.exit(1)
@@ -284,8 +341,8 @@ def main():
     if not system.initialize_modules():
         sys.exit(1)
 
-    # Run the system
     system.run(max_frames=args.max_frames)
+
 
 if __name__ == '__main__':
     main()

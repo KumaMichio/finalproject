@@ -1,7 +1,7 @@
 # Kế Hoạch Nâng Cấp Hệ Thống — Hướng Thực Tế
 
-> **Trạng thái cập nhật: 2026-05-24**
-> Giai đoạn 1–3 đã hoàn thành. Xem chi tiết tại mục "Trạng thái triển khai" bên dưới.
+> **Trạng thái cập nhật: 2026-05-29**
+> Giai đoạn 1–3 đã hoàn thành. Giai đoạn 4 đang làm: step 11 (YOLOv8s) và step 12 (ByteTrack) hoàn thành. Xem chi tiết tại mục "Trạng thái triển khai" bên dưới.
 
 ## Mục Tiêu Nâng Cấp
 
@@ -25,7 +25,7 @@ Khi một đối tượng lạ xuất hiện trong camera, luồng xử lý hi�
 
 ```
 Object vào frame
-→ YOLOv5s detect (bounding box + class)
+→ YOLOv8s detect (bounding box + class)
 → OSNet trích xuất appearance feature (512 chiều)
 → So sánh cosine similarity với gallery
 → Không khớp → tạo Global ID mới, thêm vào gallery
@@ -43,7 +43,7 @@ Object vào frame
 | Velocity history trong Tracker | Chưa có | Không tính được sudden stop / acceleration |
 | Evidence package | Chưa có | Không có bằng chứng khi sự cố xảy ra |
 | CARLA scenario scripting | Chưa có | Không tạo được kịch bản test tai nạn |
-| ByteTrack / Kalman filter | Chưa có | ID bị hoán đổi khi xe che khuất nhau |
+| ~~ByteTrack / Kalman filter~~ | ✅ Hoàn thành | `ByteTrackWrapper` (boxmot) deploy 2026-05-29 |
 | Vehicle ReID | Chưa có | OSNet chỉ train cho người, nhận diện xe kém |
 | Recording & Playback | Chưa có | Không lưu được video sự cố |
 
@@ -162,7 +162,7 @@ vehicle.apply_control(carla.VehicleControl(
 ┌──────────────────────────────▼──────────────────────────────┐
 │                     AI Processing Engine                     │
 │                                                             │
-│  YOLOv5s          ByteTrack + Kalman     OSNet ReID         │
+│  YOLOv8s ✅       ByteTrack + Kalman     OSNet ReID         │
 │  Detection    →   (nâng cấp từ IoU)  →  + Vehicle ReID     │
 │                   + Velocity History                        │
 │                                                             │
@@ -904,7 +904,7 @@ function useIncidents() {
 | **Giai đoạn 1** | Lõi phát hiện sự cố | ✅ Hoàn thành |
 | **Giai đoạn 2** | Kịch bản test CARLA | ✅ Hoàn thành |
 | **Giai đoạn 3** | Web Dashboard | ✅ Hoàn thành |
-| **Giai đoạn 4** | Nâng cấp độ chính xác AI | ⏳ Chưa làm |
+| **Giai đoạn 4** | Nâng cấp độ chính xác AI | ⏳ Đang làm (step 11 + 12 xong, 13–18 còn lại) |
 | **Giai đoạn 5** | Hoàn thiện (recording, evaluation) | ⏳ Chưa làm |
 
 ## Thứ Tự Phát Triển
@@ -926,9 +926,9 @@ GIAI ĐOẠN 3 — Web Dashboard ✅ XONG (2026-05-24)
   9. ✅ Âm thanh + flash màn hình đỏ khi CRITICAL
   10. ✅ Trang AlertManagement + ObjectHistory
 
-GIAI ĐOẠN 4 — Nâng cấp độ chính xác AI ⏳ CHƯA LÀM
-  11. YOLOv5s → YOLOv8s (đổi model, 1 giờ, mAP +20%)
-  12. IoU Greedy → ByteTrack (Kalman built-in, giảm ID swap)
+GIAI ĐOẠN 4 — Nâng cấp độ chính xác AI ⏳ ĐANG LÀM
+  11. ✅ YOLOv5s → YOLOv8s (hoàn thành 2026-05-29 — mAP +20%, thêm motorcycle)
+  12. ✅ IoU Greedy → ByteTrack (hoàn thành 2026-05-29 — Kalman + Hungarian + dual-threshold, boxmot)
   13. Sửa FPS-normalized speed + proactive incident (dùng predicted positions)
   14. Thêm Spatio-Temporal Filter cho cross-camera matching
   15. Sửa TrajectoryPredictor dùng timestamp thay frame_idx
@@ -1033,22 +1033,24 @@ dùng `cv2.getPerspectiveTransform` để map pixel → mét.
 
 ### B. AI — Modules Chưa Implement
 
-#### B1. Tracker — ByteTrack + Kalman filter
+#### ~~B1. Tracker — ByteTrack + Kalman filter~~ ✅ Hoàn thành 2026-05-29
 
-**Vấn đề cụ thể:**
-`SimpleTracker` dùng IoU greedy matching một vòng. Khi 2 đối tượng đi sát rồi tách ra
-(occlusion), tracker hoán đổi ID vì không có cơ chế dự đoán vị trí và không dùng
-appearance feature. Kết quả: Global ID không bền, một đối tượng thực bị gán 2-3 ID khác nhau.
+**Đã triển khai:**
+`ByteTrackWrapper` trong `custom_tracking_system/modules/tracker.py` — wraps `boxmot.ByteTrack`.
 
-**Giải pháp — ByteTrack:**
 ```
-Vòng 1: match detection confidence cao (>0.6) với tracks hiện có (IoU)
-Vòng 2: match detection confidence thấp (0.1–0.6) với tracks chưa khớp
+Vòng 1: match detection confidence cao (>0.25) với tracks hiện có (IoU)
+Vòng 2: match detection confidence thấp với tracks chưa khớp (dual-threshold)
 Kalman: predict vị trí cho tracks không có detection (bị che khuất)
+Hungarian: optimal matching thay greedy
 ```
 
-**File cần viết:** `custom_tracking_system/modules/tracker_byte.py`
-**Dependencies cần thêm:** `filterpy>=1.4`
+**Đã làm:**
+- `tracker.py` — `ByteTrackWrapper` class (drop-in thay `SimpleTracker`)
+- `main.py` — import + init + `update(detections, frame)` call đã cập nhật
+- `requirements.txt` — thêm `boxmot>=10.0`
+
+**Dependencies đã thêm:** `boxmot>=10.0` (thay `filterpy>=1.4`)
 
 #### B2. Tích hợp VideoSource vào pipeline — Real CCTV Footage
 
@@ -1240,7 +1242,7 @@ finalproject/
 
 ```txt
 # AI Pipeline
-filterpy>=1.4           # Kalman filter (cho ByteTrack / trajectory)
+boxmot>=10.0            # ByteTrack — Kalman + Hungarian (đã thêm 2026-05-29)
 
 # Evidence
 opencv-python>=4.8      # đã có, dùng VideoWriter
@@ -1257,4 +1259,4 @@ recharts: ^2            # biểu đồ stats
 
 ---
 
-*Tài liệu cập nhật: 2026-05-26*
+*Tài liệu cập nhật: 2026-05-29. Thay đổi: Step 11 (YOLOv8s) hoàn thành; Step 12 (ByteTrack) hoàn thành.*

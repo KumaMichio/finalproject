@@ -9,15 +9,15 @@ thanh mot he thong giam sat camera hoan chinh voi giao dien server, AI bao dong 
 
 ## Trang Thai Hien Tai
 
-### Da hoan thanh (~85%)
+### Da hoan thanh (~93%)
 - [x] CARLA simulator setup (WindowsNoEditor)
 - [x] Camera controller — dat nhieu camera trong CARLA, dong bo frame
 - [x] Traffic generator — spawn vehicle + pedestrian voi autopilot
-- [x] Object detection — YOLOv5 pretrained (person, car, bus, truck)
-- [x] Single-camera tracking — IoU greedy matching
-- [x] Cross-camera ReID — OSNet (torchreid) + fallback ResNet50
-- [x] Global ID assignment — gan ID duy nhat xuyen camera
-- [x] Trajectory prediction — linear extrapolation
+- [x] Object detection — YOLOv8s pretrained (person, car, motorcycle, bus, truck)
+- [x] Single-camera tracking — ByteTrackWrapper (Kalman + Hungarian, thay IoU greedy)
+- [x] Cross-camera ReID — OSNet (torchreid) + fallback ResNet50 + DualReIDExtractor san sang
+- [x] Global ID assignment — gan ID duy nhat xuyen camera + Spatio-Temporal Filter
+- [x] Trajectory prediction — exp-weighted velocity px/s (da sua loi, timestamp-based, horizons 0.5-3s)
 - [x] Alert system — ROI entry warning (point-in-polygon)
 - [x] Visualization — OpenCV window voi bounding box + ID
 - [x] Metrics collector — FPS, detection/tracking counts
@@ -40,11 +40,22 @@ thanh mot he thong giam sat camera hoan chinh voi giao dien server, AI bao dong 
 - [x] Real-time notification — WebSocket push, am thanh canh bao, flash man hinh do khi CRITICAL
 - [x] Scenario Controller — 5 kich ban tai nan trong CARLA (hit_and_run, pedestrian_hit, red_light_crash, rear_end, sudden_stop)
 
+### Da hoan thanh them (cap nhat 2026-05-29)
+- [x] Detection nang cap: YOLOv5s → YOLOv8s (mAP +20%, them motorcycle, batched 6 camera)
+
+### Da hoan thanh them (cap nhat 2026-05-31)
+- [x] Nang cap Tracker: ByteTrackWrapper (boxmot.ByteTrack) — Kalman + Hungarian + dual-threshold, thay IoU greedy
+- [x] Fix TrajectoryPredictor: exp-weighted velocity (px/s, timestamp-based), horizons 0.5-3s thuc te, ket noi proactive alert
+- [x] Spatio-Temporal Filter trong GlobalTracker — logic da co, cho cau hinh camera_topology
+- [x] IncidentDetector nang cap: 12 loai su co (10 reactive + 2 proactive: PREDICTED_COLLISION, PREDICTED_ROI_ENTRY)
+- [x] DualReIDExtractor — 2 model rieng: person (Market-1501) + vehicle (cho VeRi-776 weights)
+- [x] train_veri.py + dataset VeRi/ san sang fine-tune Vehicle ReID
+
 ### Chua hoan thanh
-- [ ] Nang cap AI pipeline: YOLOv8s + ByteTrack + OSNet VeRi-776
+- [ ] Fine-tune YOLOv8s tren dataset giao thong VN (motorcycle VN)
+- [ ] Vehicle ReID: hoan thien fine-tune VeRi-776 va kich hoat DualReIDExtractor trong pipeline
       (xem chi tiet: docs/production_model_stack.md)
-- [ ] Fix TrajectoryPredictor: timestamp-based velocity, proactive incident alert
-- [ ] Spatio-temporal reasoning (phan biet xe giong nhau xuyen camera)
+- [ ] Cau hinh camera_topology trong GlobalTracker (do khoang cach thuc te giua cac camera)
 - [ ] Camera management UI (them/xoa camera khi dang chay)
 - [ ] Recording lien tuc + playback (ghi video + xem lai clip su co)
 - [ ] Testing & evaluation voi ground truth (MOTA, IDF1, mAP)
@@ -73,7 +84,7 @@ thanh mot he thong giam sat camera hoan chinh voi giao dien server, AI bao dong 
 |  |              AI Processing Engine                         |   |
 |  |  +--------+ +-------+ +------+ +--------+ +-----------+  |   |
 |  |  |Detector|>|Tracker|>| ReID |>|Global  |>| Anomaly   |  |   |
-|  |  |YOLOv5  | |SORT   | |OSNet | |Tracker | | Detector  |  |   |
+|  |  |YOLOv8s | |SORT   | |OSNet | |Tracker | | Detector  |  |   |
 |  |  +--------+ +-------+ +------+ +--------+ +-----+-----+  |   |
 |  +------------------------------------------------------+---+   |
 |                           |                              |       |

@@ -22,7 +22,7 @@ E:\finalproject\
 |   |   |-- modules\
 |   |   |   |-- camera_controller.py        # Dieu khien camera trong CARLA, dong bo frame
 |   |   |   |-- traffic_generator.py        # Spawn xe + nguoi voi autopilot trong CARLA
-|   |   |   |-- detector.py                # Phat hien doi tuong (YOLOv5s, COCO pretrained)
+|   |   |   |-- detector.py                # Phat hien doi tuong (YOLOv8s, COCO pretrained, 5 class)
 |   |   |   |   |-- tracker.py                 # Theo doi trong 1 camera (IoU + timestamp/speed history)
 |   |   |   |-- reid.py                    # ReID xuyen camera (OSNet/torchreid + ResNet50 fallback)
 |   |   |   |-- global_tracking.py         # Gan Global ID xuyen camera bang ReID gallery
@@ -38,7 +38,7 @@ E:\finalproject\
 |   |   |   |-- metrics.py                 # Thu thap FPS, detection/tracking counts
 |   |   |   +-- data_writer.py             # Xuat du lieu JSON, CSV, summary report
 |   |   |-- models\
-|   |   |   |-- hub\                       # YOLOv5 model cache + ResNet50 checkpoint
+|   |   |   |-- hub\                       # Legacy YOLOv5 cache (khong dung nua)
 |   |   |   |-- detection\                 # (trong — chua fine-tune)
 |   |   |   |-- reid\                      # (trong — chua fine-tune)
 |   |   |   +-- tracking\                  # (trong — chua fine-tune)
@@ -46,7 +46,7 @@ E:\finalproject\
 |   |   |   |-- ground_truth\              # (trong — chua co du lieu)
 |   |   |   +-- synthetic_data\            # (trong — chua co du lieu)
 |   |   |-- main.py                        # Entry point chay truc tiep (khong qua server)
-|   |   |-- requirements.txt               # Dependencies: torch, yolov5, opencv, torchreid
+|   |   |-- requirements.txt               # Dependencies: ultralytics, opencv, torchreid
 |   |   +-- run.bat                        # Script chay tren Windows
 |   |
 |   |-- server\                             # Backend API Server (FastAPI)
@@ -122,7 +122,7 @@ E:\finalproject\
 
 Luong xu ly 11 buoc (cap nhat 2026-05-24):
 1. **Camera Source** — lay frame tu CARLA (hoac RTSP/File/Webcam qua VideoSource)
-2. **Detection** — YOLOv5s phat hien person, car, bus, truck
+2. **Detection** — YOLOv8s phat hien person, car, motorcycle, bus, truck
 3. **Tracking** — IoU matching + timestamp + speed history (px/s) moi frame
 4. **Feature Extraction** — OSNet (512D) hoac ResNet50 (2048D), L2-normalized
 5. **ReID Matching** — cosine similarity voi gallery, threshold 0.5

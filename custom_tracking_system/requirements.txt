@@ -18,7 +18,8 @@ pytorch-lightning==1.5.0
 timm==0.4.12
 
 # Computer Vision
-yolov5==6.1.0
+ultralytics>=8.0          # YOLOv8 — replaces yolov5==6.1.0
+boxmot>=10.0              # ByteTrack (Kalman + Hungarian) — replaces IoU Greedy
 pycocotools-windows
 albumentations==1.1.0
 

@@ -1,6 +1,8 @@
 """
 Multi-Object Tracking Module
-Implements simple tracking algorithm for single camera
+
+ByteTrackWrapper  — production tracker (boxmot.ByteTrack + Kalman + Hungarian)
+SimpleTracker     — legacy IoU-greedy fallback, kept for reference
 """
 
 import numpy as np
@@ -10,6 +12,126 @@ from datetime import datetime
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+# COCO class indices used by ObjectDetector
+_CLS_MAP = {0: 'person', 2: 'car', 3: 'motorcycle', 5: 'bus', 7: 'truck'}
+
+
+class ByteTrackWrapper:
+    """
+    Per-camera tracker wrapping boxmot.ByteTrack.
+    Drop-in replacement for SimpleTracker — update() takes an extra `frame` arg.
+
+    ByteTrack advantages over IoU-greedy:
+      - Kalman Filter predicts position under occlusion
+      - Hungarian matching (optimal, not greedy)
+      - Dual-threshold: keeps low-confidence detections as tentative tracks
+        to survive brief occlusions without ID swap
+    """
+
+    def __init__(self, track_activation_threshold: float = 0.25,
+                 lost_track_buffer: int = 30,
+                 minimum_matching_threshold: float = 0.8,
+                 frame_rate: int = 30):
+        self._init_kwargs = dict(
+            track_activation_threshold=track_activation_threshold,
+            lost_track_buffer=lost_track_buffer,
+            minimum_matching_threshold=minimum_matching_threshold,
+            frame_rate=frame_rate,
+        )
+        self._history: dict = {}  # {track_id: {positions, timestamps, speeds, class}}
+        self._init_tracker()
+        logger.info("ByteTrackWrapper initialised (frame_rate=%d, buffer=%d)",
+                    frame_rate, lost_track_buffer)
+
+    def _init_tracker(self):
+        from boxmot import ByteTrack
+        self.tracker = ByteTrack(**self._init_kwargs)
+
+    def update(self, detections: list, frame: np.ndarray) -> list:
+        """
+        Update tracker with new detections.
+
+        Args:
+            detections: list of {'box': [x1,y1,x2,y2], 'confidence': float,
+                                  'class': str, 'class_id': int}
+            frame: current camera frame (H×W×3 BGR numpy array)
+
+        Returns:
+            list of {'track_id': int, 'box': [x1,y1,x2,y2], 'class': str,
+                     'positions': list, 'timestamps': list, 'speeds': list}
+        """
+        if detections:
+            dets_arr = np.array(
+                [[*d['box'], d['confidence'], d.get('class_id', 0)]
+                 for d in detections],
+                dtype=np.float32,
+            )
+        else:
+            dets_arr = np.empty((0, 6), dtype=np.float32)
+
+        raw = self.tracker.update(dets_arr, frame)
+
+        now = datetime.now()
+        output = []
+
+        if raw is None or len(raw) == 0:
+            return output
+
+        for row in raw:
+            x1, y1, x2, y2 = int(row[0]), int(row[1]), int(row[2]), int(row[3])
+            track_id = int(row[4])
+            cls_id   = int(row[6])
+
+            box      = [x1, y1, x2, y2]
+            cls_name = _CLS_MAP.get(cls_id, 'unknown')
+            center   = [(x1 + x2) / 2, (y1 + y2) / 2]
+
+            if track_id not in self._history:
+                self._history[track_id] = {
+                    'class': cls_name,
+                    'positions': [],
+                    'timestamps': [],
+                    'speeds': [],
+                }
+            hist = self._history[track_id]
+            hist['positions'].append(center)
+            hist['timestamps'].append(now)
+            if len(hist['positions']) > 100:
+                hist['positions'].pop(0)
+                hist['timestamps'].pop(0)
+
+            if len(hist['positions']) >= 2:
+                dt = (hist['timestamps'][-1] - hist['timestamps'][-2]).total_seconds()
+                if dt > 1e-6:
+                    d = np.linalg.norm(
+                        np.array(hist['positions'][-1]) - np.array(hist['positions'][-2])
+                    )
+                    hist['speeds'].append(d / dt)
+                    if len(hist['speeds']) > 30:
+                        hist['speeds'].pop(0)
+
+            output.append({
+                'track_id':  track_id,
+                'box':       box,
+                'class':     cls_name,
+                'positions': list(hist['positions']),
+                'timestamps': list(hist['timestamps']),
+                'speeds':    list(hist['speeds']),
+            })
+
+        logger.debug("ByteTrackWrapper: %d active tracks", len(output))
+        return output
+
+    def reset(self):
+        """Reset tracker state (re-initialises the underlying ByteTrack)."""
+        self._history.clear()
+        self._init_tracker()
+        logger.info("ByteTrackWrapper reset")
+
+    def get_all_tracks(self) -> dict:
+        return {tid: dict(h) for tid, h in self._history.items()}
 
 class SimpleTracker:
     """

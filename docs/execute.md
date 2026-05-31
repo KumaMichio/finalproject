@@ -68,71 +68,76 @@ python -c "import carla; print('CARLA version:', carla.__version__)"
 # Test PyTorch
 python -c "import torch; print('CUDA available:', torch.cuda.is_available())"
 
-# Test YOLOv5
-python -c "import torch; model = torch.hub.load('ultralytics/yolov5', 'yolov5s'); print('YOLOv5 OK')"
+# Test YOLOv8
+python -c "from ultralytics import YOLO; m = YOLO('yolov8s.pt'); print('YOLOv8 OK')"
 ```
 
 ---
 
 ## 3. Dataset và Training
 
-> **Quan trọng**: Model mặc định (YOLOv5 pretrained, OSNet pretrained) có thể chạy **không cần train lại**. Training chỉ cần khi muốn tăng độ chính xác cho domain CARLA cụ thể.
+> **Quan trọng**: Model mặc định (YOLOv8s pretrained, OSNet pretrained) có thể chạy **không cần train lại**. Training chỉ cần khi muốn tăng độ chính xác cho domain cụ thể (giao thông VN, motorcycle VN).
 
 ---
 
-### 3.1 Object Detection — YOLOv5
+### 3.1 Object Detection — YOLOv8s
 
 #### Dataset
 
 | Dataset | Mục đích | Link tải |
 |---------|----------|----------|
-| **COCO 2017** | Pretrain chính, có đủ class (car, truck, bus, person) | https://cocodataset.org/#download |
-| **BDD100K** | Fine-tune cho môi trường đường phố | https://bdd-data.berkeley.edu/ |
+| **COCO 2017** | Pretrain chính — đã tích hợp trong `yolov8s.pt` | https://cocodataset.org/#download |
+| **BDD100K** | Fine-tune cho đường phố thực tế (ngày/đêm/mưa) | https://bdd-data.berkeley.edu/ |
+| **Vietnam Traffic (Roboflow)** | Fine-tune motorcycle VN (~3k ảnh) | https://roboflow.com |
 | **CARLA Synthetic** | Fine-tune cho domain CARLA (tự tạo) | Xem mục 3.1.3 |
 
-#### 3.1.1 Sử dụng YOLOv5 pretrained (không cần train)
+#### 3.1.1 Sử dụng YOLOv8s pretrained (không cần train)
 
 ```python
 # Trong detector.py — đã được config sẵn
-# model_type: 'yolov5s' (nhanh), 'yolov5m' (cân bằng), 'yolov5l' (chính xác)
-detector = ObjectDetector(model_type='yolov5s', conf_threshold=0.4)
+# model_type: 'yolov8n' (nhanh nhất), 'yolov8s' (khuyến nghị), 'yolov8m' (chính xác hơn nhưng sát 4GB VRAM)
+detector = ObjectDetector(model_type='yolov8s', conf_threshold=0.35)
+
+# Khi chạy cùng CARLA (VRAM hạn chế), bật FP16:
+detector = ObjectDetector(model_type='yolov8s', conf_threshold=0.35, half=True)
+
+# Batched inference cho 6 camera (1 forward pass thay 6):
+detections_per_cam = detector.detect_batch([frame_cam1, frame_cam2, ..., frame_cam6])
 ```
 
-Pretrained YOLOv5s trên COCO đã detect được: `car`, `truck`, `bus`, `person` — đủ dùng ngay.
+Pretrained YOLOv8s trên COCO detect được: `car`, `truck`, `bus`, `person`, `motorcycle` — đủ dùng ngay.
 
-#### 3.1.2 Fine-tune YOLOv5 trên BDD100K (tùy chọn)
+#### 3.1.2 Fine-tune YOLOv8s trên BDD100K + Vietnam Traffic (tùy chọn)
 
 ```bash
-# Cài YOLOv5 repo
-git clone https://github.com/ultralytics/yolov5
-cd yolov5
-pip install -r requirements.txt
-
-# Chuẩn bị BDD100K theo format YOLO
-# Cấu trúc thư mục:
-# datasets/bdd100k/
-#   images/train/  images/val/
-#   labels/train/  labels/val/
-
-# Train fine-tune từ pretrained weights
-python train.py \
-  --img 640 \
-  --batch 16 \
-  --epochs 50 \
-  --data bdd100k.yaml \
-  --weights yolov5s.pt \
-  --cache \
-  --device 0
+pip install ultralytics
 ```
 
-File `bdd100k.yaml`:
+```python
+from ultralytics import YOLO
+
+model = YOLO('yolov8s.pt')
+model.train(
+    data='traffic_vn.yaml',
+    epochs=50,
+    imgsz=640,
+    batch=8,           # vừa 4 GB VRAM
+    device=0,
+    optimizer='AdamW',
+    lr0=0.001,
+    augment=True,
+    val=True
+)
+```
+
+File `traffic_vn.yaml`:
 ```yaml
-path: datasets/bdd100k
+path: datasets/traffic_vn
 train: images/train
 val: images/val
 
-nc: 4
-names: ['person', 'car', 'bus', 'truck']
+nc: 5
+names: ['person', 'car', 'motorcycle', 'bus', 'truck']
 ```
 
 #### 3.1.3 Tạo synthetic dataset từ CARLA
@@ -292,14 +297,14 @@ python scripts/train.py \
 
 ```
 Để chạy ngay (không cần train):
-  ✅ YOLOv5s pretrained (COCO)      → detector.py tự load
+  ✅ YOLOv8s pretrained (COCO)      → detector.py tự download + load lần đầu (~22 MB)
   ✅ OSNet pretrained (Market-1501)  → reid.py tự load nếu có torchreid
   ✅ Linear trajectory model         → không cần model file
 
 Để tăng độ chính xác (train thêm):
-  🔧 YOLOv5 fine-tune trên BDD100K  → tăng mAP cho đường phố
-  🔧 OSNet fine-tune trên CARLA ReID → tăng Rank-1 cho domain CARLA
-  🔧 LSTM train trên ETH/UCY        → tăng độ chính xác trajectory
+  🔧 YOLOv8s fine-tune trên BDD100K + Vietnam Traffic → motorcycle VN chính xác hơn
+  🔧 OSNet fine-tune trên VeRi-776   → Vehicle ReID thay vì Person ReID
+  🔧 LSTM train trên ETH/UCY         → tăng độ chính xác trajectory
 ```
 
 ---
@@ -580,7 +585,7 @@ Số Global ID bị trùng (ID switch): càng ít càng tốt
 
 **Nếu FPS quá thấp**, thử các biện pháp sau theo thứ tự:
 1. Giảm `resolution` xuống `[640, 480]`
-2. Đổi sang model `yolov5n` (nano, nhanh nhất)
+2. Đổi sang model `yolov8n` (nano, nhanh nhất)
 3. Tắt hiển thị OpenCV (comment out `cv2.imshow`)
 4. Giảm `num_vehicles` xuống 15
 
@@ -709,10 +714,11 @@ Giải pháp:
 ### Lỗi: `CUDA out of memory`
 
 ```
-Nguyên nhân: GPU không đủ VRAM cho YOLOv5 + OSNet
+Nguyên nhân: GPU không đủ VRAM cho YOLOv8s + OSNet
 Giải pháp:
-  1. Đổi sang CPU: detector = ObjectDetector(device='cpu')
-  2. Dùng model nhỏ hơn: model_type='yolov5n'
+  1. Bật FP16: ObjectDetector(model_type='yolov8s', half=True)  — tiết kiệm ~800 MB
+  2. Dùng model nhỏ hơn: model_type='yolov8n'
+  3. Đổi sang CPU: detector = ObjectDetector(device='cpu')
   3. Giảm resolution camera xuống [640, 480]
   4. Xử lý tuần tự từng camera thay vì song song
 ```
@@ -732,7 +738,7 @@ Cài torchreid để dùng OSNet:
 ```
 Thứ tự thử:
   1. Giảm resolution: [640, 480]
-  2. Đổi model: yolov5n (nano)
+  2. Đổi model: yolov8n (nano)
   3. Tắt hiển thị: comment cv2.imshow
   4. Giảm vehicles: num_vehicles=5
   5. Dùng GPU thay vì CPU

@@ -48,7 +48,7 @@ finalproject/
 |   |   |-- modules/
 |   |   |   |-- camera_controller.py    # Dieu khien camera trong CARLA
 |   |   |   |-- traffic_generator.py    # Sinh xe co + nguoi di bo
-|   |   |   |-- detector.py            # Phat hien doi tuong (YOLOv5)
+|   |   |   |-- detector.py            # Phat hien doi tuong (YOLOv8s)
 |   |   |   |-- tracker.py             # Theo doi trong 1 camera (IoU matching)
 |   |   |   |-- reid.py                # Nhan dien lai xuyen camera (OSNet/ResNet50)
 |   |   |   |-- global_tracking.py     # Gan Global ID xuyen camera
@@ -61,7 +61,7 @@ finalproject/
 |   |   |   |-- metrics.py             # Thu thap chi so hieu suat
 |   |   |   +-- data_writer.py         # Xuat du lieu JSON, CSV, bao cao
 |   |   |-- models/
-|   |   |   |-- hub/                   # YOLOv5 model cache (tu dong tai)
+|   |   |   |-- hub/                   # Legacy YOLOv5 cache (khong dung nua)
 |   |   |   |-- detection/             # (chua co model fine-tune)
 |   |   |   |-- reid/                  # (chua co model fine-tune)
 |   |   |   +-- tracking/              # (chua co model fine-tune)
@@ -133,7 +133,7 @@ finalproject/
 |-----------|---------------------|--------|
 | Python | 3.7+ | Ngon ngu lap trinh chinh |
 | PyTorch | >= 1.10.0 | Framework deep learning |
-| YOLOv5s | v6.1 (pretrained COCO) | Phat hien doi tuong (person, car, bus, truck) |
+| YOLOv8s | Ultralytics (pretrained COCO) | Phat hien doi tuong (person, car, motorcycle, bus, truck) |
 | OSNet | x1_0 (pretrained Market-1501, qua torchreid) | Trich xuat dac trung ReID cho nhan dien lai |
 | ResNet50 | (pretrained ImageNet, fallback) | Trich xuat dac trung ReID khi khong co torchreid |
 | OpenCV | 4.5.4 | Xu ly anh, ve visualization, encode MJPEG |
@@ -169,7 +169,7 @@ finalproject/
 Video Source (CARLA / RTSP / File / Webcam)
         |  chi tra ve raw frames (numpy array)
         v
-  [1] Object Detection (YOLOv5s)
+  [1] Object Detection (YOLOv8s)
         |  Output: bounding boxes + class + confidence
         v
   [2] Single-Camera Tracking (IoU Greedy Matching)

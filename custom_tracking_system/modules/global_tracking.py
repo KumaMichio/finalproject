@@ -1,8 +1,10 @@
 """
 Global Tracking Module
-Manages cross-camera object tracking with global IDs
+Manages cross-camera object tracking with global IDs.
+Includes Spatio-Temporal Filter to reject physically impossible cross-camera matches.
 """
 
+import time as _time
 import numpy as np
 from collections import defaultdict
 from datetime import datetime
@@ -15,18 +17,27 @@ class GlobalTracker:
     Manages global object IDs across multiple cameras
     """
 
-    def __init__(self, reid_extractor, match_threshold=0.5, max_age=300):
+    def __init__(self, reid_extractor, match_threshold=0.5, max_age=300,
+                 camera_topology: dict = None):
         """
-        Initialize global tracker
+        Initialize global tracker.
 
         Args:
-            reid_extractor: ReIDExtractor instance
-            match_threshold: Threshold for ReID matching
-            max_age: Maximum age for global tracks (seconds)
+            reid_extractor:   ReIDExtractor instance
+            match_threshold:  Cosine-similarity threshold for ReID matching
+            max_age:          Max seconds to keep an inactive global track
+            camera_topology:  Optional dict describing feasible travel times between cameras.
+                              Format: {(cam_a, cam_b): (min_seconds, max_seconds)}
+                              Both directions must be listed separately.
+                              Example:
+                                {('CAM_001', 'CAM_002'): (5, 60),
+                                 ('CAM_002', 'CAM_001'): (5, 60)}
+                              If None or empty, no spatio-temporal filtering is applied.
         """
         self.reid_extractor = reid_extractor
         self.match_threshold = match_threshold
         self.max_age = max_age
+        self.camera_topology: dict = camera_topology or {}
 
         # Global tracks: {global_id: track_info}
         self.global_tracks = {}
@@ -34,7 +45,14 @@ class GlobalTracker:
         # Next available global ID
         self.next_global_id = 1000
 
-        logger.info(f"GlobalTracker initialized with threshold={match_threshold}")
+        # Spatio-temporal state: last seen camera + unix timestamp per global_id
+        # {global_id: {'camera_id': str, 'timestamp': float}}
+        self._last_seen_info: dict = {}
+
+        logger.info(
+            "GlobalTracker initialised: threshold=%.2f, topology_pairs=%d",
+            match_threshold, len(self.camera_topology)
+        )
 
     def process_camera_tracks(self, camera_id, frame, local_tracks):
         """
@@ -53,8 +71,10 @@ class GlobalTracker:
         for local_track in local_tracks:
             box = local_track['box']
 
-            # Extract ReID feature
-            feature = self.reid_extractor.extract_feature(frame, box)
+            # Extract ReID feature — pass object class so DualReIDExtractor
+            # can choose person vs vehicle model automatically
+            obj_class = local_track.get('class', 'unknown')
+            feature = self.reid_extractor.extract_feature(frame, box, obj_class)
             if feature is None:
                 continue
 
@@ -62,25 +82,29 @@ class GlobalTracker:
             matched_global_id = self.reid_extractor.match_with_gallery(
                 feature, threshold=self.match_threshold)
 
-            if matched_global_id is not None:
+            # Accept match only when spatio-temporally feasible
+            if (matched_global_id is not None and
+                    self._is_feasible_match(matched_global_id, camera_id)):
                 global_id = matched_global_id
             else:
-                # Create new global ID
+                # Create new global ID (also covers infeasible cross-camera match)
                 global_id = self.next_global_id
                 self.next_global_id += 1
 
-            # Update gallery
+            # Update gallery and track state
             self.reid_extractor.add_to_gallery(global_id, feature)
-
-            # Update global track
             self._update_global_track(global_id, camera_id, local_track)
 
             global_tracks_output.append({
-                'global_id': global_id,
-                'camera_id': camera_id,
-                'box': box,
-                'class': local_track['class'],
-                'local_track_id': local_track['track_id']
+                'global_id':      global_id,
+                'camera_id':      camera_id,
+                'box':            box,
+                'class':          local_track['class'],
+                'local_track_id': local_track['track_id'],
+                # Propagate motion data so IncidentDetector can use speeds
+                'speeds':         local_track.get('speeds', []),
+                'positions':      local_track.get('positions', []),
+                'timestamps':     local_track.get('timestamps', []),
             })
 
         return global_tracks_output
@@ -111,6 +135,12 @@ class GlobalTracker:
         track['last_seen'] = now
         track['total_cameras'].add(camera_id)
 
+        # Update spatio-temporal state (used by _is_feasible_match on next frame)
+        self._last_seen_info[global_id] = {
+            'camera_id': camera_id,
+            'timestamp': _time.time(),
+        }
+
         # Add to camera history
         track['camera_history'][camera_id].append({
             'timestamp': now,
@@ -121,6 +151,58 @@ class GlobalTracker:
         # Keep only recent history (last 100 entries per camera)
         if len(track['camera_history'][camera_id]) > 100:
             track['camera_history'][camera_id].pop(0)
+
+    # ------------------------------------------------------------------
+    # Spatio-Temporal Filter
+    # ------------------------------------------------------------------
+
+    def _is_feasible_match(self, global_id: int, target_camera: str) -> bool:
+        """
+        Return True if the elapsed time since this global_id was last seen
+        is consistent with physically traveling to target_camera.
+
+        Always returns True when:
+          - The object has never been seen before (first appearance).
+          - The last camera equals target_camera (same-camera re-match).
+          - No topology entry exists for the camera pair (unconstrained).
+        """
+        info = self._last_seen_info.get(global_id)
+        if info is None:
+            return True  # first appearance — no spatial constraint yet
+
+        last_cam = info['camera_id']
+        if last_cam == target_camera:
+            return True  # same camera, no topology check needed
+
+        key = (last_cam, target_camera)
+        if key not in self.camera_topology:
+            return True  # no constraint defined for this pair
+
+        elapsed = _time.time() - info['timestamp']
+        min_t, max_t = self.camera_topology[key]
+        feasible = min_t <= elapsed <= max_t
+        if not feasible:
+            logger.debug(
+                "ST-filter rejected match gid=%d: %s→%s elapsed=%.1fs (allowed %.0f–%.0f s)",
+                global_id, last_cam, target_camera, elapsed, min_t, max_t,
+            )
+        return feasible
+
+    def is_feasible_transition(self, cam_a: str, t_a: float,
+                               cam_b: str, t_b: float) -> bool:
+        """
+        Public utility: check whether an object could travel from cam_a at time t_a
+        to cam_b at time t_b given the configured topology.
+        t_a, t_b are Unix timestamps (float seconds).
+        """
+        key = (cam_a, cam_b)
+        if key not in self.camera_topology:
+            return True
+        min_t, max_t = self.camera_topology[key]
+        delta = abs(t_b - t_a)
+        return min_t <= delta <= max_t
+
+    # ------------------------------------------------------------------
 
     def get_active_tracks(self, timeout_seconds=30):
         """
@@ -221,8 +303,9 @@ class GlobalTracker:
         }
 
     def reset(self):
-        """Reset global tracker state"""
+        """Reset global tracker state."""
         self.global_tracks.clear()
+        self._last_seen_info.clear()
         self.next_global_id = 1000
         self.reid_extractor.clear_gallery()
         logger.info("Global tracker reset")

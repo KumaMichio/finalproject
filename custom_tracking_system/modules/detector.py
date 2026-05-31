@@ -1,185 +1,175 @@
 """
 Object Detection Module
-Uses YOLOv5 for detecting vehicles and pedestrians in camera frames
+Uses YOLOv8 for detecting vehicles and pedestrians in camera frames
 """
 
-import torch
 import cv2
 import numpy as np
 import logging
 
 logger = logging.getLogger(__name__)
 
+
 class ObjectDetector:
-    """
-    Object detector using YOLOv5 for real-time detection
-    """
+    """Object detector using YOLOv8 for real-time detection."""
 
-    def __init__(self, model_type='yolov5s', conf_threshold=0.4, device=None):
+    # COCO class indices of interest
+    CLASSES = {
+        0: 'person',
+        2: 'car',
+        3: 'motorcycle',
+        5: 'bus',
+        7: 'truck',
+    }
+
+    CLASS_COLORS = {
+        'person':     (255,   0,   0),
+        'car':        (  0, 255,   0),
+        'motorcycle': (  0, 255, 255),
+        'bus':        (  0,   0, 255),
+        'truck':      (255, 255,   0),
+    }
+
+    def __init__(self, model_type: str = 'yolov8s', conf_threshold: float = 0.35,
+                 device: str | None = None, half: bool = False):
         """
-        Initialize object detector
-
         Args:
-            model_type: YOLOv5 model variant ('yolov5s', 'yolov5m', 'yolov5l', 'yolov5x')
-            conf_threshold: Confidence threshold for detections
-            device: Device to run model on ('cpu', 'cuda', None for auto)
+            model_type: YOLOv8 variant — 'yolov8n', 'yolov8s', 'yolov8m'
+            conf_threshold: Minimum confidence to keep a detection
+            device: 'cpu', 'cuda', '0', etc. None = auto
+            half: FP16 inference — saves ~800 MB VRAM, use when running alongside CARLA
         """
+        import torch
         self.model_type = model_type
         self.conf_threshold = conf_threshold
-        self.device = device or ('cuda' if torch.cuda.is_available() else 'cpu')
-
-        # Classes of interest (COCO dataset indices)
-        self.classes_of_interest = {
-            0: 'person',      # person
-            2: 'car',         # car
-            5: 'bus',         # bus
-            7: 'truck'        # truck
-        }
-
+        self.device = device or ('0' if torch.cuda.is_available() else 'cpu')
+        self.half = half
         self.model = None
         self._load_model()
+        logger.info("ObjectDetector initialised: %s on %s%s",
+                    model_type, self.device, " (FP16)" if half else "")
 
-        logger.info(f"ObjectDetector initialized with {model_type} on {self.device}")
+    # ------------------------------------------------------------------
+    # Internal
+    # ------------------------------------------------------------------
 
     def _load_model(self):
-        """Load YOLOv5 model"""
-        import os, sys
+        from ultralytics import YOLO
         try:
-            # Set hub cache on same drive as project (avoids Windows cross-drive path error)
-            hub_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                                   'models', 'hub')
-            os.makedirs(hub_dir, exist_ok=True)
-            torch.hub.set_dir(hub_dir)
-
-            # YOLOv5 uses bare `utils` imports that conflict with our project's utils/ package.
-            # Temporarily remove our utils from sys.modules so YOLOv5 finds its own.
-            _saved = {k: sys.modules.pop(k)
-                      for k in list(sys.modules)
-                      if k == 'utils' or k.startswith('utils.')}
-            try:
-                self.model = torch.hub.load('ultralytics/yolov5:v6.1', self.model_type,
-                                            pretrained=True, force_reload=False)
-            finally:
-                # Remove YOLOv5's utils from cache, restore our utils
-                for k in [k for k in list(sys.modules)
-                          if k == 'utils' or k.startswith('utils.')]:
-                    del sys.modules[k]
-                sys.modules.update(_saved)
-
-            # Patch for PyTorch >=1.11: older YOLOv5 v6.1 checkpoints lack
-            # `recompute_scale_factor` on nn.Upsample, breaking forward().
-            import torch.nn as nn
-            for m in self.model.modules():
-                if isinstance(m, nn.Upsample) and not hasattr(m, 'recompute_scale_factor'):
-                    m.recompute_scale_factor = None
-
-            self.model.to(self.device)
-            self.model.conf = self.conf_threshold
-            self.model.classes = list(self.classes_of_interest.keys())
-
-            logger.info(f"Model loaded successfully: {self.model_type}")
-
-        except Exception as e:
-            logger.error(f"Failed to load model: {e}")
+            self.model = YOLO(f'{self.model_type}.pt')
+            if self.half:
+                self.model.model.half()
+            logger.info("Model loaded: %s", self.model_type)
+        except Exception as exc:
+            logger.error("Failed to load model: %s", exc)
             raise
 
-    def detect(self, frame):
-        """
-        Detect objects in frame
-
-        Args:
-            frame: numpy array (H, W, 3) - RGB image
-
-        Returns:
-            list: [{'box': [x1,y1,x2,y2], 'confidence': float, 'class': str, 'class_id': int}]
-        """
-        if self.model is None:
-            logger.error("Model not loaded")
-            return []
-
-        try:
-            # Run inference
-            results = self.model(frame)
-
-            # Parse results
-            detections = []
-            for det in results.xyxy[0]:  # xyxy format
-                x1, y1, x2, y2, conf, cls = det
-
-                class_id = int(cls)
-                if class_id in self.classes_of_interest:
-                    detection = {
-                        'box': [int(x1), int(y1), int(x2), int(y2)],
-                        'confidence': float(conf),
-                        'class': self.classes_of_interest[class_id],
-                        'class_id': class_id
-                    }
-                    detections.append(detection)
-
-            logger.debug(f"Detected {len(detections)} objects")
+    def _parse_results(self, results, frame_shape=None) -> list[dict]:
+        """Convert a single YOLOv8 Results object to the canonical detection list."""
+        detections = []
+        boxes = results.boxes
+        if boxes is None or len(boxes) == 0:
             return detections
 
-        except Exception as e:
-            logger.error(f"Detection error: {e}")
-            return []
+        xyxy = boxes.xyxy.cpu().numpy()
+        confs = boxes.conf.cpu().numpy()
+        clss  = boxes.cls.cpu().numpy().astype(int)
 
-    def visualize(self, frame, detections, show_labels=True):
+        for (x1, y1, x2, y2), conf, cls_id in zip(xyxy, confs, clss):
+            if cls_id not in self.CLASSES:
+                continue
+            detections.append({
+                'box':        [int(x1), int(y1), int(x2), int(y2)],
+                'confidence': float(conf),
+                'class':      self.CLASSES[cls_id],
+                'class_id':   cls_id,
+            })
+        return detections
+
+    # ------------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------------
+
+    def detect(self, frame: np.ndarray) -> list[dict]:
         """
-        Draw bounding boxes on frame
+        Detect objects in a single frame.
 
         Args:
-            frame: numpy array (H, W, 3)
-            detections: list of detection dicts
-            show_labels: whether to show class labels
+            frame: H×W×3 numpy array (BGR or RGB — YOLOv8 handles both)
 
         Returns:
-            numpy array: frame with bounding boxes
-        """
-        frame_copy = frame.copy()
-
-        for det in detections:
-            x1, y1, x2, y2 = det['box']
-            confidence = det['confidence']
-            class_name = det['class']
-
-            # Choose color based on class
-            color = self._get_class_color(class_name)
-
-            # Draw bounding box
-            cv2.rectangle(frame_copy, (x1, y1), (x2, y2), color, 2)
-
-            if show_labels:
-                # Draw label
-                label = f"{class_name} ({confidence:.2f})"
-                cv2.putText(frame_copy, label, (x1, y1-10),
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
-
-        return frame_copy
-
-    def _get_class_color(self, class_name):
-        """Get color for class visualization"""
-        colors = {
-            'person': (255, 0, 0),    # Blue
-            'car': (0, 255, 0),       # Green
-            'bus': (0, 0, 255),       # Red
-            'truck': (255, 255, 0)    # Cyan
-        }
-        return colors.get(class_name, (255, 255, 255))
-
-    def get_model_info(self):
-        """
-        Get information about the loaded model
-
-        Returns:
-            dict: Model information
+            list of {'box': [x1,y1,x2,y2], 'confidence': float,
+                     'class': str, 'class_id': int}
         """
         if self.model is None:
-            return {'status': 'not_loaded'}
+            return []
+        try:
+            results = self.model(
+                frame,
+                imgsz=640,
+                conf=self.conf_threshold,
+                classes=list(self.CLASSES.keys()),
+                device=self.device,
+                verbose=False,
+            )
+            return self._parse_results(results[0])
+        except Exception as exc:
+            logger.error("Detection error: %s", exc)
+            return []
 
+    def detect_batch(self, frames: list[np.ndarray]) -> list[list[dict]]:
+        """
+        Detect objects in a batch of frames (one forward pass for all cameras).
+
+        Args:
+            frames: list of H×W×3 arrays, one per camera
+
+        Returns:
+            list[list[dict]] — detections[i] corresponds to frames[i]
+        """
+        if self.model is None or not frames:
+            return [[] for _ in frames]
+        try:
+            results = self.model(
+                frames,
+                imgsz=640,
+                conf=self.conf_threshold,
+                classes=list(self.CLASSES.keys()),
+                device=self.device,
+                verbose=False,
+            )
+            return [self._parse_results(r) for r in results]
+        except Exception as exc:
+            logger.error("Batch detection error: %s", exc)
+            return [[] for _ in frames]
+
+    # ------------------------------------------------------------------
+    # Visualisation
+    # ------------------------------------------------------------------
+
+    def visualize(self, frame: np.ndarray, detections: list[dict],
+                  show_labels: bool = True) -> np.ndarray:
+        out = frame.copy()
+        for det in detections:
+            x1, y1, x2, y2 = det['box']
+            color = self.CLASS_COLORS.get(det['class'], (255, 255, 255))
+            cv2.rectangle(out, (x1, y1), (x2, y2), color, 2)
+            if show_labels:
+                label = f"{det['class']} {det['confidence']:.2f}"
+                cv2.putText(out, label, (x1, y1 - 8),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.45, color, 1)
+        return out
+
+    # ------------------------------------------------------------------
+    # Introspection
+    # ------------------------------------------------------------------
+
+    def get_model_info(self) -> dict:
         return {
-            'model_type': self.model_type,
-            'device': str(self.device),
+            'model_type':     self.model_type,
+            'device':         self.device,
+            'half':           self.half,
             'conf_threshold': self.conf_threshold,
-            'classes': self.classes_of_interest,
-            'status': 'loaded'
+            'classes':        self.CLASSES,
+            'status':         'loaded' if self.model else 'not_loaded',
         }

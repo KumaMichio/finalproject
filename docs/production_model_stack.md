@@ -5,7 +5,7 @@
 >
 > **Liên kết:** Xem thêm `upgrade.md` (lộ trình implement) và `bao_cao_tien_do.md` (tiến độ tổng thể).
 >
-> **Cập nhật lần cuối:** 2026-05-27
+> **Cập nhật lần cuối:** 2026-05-29
 
 ---
 
@@ -93,15 +93,15 @@ FastAPI Backend → WebSocket → React Dashboard (6 camera grid)
 
 ---
 
-### 3.1 Detection — **YOLOv8s** (thay YOLOv5s)
+### 3.1 Detection — **YOLOv8s** ✅ Đã triển khai (2026-05-29)
 
 #### Lý do chọn YOLOv8s thay vì các biến thể khác
 
 | Model | mAP COCO | VRAM @ batch=6 | FPS thực tế | Ghi chú |
 |---|---|---|---|---|
-| YOLOv5s *(hiện tại)* | 37.4 | ~1.2 GB | ~50 | Thiếu nhãn VN |
+| YOLOv5s *(đã thay thế)* | 37.4 | ~1.2 GB | ~50 | Thiếu nhãn VN, đã bỏ |
 | **YOLOv8n** | 37.3 | ~1.0 GB | ~55 | Nhanh nhưng mAP thấp |
-| **YOLOv8s** ✅ | 44.9 | ~1.8 GB | ~40 | **Khuyến nghị** |
+| **YOLOv8s** ✅ **ĐANG DÙNG** | 44.9 | ~1.8 GB | ~40 | **Đang chạy** |
 | YOLOv8m | 50.2 | ~3.2 GB | ~25 | Sát ngưỡng 4 GB, không an toàn |
 | RT-DETR-L | 53.0 | ~4.0+ GB | ~15 | Vượt VRAM |
 
@@ -565,8 +565,8 @@ score = clf.predict([[speed, accel, turn, density, hour]])
 
 | Tầng | CARLA *(hiện tại)* | **Production Stack** | VRAM | Trạng thái |
 |---|---|---|---|---|
-| **Detection** | YOLOv5s (COCO) | **YOLOv8s** fine-tuned VN | ~1.8 GB | ⏳ Chưa làm |
-| **Tracking** | IoU Greedy | **ByteTrack** | CPU | ⏳ Chưa làm |
+| **Detection** | ~~YOLOv5s (COCO)~~ | **YOLOv8s** (COCO, 5 class) | ~1.8 GB | ✅ Hoàn thành — fine-tune VN là bước tiếp theo |
+| **Tracking** | ~~IoU Greedy~~ | **ByteTrack** (boxmot, Kalman + Hungarian) | CPU | ✅ Hoàn thành — 2026-05-29 |
 | **Re-ID** | OSNet (Market-1501) | **OSNet** fine-tune VeRi-776 + Spatio-Temporal | ~0.4 GB | ⏳ Chưa làm |
 | **Trajectory** | Linear Extrap (có lỗi) | **Kalman** từ ByteTrack + time-based | CPU | ⏳ Chưa làm |
 | **Incident** | Rule-based cứng | **Rule-based FPS-normalized** + proactive | CPU | ⏳ Fix cần làm |
@@ -578,8 +578,8 @@ score = clf.predict([[speed, accel, turn, density, hour]])
 
 | # | Việc | Thời gian | Lợi ích | VRAM thêm |
 |---|---|---|---|---|
-| 1 | YOLOv5s → **YOLOv8s** (đổi model) | 1 giờ | mAP +20%, thêm motorcycle | 0 |
-| 2 | IoU Greedy → **ByteTrack** | 2 ngày | Giảm ID swap, Kalman built-in | CPU only |
+| ~~1~~ | ~~YOLOv5s → **YOLOv8s** (đổi model)~~ | ~~1 giờ~~ | ✅ **Hoàn thành 2026-05-29** — mAP +20%, thêm motorcycle | 0 |
+| ~~2~~ | ~~IoU Greedy → **ByteTrack**~~ | ~~2 ngày~~ | ✅ **Hoàn thành 2026-05-29** — `ByteTrackWrapper` (boxmot), Kalman + Hungarian + dual-threshold | CPU only |
 | 3 | Sửa **FPS-normalized speed** + proactive incident | 1 ngày | Giảm false positive, thêm predict_collision | CPU only |
 | 4 | Thêm **Spatio-Temporal Filter** (50 dòng code) | 1 ngày | Giảm cross-camera false match | CPU only |
 | 5 | Sửa `TrajectoryPredictor` dùng **timestamp** | 1 ngày | Velocity đúng đơn vị | CPU only |
@@ -740,4 +740,4 @@ os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:128'
 
 ---
 
-*Tài liệu tạo: 2026-05-27. Xem thêm: `upgrade.md` (lộ trình chi tiết), `bao_cao_tien_do.md` (tiến độ tổng thể).*
+*Tài liệu tạo: 2026-05-27. Cập nhật: 2026-05-29 (Detection: YOLOv5s → YOLOv8s hoàn thành; Tracking: IoU Greedy → ByteTrack hoàn thành). Xem thêm: `upgrade.md` (lộ trình chi tiết), `bao_cao_tien_do.md` (tiến độ tổng thể).*

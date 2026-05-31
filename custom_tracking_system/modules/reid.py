@@ -2,8 +2,12 @@
 Re-Identification Module
 Extracts features for cross-camera object matching.
 
-Primary: OSNet (torchreid) pretrained on Market-1501 — proper ReID model.
-Fallback: ResNet50 ImageNet if torchreid is not installed.
+Classes
+-------
+ReIDExtractor       — single-model extractor (persons, Market-1501 pretrained).
+DualReIDExtractor   — two-model extractor: person model + vehicle model.
+                      Vehicle model loads weights from train_veri.py output.
+                      Use this class after fine-tuning on VeRi-776.
 """
 
 import torch
@@ -116,7 +120,7 @@ class ReIDExtractor:
     # Feature extraction
     # ------------------------------------------------------------------
 
-    def extract_feature(self, frame, box):
+    def extract_feature(self, frame, box, object_class: str = 'person'):
         """
         Extract ReID feature vector from a detected object crop.
 
@@ -245,3 +249,124 @@ class ReIDExtractor:
             'device': str(self.device),
             'gallery_size': self.get_gallery_size(),
         }
+
+
+# ---------------------------------------------------------------------------
+# DualReIDExtractor
+# ---------------------------------------------------------------------------
+
+_VEHICLE_CLASSES = {'car', 'truck', 'bus', 'motorcycle'}
+
+
+class DualReIDExtractor(ReIDExtractor):
+    """
+    Two-model Re-ID extractor:
+      • person_model  — OSNet pretrained on Market-1501  (persons)
+      • vehicle_model — OSNet fine-tuned on VeRi-776     (vehicles)
+
+    Usage:
+        reid = DualReIDExtractor(vehicle_weights='weights/osnet_veri776.pth')
+        feature = reid.extract_feature(frame, box, object_class='car')
+
+    The vehicle model is loaded lazily — if the weights file does not exist
+    the extractor silently falls back to the person model for all classes.
+    The person model path stays the same as ReIDExtractor.
+
+    Steps to activate:
+        1. Run: python train_veri.py --data ../../VeRi --out weights/osnet_veri776.pth
+        2. Replace ReIDExtractor with DualReIDExtractor in main.py / ai_processor.py.
+    """
+
+    def __init__(self, vehicle_weights: str = 'weights/osnet_veri776.pth',
+                 person_model_name: str = 'osnet_x1_0',
+                 device: str = None):
+        """
+        Args:
+            vehicle_weights:   Path to the .pth checkpoint saved by train_veri.py.
+            person_model_name: torchreid model name for person Re-ID.
+            device:            'cuda' | 'cpu' | None (auto).
+        """
+        # Initialise base class with the person model
+        super().__init__(model_name=person_model_name, pretrained=True, device=device)
+        self._person_model  = self.model       # alias for clarity
+        self._vehicle_model = None
+        self._vehicle_weights = vehicle_weights
+        self._load_vehicle_model()
+
+    # ------------------------------------------------------------------
+    # Vehicle model loading
+    # ------------------------------------------------------------------
+
+    def _load_vehicle_model(self):
+        import os
+        if not os.path.exists(self._vehicle_weights):
+            logger.warning(
+                "Vehicle weights not found at '%s'. "
+                "DualReIDExtractor will use person model for all classes until training completes. "
+                "Run: python train_veri.py --data <VeRi_root> --out %s",
+                self._vehicle_weights, self._vehicle_weights,
+            )
+            return
+
+        if not TORCHREID_AVAILABLE:
+            logger.error("torchreid required for vehicle model — install it first.")
+            return
+
+        try:
+            ckpt = torch.load(self._vehicle_weights, map_location='cpu', weights_only=False)
+            num_classes = ckpt.get('num_classes', 576)   # VeRi-776 has 576 train IDs
+
+            model = torchreid.models.build_model(
+                name='osnet_x1_0',
+                num_classes=num_classes,
+                pretrained=False,
+            )
+            model.load_state_dict(ckpt['model'])
+            model.to(self.device)
+            model.eval()
+            self._vehicle_model = model
+            logger.info(
+                "Vehicle ReID model loaded: OSNet x1.0  VeRi-776 (%d classes)  val_acc=%.2f%%",
+                num_classes, ckpt.get('val_acc', 0) * 100,
+            )
+        except Exception as exc:
+            logger.error("Failed to load vehicle model: %s", exc)
+
+    # ------------------------------------------------------------------
+    # Feature extraction — branch on object class
+    # ------------------------------------------------------------------
+
+    def extract_feature(self, frame, box, object_class: str = 'person'):
+        """
+        Extract Re-ID feature, using vehicle model for vehicles if available.
+
+        Args:
+            frame:        H×W×3 numpy array (BGR or RGB).
+            box:          [x1, y1, x2, y2].
+            object_class: COCO class name ('person', 'car', 'truck', ...).
+
+        Returns:
+            numpy array (1, 512) L2-normalised, or None on failure.
+        """
+        use_vehicle_model = (
+            object_class in _VEHICLE_CLASSES
+            and self._vehicle_model is not None
+        )
+        model_to_use = self._vehicle_model if use_vehicle_model else self._person_model
+
+        # Temporarily swap self.model so the parent _extract_with_model() works
+        self.model = model_to_use
+        result = super().extract_feature(frame, box)
+        self.model = self._person_model   # restore
+        return result
+
+    # ------------------------------------------------------------------
+
+    def get_model_info(self):
+        info = super().get_model_info()
+        info.update({
+            'extractor_type':     'DualReIDExtractor',
+            'vehicle_model':      'OSNet x1.0 VeRi-776' if self._vehicle_model else 'NOT LOADED (fallback to person model)',
+            'vehicle_weights':    self._vehicle_weights,
+        })
+        return info

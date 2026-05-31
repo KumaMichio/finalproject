@@ -62,14 +62,19 @@ class IncidentDetector:
     # Public API
     # ------------------------------------------------------------------
 
-    def update(self, global_tracks: list, camera_id: str) -> list:
+    def update(self, global_tracks: list, camera_id: str,
+               predictions: dict = None, rois: dict = None) -> list:
         """
         Gọi mỗi frame sau khi có global_tracks từ GlobalTracker.
 
         Args:
             global_tracks: list dicts — output của GlobalTracker.process_camera_tracks()
                            Mỗi dict cần: global_id, box, class, speeds (list px/s)
-            camera_id: camera đang xử lý
+            camera_id:    camera đang xử lý
+            predictions:  dict {global_id: {'t+0.5s': [x,y], ...}} từ TrajectoryPredictor
+                          — dùng để kích hoạt proactive checks
+            rois:         dict {camera_id: [{'name': str, 'polygon': [...]}]}
+                          — dùng cho predicted ROI entry check
 
         Returns:
             list of incident dicts — có thể rỗng
@@ -84,7 +89,7 @@ class IncidentDetector:
             if speeds:
                 self.speed_history[gid].append((now, speeds[-1]))
 
-        # Chạy từng detector
+        # Chạy từng detector phản ứng (reactive)
         incidents += self._check_sudden_stop(global_tracks, camera_id, now)
         incidents += self._check_sudden_accel(global_tracks, camera_id, now)
         incidents += self._check_overspeed(global_tracks, camera_id, now)
@@ -94,6 +99,14 @@ class IncidentDetector:
         incidents += self._check_loitering(global_tracks, camera_id, now)
         incidents += self._check_crowd(global_tracks, camera_id, now)
         incidents += self._check_camera_transition(global_tracks, camera_id, now)
+
+        # Proactive checks dùng predicted positions (chỉ khi có predictions)
+        if predictions:
+            incidents += self._check_predicted_collision(
+                global_tracks, predictions, camera_id, now)
+            if rois:
+                incidents += self._check_predicted_roi_entry(
+                    global_tracks, predictions, rois, camera_id, now)
 
         # Lọc duplicate dựa trên cooldown
         incidents = self._deduplicate(incidents, now)
@@ -325,7 +338,13 @@ class IncidentDetector:
 
     def _current_speed(self, gid: int):
         history = list(self.speed_history[gid])
-        return history[-1][1] if history else None
+        if not history:
+            return None
+        recent = [h[1] for h in history[-5:] if h[1] is not None]
+        if not recent:
+            return None
+        weights = np.exp(np.linspace(-1, 0, len(recent)))
+        return float(np.average(recent, weights=weights))
 
     def _box_center(self, box):
         x1, y1, x2, y2 = box
@@ -356,6 +375,103 @@ class IncidentDetector:
                 self._cooldown_map[key] = now
                 out.append(inc)
         return out
+
+    # ------------------------------------------------------------------
+    # Proactive checks (dùng predicted positions từ TrajectoryPredictor)
+    # ------------------------------------------------------------------
+
+    def _check_predicted_collision(self, tracks, predictions, camera_id, now):
+        """
+        Cảnh báo trước khi va chạm xảy ra dựa trên quỹ đạo dự đoán.
+        predictions: {global_id: {'t+0.5s': [x,y], ...}}
+        """
+        incidents = []
+        vehicles    = [t for t in tracks
+                       if t['class'] in ('car', 'truck', 'bus', 'motorcycle')]
+        pedestrians = [t for t in tracks if t['class'] == 'person']
+
+        for v in vehicles:
+            gid = v['global_id']
+            v_preds = predictions.get(gid, {})
+            if not v_preds:
+                continue
+            speed = self._current_speed(gid) or 0
+            if speed < self.min_moving_speed:
+                continue  # xe đứng yên không nguy hiểm
+
+            for ped in pedestrians:
+                ped_center = np.array(self._box_center(ped['box']))
+                for horizon, pred_pos in v_preds.items():
+                    dist = float(np.linalg.norm(np.array(pred_pos) - ped_center))
+                    # Ngưỡng rộng hơn cho dự đoán (có sai số Kalman)
+                    if dist < self.ped_proximity_px * 1.5:
+                        incidents.append(self._make(
+                            type='PREDICTED_COLLISION',
+                            severity='CRITICAL',
+                            gid=gid, cam=camera_id,
+                            msg=(f"Dự đoán va chạm: Xe #{gid} → Người #{ped['global_id']} "
+                                 f"sau {horizon} (dist={dist:.0f}px)"),
+                            details={
+                                'horizon':           horizon,
+                                'predicted_pos':     pred_pos,
+                                'pedestrian_pos':    ped_center.tolist(),
+                                'predicted_distance': round(dist, 1),
+                                'vehicle_speed':     round(speed, 1),
+                            }
+                        ))
+                        break  # 1 alert / (xe, người) / frame đủ rồi
+        return incidents
+
+    def _check_predicted_roi_entry(self, tracks, predictions, rois, camera_id, now):
+        """
+        Cảnh báo trước khi đối tượng vào vùng ROI nguy hiểm.
+        """
+        incidents = []
+        cam_rois = rois.get(camera_id, [])
+        if not cam_rois:
+            return incidents
+
+        for track in tracks:
+            gid   = track['global_id']
+            preds = predictions.get(gid, {})
+            if not preds:
+                continue
+            for roi in cam_rois:
+                polygon = roi.get('polygon', [])
+                if len(polygon) < 3:
+                    continue
+                for horizon, pred_pos in preds.items():
+                    if self._point_in_polygon(pred_pos, polygon):
+                        incidents.append(self._make(
+                            type='PREDICTED_ROI_ENTRY',
+                            severity='WARNING',
+                            gid=gid, cam=camera_id,
+                            msg=(f"Dự đoán #{gid} ({track['class']}) vào ROI "
+                                 f"'{roi.get('name', '?')}' sau {horizon}"),
+                            details={
+                                'horizon':      horizon,
+                                'roi_name':     roi.get('name', ''),
+                                'pred_pos':     pred_pos,
+                            }
+                        ))
+                        break  # 1 alert / (object, roi) / frame
+        return incidents
+
+    @staticmethod
+    def _point_in_polygon(point, polygon) -> bool:
+        """Ray-casting algorithm."""
+        x, y = point
+        inside = False
+        j = len(polygon) - 1
+        for i, (xi, yi) in enumerate(polygon):
+            xj, yj = polygon[j]
+            if ((yi > y) != (yj > y) and
+                    x < (xj - xi) * (y - yi) / ((yj - yi) or 1e-12) + xi):
+                inside = not inside
+            j = i
+        return inside
+
+    # ------------------------------------------------------------------
 
     def reset_object(self, gid: int):
         """Xoá trạng thái của 1 object (khi object mất khỏi hệ thống)."""
