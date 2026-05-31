@@ -17,10 +17,16 @@ echo ============================================
 echo  Multi-Camera CCTV Tracking System - Server
 echo ============================================
 
+REM CARLA Python API path (can chinh sua neu CARLA cai o noi khac)
+set CARLA_ROOT=%~dp0..\WindowsNoEditor
+set CARLA_PYTHON=%CARLA_ROOT%\PythonAPI\carla\dist\carla_extracted
+set CARLA_API=%CARLA_ROOT%\PythonAPI
+set PYTHONPATH=%CARLA_PYTHON%;%CARLA_API%;%PYTHONPATH%
+
 REM Kiem tra Python
 python --version >nul 2>&1
 if errorlevel 1 (
-    echo ERROR: Python not found. Please install Python 3.10+
+    echo ERROR: Python not found.
     pause
     exit /b 1
 )
@@ -30,8 +36,7 @@ echo Starting server...
 echo.
 
 if "%1"=="--with-ai" (
-    echo Mode: API Server + AI Pipeline (CARLA required)
-    echo Make sure CARLA server is running on localhost:2000
+    echo Mode: API Server + AI Pipeline (CARLA required on localhost:2000)
     echo.
     python app.py --with-ai --host 0.0.0.0 --port 8000
 ) else (
