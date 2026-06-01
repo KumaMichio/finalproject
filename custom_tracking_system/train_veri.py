@@ -200,19 +200,27 @@ def main():
     print(f"[Config] device={device}  epochs={args.epochs}  batch={args.batch}  lr={args.lr}")
 
     # ---- Datasets ----
-    train_set = VeRiDataset(
+    # Load toàn bộ train set trước, sau đó split 90/10 để validation dùng
+    # cùng class space với training (Re-ID là open-set — không dùng test set làm val).
+    full_set = VeRiDataset(
         image_dir=data_root / 'image_train',
         label_xml=data_root / 'train_label.xml',
         transform=build_transforms(is_train=True),
     )
-    num_classes = train_set.num_classes
+    num_classes = full_set.num_classes
 
-    # Use test set as validation (classification proxy — not full Re-ID mAP)
-    val_set = VeRiDataset(
-        image_dir=data_root / 'image_test',
-        label_xml=data_root / 'test_label.xml',
-        transform=build_transforms(is_train=False),
+    val_size   = max(1, int(len(full_set) * 0.1))
+    train_size = len(full_set) - val_size
+    train_set, val_set_raw = torch.utils.data.random_split(
+        full_set, [train_size, val_size],
+        generator=torch.Generator().manual_seed(42),
     )
+    # Val set dùng transform không augment
+    from torch.utils.data import Subset
+    from copy import deepcopy
+    val_full = deepcopy(full_set)
+    val_full.transform = build_transforms(is_train=False)
+    val_set = Subset(val_full, val_set_raw.indices)
 
     # pin_memory only works with CUDA (not DirectML or CPU)
     use_pin = isinstance(device, torch.device) and device.type == 'cuda'

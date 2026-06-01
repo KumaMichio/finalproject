@@ -27,7 +27,7 @@ export default function StatsBar({ connected }) {
       </div>
       <span>FPS: <b className="text-white">{stats.fps?.toFixed(1) ?? '--'}</b></span>
       <span>Đối tượng: <b className="text-white">{stats.active_tracks ?? '--'}</b></span>
-      <span>Sự cố hôm nay: <b className="text-white">{stats.alert_count ?? '--'}</b></span>
+      <span>Sự cố hôm nay: <b className="text-white">{stats.alerts_today ?? '--'}</b></span>
       <span className="ml-auto font-mono">
         {new Date().toLocaleTimeString('vi-VN')}
       </span>

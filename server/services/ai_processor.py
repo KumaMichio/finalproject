@@ -44,6 +44,7 @@ class AIProcessor:
         self.frame_count = 0
         self.fps = 0.0
         self.status = "stopped"  # stopped / starting / running / error
+        self._active_track_count = 0
 
     def start(self):
         """Khoi dong AI pipeline trong background thread."""
@@ -96,8 +97,8 @@ class AIProcessor:
         from modules.camera_controller import CameraController
         from modules.traffic_generator import TrafficGenerator
         from modules.detector import ObjectDetector
-        from modules.tracker import SimpleTracker
-        from modules.reid import ReIDExtractor
+        from modules.tracker import ByteTrackWrapper
+        from modules.reid import DualReIDExtractor
         from modules.global_tracking import GlobalTracker
         from modules.trajectory_predictor import TrajectoryPredictor
         from modules.alert_system import AlertSystem
@@ -114,14 +115,27 @@ class AIProcessor:
             self.world, num_vehicles=10, num_pedestrians=5)
         self.traffic_generator.spawn_actors()
 
-        self.detector = ObjectDetector(model_type="yolov5s")
+        self.detector = ObjectDetector(model_type="yolov8s", half=True)
 
         self.trackers = {}
         for cam_id in self.camera_controller.cameras:
-            self.trackers[cam_id] = SimpleTracker(max_age=30, min_hits=3)
+            self.trackers[cam_id] = ByteTrackWrapper(
+                track_activation_threshold=0.25,
+                lost_track_buffer=30,
+                minimum_matching_threshold=0.8,
+                frame_rate=10,
+            )
 
-        self.reid_extractor = ReIDExtractor()
-        self.global_tracker = GlobalTracker(self.reid_extractor)
+        vehicle_weights = str(_tracking_dir / "weights" / "osnet_veri776.pth")
+        self.reid_extractor = DualReIDExtractor(vehicle_weights=vehicle_weights)
+
+        # Đọc camera_topology từ config (cặp key dùng "__" làm phân cách vì YAML không hỗ trợ tuple key)
+        raw_topology = self.camera_controller.config.get("camera_topology", {})
+        camera_topology = {
+            tuple(k.split("__")): tuple(v)
+            for k, v in raw_topology.items()
+        }
+        self.global_tracker = GlobalTracker(self.reid_extractor, camera_topology=camera_topology)
         self.trajectory_predictor = TrajectoryPredictor(window_size=10, pred_steps=5)
 
         self.alert_system = AlertSystem(self.trajectory_predictor)
@@ -183,12 +197,13 @@ class AIProcessor:
             self.frame_count += 1
             fps_frame_count += 1
 
-            # Tinh FPS moi 1 giay
+            # Tinh FPS moi 1 giay + push stats
             elapsed = time.time() - fps_start
             if elapsed >= 1.0:
                 self.fps = fps_frame_count / elapsed
                 fps_frame_count = 0
                 fps_start = time.time()
+                self._push_stats_ws()
 
             # Lay frames tu cameras
             sync_frames = self.camera_controller.get_synchronized_frames()
@@ -207,8 +222,8 @@ class AIProcessor:
                     # 1. Detection
                     detections = self.detector.detect(frame)
 
-                    # 2. Single-camera tracking
-                    local_tracks = self.trackers[camera_id].update(detections)
+                    # 2. Single-camera tracking (ByteTrackWrapper cần thêm frame)
+                    local_tracks = self.trackers[camera_id].update(detections, frame)
 
                     # 3. Cross-camera global tracking
                     global_tracks = self.global_tracker.process_camera_tracks(
@@ -217,19 +232,21 @@ class AIProcessor:
                     all_global_tracks.extend(global_tracks)
 
                     # 4. Update trajectory + check alerts
+                    now_ts = time.time()
+                    predictions_map = {}  # {global_id: dict} cho incident detector
                     for g_track in global_tracks:
                         gid = g_track["global_id"]
                         box = g_track["box"]
                         center = [(box[0] + box[2]) / 2, (box[1] + box[3]) / 2]
 
-                        self.trajectory_predictor.update_trajectory(
-                            gid, center, self.frame_count
-                        )
+                        self.trajectory_predictor.update_trajectory(gid, center, now_ts)
 
                         predicted = self.trajectory_predictor.predict(gid)
                         if predicted:
+                            predictions_map[gid] = predicted
+                            # check_alerts() cần list[[x,y]], predict() trả dict
                             alerts = self.alert_system.check_alerts(
-                                gid, camera_id, predicted, box
+                                gid, camera_id, list(predicted.values()), box
                             )
                             for alert in alerts:
                                 self.alert_system.log_alert(alert)
@@ -244,8 +261,12 @@ class AIProcessor:
                                 db, gid, camera_id, self.frame_count, box
                             )
 
-                    # 5. Incident detection
-                    incidents = self.incident_detector.update(global_tracks, camera_id)
+                    # 5. Incident detection — truyền predictions để kích hoạt proactive alerts
+                    incidents = self.incident_detector.update(
+                        global_tracks, camera_id,
+                        predictions=predictions_map or None,
+                        rois=self.alert_system.rois or None,
+                    )
                     for incident in incidents:
                         self._save_incident(db, incident)
                         self._push_incident_ws(incident)
@@ -271,7 +292,7 @@ class AIProcessor:
 
                 db.commit()
 
-                # 7. Push WebSocket updates (async, fire-and-forget)
+                self._active_track_count = len(all_global_tracks)
                 self._push_ws_updates(all_global_tracks)
 
             except Exception as e:
@@ -300,21 +321,22 @@ class AIProcessor:
         """Push incident qua WebSocket /ws/alerts."""
         try:
             from routers.websocket import ws_manager
-            if ws_manager.get_count("alerts") > 0:
-                msg = {
-                    "event":     "incident",
-                    "type":      incident['type'],
-                    "severity":  incident['severity'],
-                    "global_id": incident['global_id'],
-                    "camera_id": incident['camera_id'],
-                    "message":   incident['message'],
-                    "details":   incident.get('details', {}),
-                    "timestamp": incident['timestamp'].isoformat(),
-                }
-                asyncio.run_coroutine_threadsafe(
-                    ws_manager.broadcast("alerts", msg),
-                    self._event_loop,
-                )
+            if not hasattr(self, '_event_loop') or ws_manager.get_count("alerts") == 0:
+                return
+            msg = {
+                "event":     "incident",
+                "type":      incident['type'],
+                "severity":  incident['severity'],
+                "global_id": incident['global_id'],
+                "camera_id": incident['camera_id'],
+                "message":   incident['message'],
+                "details":   incident.get('details', {}),
+                "timestamp": incident['timestamp'].isoformat(),
+            }
+            asyncio.run_coroutine_threadsafe(
+                ws_manager.broadcast("alerts", msg),
+                self._event_loop,
+            )
         except Exception:
             pass
 
@@ -340,25 +362,51 @@ class AIProcessor:
         """Push tracking updates qua WebSocket (non-blocking)."""
         try:
             from routers.websocket import ws_manager
-
-            # Chi push neu co clients dang ket noi
-            if ws_manager.get_count("tracks") > 0:
-                for track in global_tracks:
-                    msg = {
-                        "event": "track_update",
-                        "global_id": track["global_id"],
-                        "camera_id": track["camera_id"],
-                        "box": track["box"],
-                        "object_class": track["class"],
-                        "frame_count": self.frame_count,
-                    }
-                    # Schedule coroutine len event loop cua FastAPI
-                    asyncio.run_coroutine_threadsafe(
-                        ws_manager.broadcast("tracks", msg),
-                        self._event_loop,
-                    )
+            if not hasattr(self, '_event_loop') or ws_manager.get_count("tracks") == 0:
+                return
+            for track in global_tracks:
+                msg = {
+                    "event": "track_update",
+                    "global_id": track["global_id"],
+                    "camera_id": track["camera_id"],
+                    "box": track["box"],
+                    "object_class": track["class"],
+                    "frame_count": self.frame_count,
+                }
+                asyncio.run_coroutine_threadsafe(
+                    ws_manager.broadcast("tracks", msg),
+                    self._event_loop,
+                )
         except Exception:
             pass  # WebSocket push la best-effort
+
+    def _push_stats_ws(self):
+        """Push system stats qua /ws/stats moi 1 giay."""
+        try:
+            from routers.websocket import ws_manager
+            if not hasattr(self, '_event_loop') or ws_manager.get_count("stats") == 0:
+                return
+            from services.alert_service import count_alerts_today
+            from models.database import SessionLocal
+            db = SessionLocal()
+            try:
+                alerts_today = count_alerts_today(db)
+            finally:
+                db.close()
+            msg = {
+                "event":         "stats",
+                "fps":           round(self.fps, 1),
+                "frame_count":   self.frame_count,
+                "active_tracks": self._active_track_count,
+                "alerts_today":  alerts_today,
+                "status":        self.status,
+            }
+            asyncio.run_coroutine_threadsafe(
+                ws_manager.broadcast("stats", msg),
+                self._event_loop,
+            )
+        except Exception:
+            pass
 
     def set_event_loop(self, loop: asyncio.AbstractEventLoop):
         """Goi tu FastAPI lifespan de AI processor co the push WS."""

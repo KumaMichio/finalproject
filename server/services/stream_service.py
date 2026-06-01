@@ -24,6 +24,12 @@ class FrameBuffer:
         self._frames: dict[str, tuple[bytes, float]] = {}
         # Asyncio event de thong bao co frame moi
         self._events: dict[str, asyncio.Event] = defaultdict(asyncio.Event)
+        # Event loop — set boi FastAPI lifespan de put_frame() co the signal thread-safe
+        self._loop: asyncio.AbstractEventLoop | None = None
+
+    def set_loop(self, loop: asyncio.AbstractEventLoop):
+        """Goi tu FastAPI lifespan truoc khi AI thread bat dau."""
+        self._loop = loop
 
     def put_frame(self, camera_id: str, frame: np.ndarray):
         """Ghi 1 frame (numpy BGR) vao buffer. Goi tu AI processor thread."""
@@ -31,10 +37,13 @@ class FrameBuffer:
             ".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, JPEG_QUALITY]
         )
         self._frames[camera_id] = (jpeg.tobytes(), time.time())
-        # Signal cho tat ca consumer dang cho
+        # Signal cho tat ca consumer dang cho (thread-safe)
         event = self._events.get(camera_id)
         if event:
-            event.set()
+            if self._loop and self._loop.is_running():
+                self._loop.call_soon_threadsafe(event.set)
+            else:
+                event.set()
 
     def get_latest(self, camera_id: str) -> Optional[bytes]:
         """Lay frame jpeg moi nhat. Tra ve None neu chua co."""

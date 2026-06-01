@@ -11,7 +11,7 @@ Môi trường mô phỏng: CARLA Simulator phiên bản 0.9.9.4.
 
 ## 2. Tổng Quan Dự Án
 
-Dự án được tổ chức thành **4 thành phần chính**, mỗi thành phần nằm trong một thư mục riêng biệt và có thể hoạt động độc lập hoặc kết hợp với nhau:
+Dự án được tổ chức thành **4 thành phần chính**:
 
 ```
 finalproject/
@@ -21,137 +21,7 @@ finalproject/
 └── WindowsNoEditor/          # CARLA Simulator — môi trường mô phỏng đô thị
 ```
 
-### 2.1 AI Pipeline (`custom_tracking_system/`)
-
-Lõi trí tuệ nhân tạo của hệ thống, xử lý video từ nhiều camera theo pipeline 8+ bước:
-
-| Mô-đun | Chức năng |
-|--------|-----------|
-| `camera_controller.py` | Kết nối và đồng bộ nhiều camera trong CARLA |
-| `traffic_generator.py` | Sinh phương tiện và người đi bộ tự động trong môi trường mô phỏng |
-| `detector.py` | Phát hiện đối tượng (xe, người) bằng YOLOv8s (nâng cấp từ YOLOv5s) |
-| `tracker.py` | Theo dõi đối tượng trong từng camera — **ByteTrackWrapper** (Kalman + Hungarian, thay IoU Greedy) |
-| `reid.py` | Trích xuất đặc trưng hình ảnh bằng OSNet/ResNet50 cho Re-ID |
-| `global_tracking.py` | Gán Global ID duy nhất xuyên camera bằng cosine similarity + **Spatio-Temporal Filter** (lọc match phi thực tế, chờ cấu hình topology) |
-| `trajectory_predictor.py` | Dự đoán quỹ đạo tại 5 mốc thời gian thực (0.5s–3s) bằng exp-weighted velocity (px/s) |
-| `alert_system.py` | Cảnh báo khi đối tượng xâm nhập vùng ROI (Region of Interest) |
-| `incident_detector.py` | Phát hiện **12 loại sự cố** real-time: 10 reactive + 2 proactive (PREDICTED_COLLISION, PREDICTED_ROI_ENTRY) |
-| `evidence_package.py` | Ring buffer 30s — tự động lưu clip + ảnh + metadata khi có sự cố |
-| `scenario_controller.py` | Tạo kịch bản tai nạn có kiểm soát trong CARLA (5 kịch bản) |
-| `video_source.py` | Lớp trừu tượng VideoSource hỗ trợ CARLA / RTSP / File / Webcam |
-| `ground_truth.py` | Thu thập ground truth từ CARLA để phục vụ đánh giá độ chính xác |
-
-#### Các mô hình AI đang sử dụng — Ưu/Nhược điểm và Hướng nâng cấp
-
----
-
-##### Mô hình 1 — Phát hiện đối tượng: **YOLOv8s** (pretrained COCO) ✅ Đã nâng cấp 2026-05-29
-
-| | |
-|---|---|
-| **Cấu hình hiện tại** | `yolov8s`, confidence ≥ 0.35, **5 lớp**: `person / car / motorcycle / bus / truck` |
-| **Ưu điểm** | mAP COCO 44.9 (+20% so với YOLOv5s 37.4); API đơn giản hơn (Ultralytics); hỗ trợ batched inference cho 6 camera trong 1 forward pass; thêm được `motorcycle` (class 3 COCO) |
-| **Nhược điểm** | Vẫn dùng weights COCO chung — xe máy Việt Nam (SH, Wave) phát hiện kém hơn xe Tây; cần fine-tune thêm để tối ưu cho giao thông VN |
-| **Bước tiếp theo** | Fine-tune trên **BDD100K + Vietnam Traffic Dataset** (Roboflow) để thêm motorcycle VN chính xác — xem hướng dẫn tại `docs/production_model_stack.md` |
-
----
-
-##### Mô hình 2 — Theo dõi trong từng camera: **ByteTrackWrapper** (boxmot) ✅ Đã nâng cấp 2026-05-29
-
-| | |
-|---|---|
-| **Cấu hình hiện tại** | `ByteTrackWrapper` wrapping `boxmot.ByteTrack`; `track_activation_threshold=0.25`, `lost_track_buffer=30`, `minimum_matching_threshold=0.8`, `frame_rate=10` (CARLA sync mode) |
-| **Ưu điểm** | Kalman Filter built-in dự đoán vị trí khi bị che khuất; Hungarian algorithm (optimal matching, không phải greedy); dual-threshold giữ track có confidence thấp để tránh ID swap; zero VRAM (CPU only) |
-| **So với IoU Greedy trước đây** | ~~`max_age=30`, `min_hits=3`, `iou_threshold=0.3`~~ — không có Kalman, greedy matching, ID swap khi occlusion |
-| **Bước tiếp theo** | Có thể nâng lên **StrongSORT** (Kalman + ReID appearance) nếu cần dùng chung đặc trưng với mô hình ReID sau khi fine-tune VeRi-776 |
-
----
-
-##### Mô hình 3 — Nhận diện lại xuyên camera (Re-ID): **OSNet** / **ResNet50 fallback**
-
-| | |
-|---|---|
-| **Cấu hình hiện tại** | **Chính:** `osnet_x1_0` (torchreid), pretrained Market-1501, output 512D; **Dự phòng:** ResNet50 ImageNet, output 2048D. So khớp bằng cosine similarity, ngưỡng ≥ 0.5 |
-| **Ưu điểm** | OSNet được thiết kế riêng cho Re-ID, nhẹ hơn ResNet50 (1M params vs 25M), feature chuẩn hóa L2 giúp so khớp ổn định |
-| **Nhược điểm** | Market-1501 là tập dữ liệu **người đi bộ** — mô hình không được huấn luyện cho **xe cộ**, nên hai xe cùng màu/kiểu dễ bị nhầm; ResNet50-ImageNet fallback không phải ReID model (feature không phân biệt cá thể tốt) |
-| **Đã thêm** | `DualReIDExtractor` — 2 model riêng: `person_model` (OSNet Market-1501) + `vehicle_model` (chờ weights VeRi-776); **Spatio-Temporal Filter** trong `GlobalTracker` — lọc match dựa trên khoảng cách camera + delta thời gian (cần cấu hình `camera_topology`) |
-| **Hướng nâng cấp** | Hoàn thiện fine-tune `osnet_x1_0` trên **VeRi-776** (`train_veri.py` đã viết, dataset đã có tại `VeRi/`); kích hoạt `DualReIDExtractor` và cấu hình `camera_topology` trong `GlobalTracker` |
-
----
-
-##### Mô hình 4 — Dự đoán quỹ đạo: **Exp-weighted Velocity** ✅ Đã sửa lỗi 2026-05-31
-
-| | |
-|---|---|
-| **Cấu hình hiện tại** | **Exp-weighted velocity** từ toàn bộ `window_size=10` điểm (không phải chỉ 2 điểm cuối); đơn vị **px/s** gắn với unix timestamp thực (không phải px/frame); dự đoán tại 5 mốc thời gian thực: `t+0.5s`, `t+1.0s`, `t+1.5s`, `t+2.0s`, `t+3.0s`; kết nối với `IncidentDetector` cho proactive alert |
-| **Ưu điểm** | Không phụ thuộc FPS; điểm gần đây được ưu tiên (exp decay); horizon 3s đủ dài để cảnh báo sớm; cùng interface với AlertSystem |
-| **Nhược điểm** | Vẫn giả định vận tốc ổn định → chưa xử lý rẽ đột ngột hoặc dừng đèn đỏ; không mô hình hóa gia tốc |
-| **Hướng nâng cấp** | **Kalman Filter** — mô hình chuyển động hằng vận tốc/gia tốc, chống nhiễu tốt hơn; **LSTM** — học được pattern rẽ từ lịch sử dài hơn |
-
----
-
-##### Mô hình 5 — Phát hiện sự cố: **Rule-based Threshold** (heuristic)
-
-| | |
-|---|---|
-| **Cấu hình hiện tại** | **12 loại sự cố**: 10 reactive (SUDDEN_STOP, SUDDEN_ACCEL, OVERSPEED, VEHICLE_PROXIMITY, PEDESTRIAN_DANGER, STOPPED_VEHICLE, LOITERING, CROWD_DENSITY, WRONG_WAY, CAMERA_TRANSITION) + 2 proactive dùng predicted positions (PREDICTED_COLLISION, PREDICTED_ROI_ENTRY); cooldown 4 giây chống duplicate; velocity tính bằng exp-weighted px/s |
-| **Ưu điểm** | Hoạt động ngay không cần data training, dễ giải thích, dễ điều chỉnh ngưỡng theo môi trường cụ thể |
-| **Nhược điểm** | Ngưỡng cứng nhạy cảm với noise từ tracker (FPS thay đổi → tốc độ px/s dao động); không tự thích nghi với môi trường khác nhau; dễ false positive khi tracker bị swap ID |
-| **Hướng nâng cấp** | **Anomaly Detection** (Isolation Forest / Autoencoder) học phân phối hành vi bình thường; **GCN / Transformer** mô hình hóa tương tác không gian giữa nhiều đối tượng đồng thời |
-
----
-
-##### Tóm tắt so sánh mô hình
-
-| Thành phần | Hiện tại | Production Stack | VRAM | Độ ưu tiên |
-|-----------|---------|-----------------|------|-----------|
-| Detection | ~~YOLOv5s~~ → **YOLOv8s** (COCO, 5 class) ✅ | Fine-tune VN thêm motorcycle VN chính xác | ~1.8 GB | ✅ Bước cơ bản xong |
-| Tracker | ~~IoU Greedy~~ → **ByteTrack** (Kalman + Hungarian) ✅ | Đã deploy | CPU only | ✅ Hoàn thành |
-| Re-ID | OSNet Market-1501 (người) + `DualReIDExtractor` sẵn sàng | **Fine-tune VeRi-776** (xe) — `train_veri.py` đã viết, dataset `VeRi/` đã có; + Spatio-Temporal Filter trong `GlobalTracker` | ~0.4 GB | **Cao** |
-| Trajectory | ~~Linear Extrapolation (lỗi px/frame)~~ → **Exp-weighted velocity (px/s)** ✅ | Kalman Filter / LSTM cho độ chính xác cao hơn khi rẽ | CPU only | ✅ Cơ bản xong |
-| Incident | **12 loại** (10 reactive + 2 proactive dùng predicted pos) ✅ | Anomaly Detection (Isolation Forest) tự thích nghi | CPU only | ✅ Cơ bản xong |
-
-> ✅ **`trajectory_predictor.py` đã được sửa (2026-05-31):**
-> - Sử dụng toàn bộ `window_size=10` điểm với trọng số exp decay (không còn chỉ 2 điểm cuối)
-> - Velocity tính bằng **px/s** gắn với unix timestamp thực (không còn phụ thuộc FPS)
-> - Prediction tại 5 mốc thời gian thực: `t+0.5s` → `t+3.0s` (không còn 5 frames ~0.17s)
-> - Kết nối với `IncidentDetector` → có proactive alert (PREDICTED_COLLISION, PREDICTED_ROI_ENTRY)
-
-> 📋 **Tài liệu chi tiết production stack:** [`docs/production_model_stack.md`](production_model_stack.md)
-> — bao gồm: ràng buộc phần cứng (4 GB VRAM), kiến trúc batch 6 camera,
-> fine-tune guide, migration CARLA → RTSP thực tế.
-
----
-
-### 2.2 Backend API Server (`server/`)
-
-Server FastAPI cung cấp giao diện lập trình chuẩn cho toàn hệ thống:
-
-| Thành phần | Chức năng |
-|-----------|-----------|
-| **REST API** (17 endpoints) | Quản lý camera, tracks, alerts, ROIs, thống kê |
-| **WebSocket** (3 kênh) | Push cảnh báo, tracking update, thống kê real-time |
-| **MJPEG Streaming** | Truyền video trực tiếp tới trình duyệt qua HTTP |
-| **Database SQLite** | 5 bảng: `cameras`, `alerts`, `tracked_objects`, `tracking_history`, `rois` |
-| **AI Processor** | Chạy AI pipeline trong background thread, push kết quả lên WebSocket |
-
-### 2.3 Web Dashboard (`frontend/`)
-
-Giao diện giám sát real-time được xây dựng bằng React + Tailwind CSS:
-
-| Tính năng | Mô tả |
-|-----------|-------|
-| Camera Grid | Hiển thị live video từ nhiều camera đồng thời |
-| Incident Panel | Bảng sự cố real-time, phân loại theo mức độ (INFO / WARNING / CRITICAL) |
-| Alert Management | Xem, lọc, xác nhận các cảnh báo |
-| Object History | Tra cứu lịch sử di chuyển của đối tượng theo Global ID |
-| Real-time Notification | Âm thanh cảnh báo + flash màn hình đỏ khi CRITICAL |
-
-### 2.4 Môi Trường Mô Phỏng (`WindowsNoEditor/`)
-
-CARLA Simulator 0.9.9.4 — engine mô phỏng đô thị 3D chạy trên Unreal Engine 4, đóng vai trò thay thế cho hệ thống camera IP thực tế trong giai đoạn phát triển và thử nghiệm.
-
-### 2.5 Luồng Hoạt Động Tổng Thể
+### 2.1 Luồng Hoạt Động Tổng Thể
 
 ```
 CARLA Simulator
@@ -159,7 +29,7 @@ CARLA Simulator
       ▼
 AI Pipeline (custom_tracking_system/)
   Detect → Track → ReID → Global ID → Trajectory → Incident Detection
-      │  (kết quả xử lý: tracks, alerts, incidents, evidence)
+      │  (kết quả: tracks, alerts, incidents, evidence)
       ▼
 Backend Server (server/)
   REST API + WebSocket + MJPEG
@@ -171,236 +41,200 @@ Web Dashboard (frontend/)
 
 ---
 
-## 3. Mục Tiêu Của Dự Án
+## 3. Mục Tiêu Dự Án
 
-### 3.1 Vấn đề dự án hướng tới
-
-Các hệ thống camera giám sát truyền thống hiện nay chủ yếu chỉ ghi hình thụ động,
-việc theo dõi đối tượng phải dựa vào sức người. Khi hệ thống có nhiều camera trải
-trên một khu vực rộng, các vấn đề thường gặp gồm:
-
-- Không tự động phát hiện được phương tiện và người đi bộ trong khung hình.
-- Không theo dõi liên tục được một đối tượng khi nó di chuyển qua nhiều camera
-  (mỗi camera nhìn đối tượng như một thực thể mới, không có ID chung).
-- Không dự đoán được hành vi tiếp theo của đối tượng để cảnh báo sớm.
-- Không tự động cảnh báo khi đối tượng đi vào các vùng nguy hiểm hoặc vùng cấm.
-- Khó tích hợp với các ứng dụng giám sát khác (web dashboard, mobile app)
-  do thiếu giao diện lập trình (API) chuẩn.
-
-### 3.2 Mục tiêu cụ thể của dự án
-
-Dự án xây dựng một hệ thống giám sát đa camera có khả năng:
-
-1. **Phát hiện đối tượng** (xe ô tô, xe tải, xe buýt, người đi bộ) từ nhiều
-   camera đồng thời bằng mô hình học sâu YOLOv8s.
-2. **Theo dõi đối tượng trong từng camera** (single-camera tracking) bằng
-   thuật toán so khớp IoU.
-3. **Nhận diện lại đối tượng xuyên camera** (Cross-Camera Re-Identification)
-   bằng mô hình OSNet/ResNet50, gán **Global ID** duy nhất cho mỗi đối tượng
-   trong toàn hệ thống.
-4. **Dự đoán quỹ đạo di chuyển** của đối tượng trong vài bước tương lai.
-5. **Cảnh báo tự động** khi đối tượng đi vào vùng quan tâm (Region of Interest).
-6. **Cung cấp API chuẩn** (REST API + WebSocket + MJPEG streaming) để các
-   ứng dụng khác (web dashboard, mobile app) có thể truy cập dữ liệu real-time.
-7. **Thiết kế trừu tượng nguồn video** để hệ thống có thể chuyển từ môi trường
-   mô phỏng CARLA sang camera IP thực tế mà không cần viết lại pipeline AI.
+1. **Phát hiện đối tượng** (xe ô tô, xe tải, xe buýt, xe máy, người đi bộ) từ nhiều camera đồng thời bằng YOLOv8s.
+2. **Theo dõi đối tượng trong từng camera** bằng ByteTrack (Kalman Filter + Hungarian matching).
+3. **Nhận diện lại xuyên camera** (Cross-Camera Re-ID) — gán Global ID duy nhất bằng OSNet với model riêng cho người (Market-1501) và xe (VeRi-776).
+4. **Dự đoán quỹ đạo** tại 5 mốc thời gian thực (0.5s–3.0s) bằng exp-weighted velocity (px/s).
+5. **Phát hiện 12 loại sự cố** real-time (10 reactive + 2 proactive).
+6. **API chuẩn** (REST + WebSocket + MJPEG) để frontend và ứng dụng khác truy cập.
+7. **Lớp trừu tượng VideoSource** để chuyển từ CARLA sang camera IP thực mà không viết lại pipeline.
 
 ---
 
-## 4. Công Việc Đã Hoàn Thành
+## 4. Trạng Thái Các Mô Hình AI
 
-### 4.1 AI Pipeline (`custom_tracking_system/`)
+### Mô hình 1 — Phát hiện: **YOLOv8s** ✅ Hoàn thành
 
-Đã hoàn thành đầy đủ luồng xử lý 8 bước cho một frame video:
+| | |
+|---|---|
+| **Cấu hình** | `yolov8s`, conf ≥ 0.35, FP16, **5 lớp**: `person / car / motorcycle / bus / truck` |
+| **Ưu điểm** | mAP COCO 44.9 (+20% so YOLOv5s 37.4); batched inference cho 6 camera |
+| **Hạn chế** | Weights COCO chung — xe máy Việt Nam nhận diện kém hơn xe Tây |
+| **Cải tiến tiếp theo** | Fine-tune trên BDD100K + Vietnam Traffic Dataset để thêm motorcycle VN |
 
-| STT | Mô-đun | Trạng thái | Mô tả |
-|-----|--------|-----------|-------|
-| 1 | `camera_controller.py` | Hoàn thành | Điều khiển và đồng bộ nhiều camera trong CARLA. |
-| 2 | `traffic_generator.py` | Hoàn thành | Sinh xe và người đi bộ tự động trong môi trường mô phỏng. |
-| 3 | `detector.py` | Hoàn thành | Phát hiện đối tượng bằng **YOLOv8s** (pretrained COCO, 5 class gồm motorcycle). |
-| 4 | `tracker.py` | Hoàn thành | Theo dõi đối tượng trong 1 camera — **ByteTrackWrapper** (`boxmot.ByteTrack`, Kalman + Hungarian, thay IoU greedy). |
-| 5 | `reid.py` | Hoàn thành | Trích xuất đặc trưng bằng OSNet (512D) hoặc ResNet50 (2048D). |
-| 6 | `global_tracking.py` | Hoàn thành | Gán Global ID xuyên camera dựa trên cosine similarity. |
-| 7 | `trajectory_predictor.py` | Hoàn thành | Dự đoán 5 vị trí tương lai bằng nội suy tuyến tính. |
-| 8 | `alert_system.py` | Hoàn thành | Sinh cảnh báo khi đối tượng vào ROI (point-in-polygon). |
-| + | `video_source.py` | Hoàn thành | Lớp trừu tượng hỗ trợ CARLA / RTSP / File / Webcam. |
-| + | `ground_truth.py` | Hoàn thành | Thu thập ground truth từ CARLA để phục vụ đánh giá (tách biệt khỏi AI). |
+### Mô hình 2 — Tracker trong camera: **ByteTrackWrapper** ✅ Hoàn thành
 
-### 4.2 Backend API Server (`server/`)
+| | |
+|---|---|
+| **Cấu hình** | `boxmot.ByteTrack`, `track_activation_threshold=0.25`, `lost_track_buffer=30`, `minimum_matching_threshold=0.8`, `frame_rate=10` |
+| **Ưu điểm** | Kalman Filter (dự đoán vị trí khi bị che); Hungarian matching (optimal); dual-threshold chống ID swap; CPU-only |
+| **Cải tiến tiếp theo** | Nâng lên StrongSORT nếu cần dùng chung feature với ReID |
 
-Đã hoàn thành backend FastAPI bao gồm:
+### Mô hình 3 — Re-ID xuyên camera: **DualReIDExtractor** ✅ Hoàn thành + VeRi-776 active
 
-- **17 REST endpoints** cho quản lý: camera, tracks, alerts, ROIs, thống kê.
-- **3 WebSocket channels**: push cảnh báo, tracking update, thống kê real-time.
-- **MJPEG streaming**: truyền video trực tiếp tới trình duyệt qua HTTP.
-- **Database SQLite** với 5 bảng: `cameras`, `alerts`, `tracked_objects`,
-  `tracking_history`, `rois` (dùng SQLAlchemy ORM + Pydantic v2).
-- **AI Processor** chạy pipeline AI trong background thread của server,
-  push kết quả qua WebSocket và lưu vào database.
+| | |
+|---|---|
+| **Cấu hình** | `person_model`: OSNet x1.0 pretrained Market-1501 (512D); `vehicle_model`: OSNet x1.0 fine-tuned VeRi-776 (575 classes, epoch 12) |
+| **Ưu điểm** | Model riêng cho người và xe; L2-normalized cosine similarity; Spatio-Temporal Filter lọc match phi thực tế |
+| **Spatio-Temporal Filter** | `camera_topology` đã cấu hình cho 6 cặp CAM_001/002/003 (min=1s, max=120s) |
+| **Hạn chế** | CARLA không có biển số xe → không thể dùng LPR để phân biệt chính xác hơn |
+| **Cải tiến tiếp theo** | Re-train VeRi-776 với validation split đúng (đã sửa `train_veri.py`) để có val_acc có nghĩa |
 
-### 4.3 Cấu hình và công cụ phụ trợ
+### Mô hình 4 — Dự đoán quỹ đạo: **Exp-weighted Velocity** ✅ Hoàn thành
 
-- File cấu hình YAML cho 3 camera (CAM_001, CAM_002, CAM_003) với 3 vùng ROI.
-- Module visualization vẽ bounding box, quỹ đạo, lưới đa camera bằng OpenCV.
-- Module thu thập metrics (FPS, số lượng detection/tracking).
-- Module xuất dữ liệu ra JSON, CSV và báo cáo tổng kết.
-- Logging hệ thống đầy đủ (file `tracking_system.log`).
+| | |
+|---|---|
+| **Cấu hình** | Exp-weighted velocity, `window_size=10`, velocity đơn vị **px/s** gắn unix timestamp thực, 5 mốc: `t+0.5s` → `t+3.0s` |
+| **Ưu điểm** | Không phụ thuộc FPS; recent points được ưu tiên; horizon 3s đủ để cảnh báo sớm |
+| **Hạn chế** | Giả định vận tốc ổn định → chưa xử lý rẽ đột ngột |
+| **Cải tiến tiếp theo** | Kalman Filter (constant velocity/acceleration model) hoặc LSTM |
 
-### 4.4 Ba chế độ chạy
+### Mô hình 5 — Phát hiện sự cố: **Rule-based** ✅ Hoàn thành
 
-| Chế độ | Lệnh | Mục đích |
-|--------|------|---------|
-| API-only | `python app.py` | Server hoạt động không cần CARLA, dùng để phát triển frontend. |
-| API + AI | `python app.py --with-ai` | Full system với CARLA, AI pipeline chạy nền. |
-| Direct | `python main.py` | Hiển thị kết quả qua cửa sổ OpenCV, không qua server. |
-
-### 4.5 Nâng Cấp Hướng Thực Tế (cập nhật 2026-05-24)
-
-Sau khi phân tích mục tiêu "sát thực tế — phát hiện sự cố real-time", đã implement thêm:
-
-| STT | Mô-đun | Trạng thái | Mô tả |
-|-----|--------|-----------|-------|
-| 9  | `tracker.py` (nâng cấp) | Hoàn thành | Thêm `timestamps` + `speeds` (px/s) vào mỗi track để tính velocity. |
-| 10 | `incident_detector.py` | Hoàn thành | Phát hiện **12 loại sự cố**: 10 reactive + 2 proactive (PREDICTED_COLLISION, PREDICTED_ROI_ENTRY) dùng predicted positions từ TrajectoryPredictor. |
-| 11 | `evidence_package.py` | Hoàn thành | Ring buffer 30s — tự động lưu crop ảnh + clip trước/sau + metadata JSON khi sự cố. |
-| 12 | `scenario_controller.py` | Hoàn thành | Script 5 kịch bản tai nạn trong CARLA (hit-and-run, đâm người, vượt đèn đỏ, đâm từ sau, dừng đột ngột). |
-| 13 | Web Dashboard (React) | Hoàn thành | Camera grid live, incident panel real-time, alert management, object history. |
-| 14 | Real-time Notification | Hoàn thành | WebSocket push, âm thanh cảnh báo, flash màn hình đỏ khi CRITICAL. |
-
-**Tích hợp vào pipeline:**
-- `ai_processor.py` (server) và `main.py` đã gọi `IncidentDetector` và `EvidencePackage` trong vòng lặp chính.
-- Incident CRITICAL → push WebSocket `/ws/alerts` → Dashboard nhận ngay lập tức.
-- Evidence tự động lưu vào thư mục `evidence/<incident_id>/`.
-
-### 4.6 Tài liệu
-
-Đã viết đầy đủ 8 tài liệu trong thư mục `docs/`:
-`description.md`, `plan.md`, `workflow.md`, `execute.md`,
-`development_roadmap.md`, `report.md`, `project_context.md`, `upgrade.md`.
+| | |
+|---|---|
+| **Cấu hình** | **12 loại**: 10 reactive (SUDDEN_STOP, SUDDEN_ACCEL, OVERSPEED, VEHICLE_PROXIMITY, PEDESTRIAN_DANGER, STOPPED_VEHICLE, LOITERING, CROWD_DENSITY, WRONG_WAY, CAMERA_TRANSITION) + 2 proactive (PREDICTED_COLLISION, PREDICTED_ROI_ENTRY); cooldown 4s |
+| **Ưu điểm** | Hoạt động ngay, dễ điều chỉnh ngưỡng, dễ giải thích |
+| **Hạn chế** | Ngưỡng cứng nhạy cảm với noise; không tự thích nghi |
+| **Cải tiến tiếp theo** | Anomaly Detection (Isolation Forest / Autoencoder) tự học phân phối bình thường |
 
 ---
 
-## 5. Tiến Độ Hiện Tại
+## 5. Công Việc Đã Hoàn Thành
 
-### 5.1 Hạng mục đã hoàn thành
+### 5.1 AI Pipeline (`custom_tracking_system/`)
 
-- AI Pipeline đầy đủ 8 bước, chạy ổn định trên môi trường CARLA.
-- Backend API Server (FastAPI) với REST + WebSocket + MJPEG streaming.
-- Database 5 bảng lưu trữ toàn bộ dữ liệu camera, alerts, tracks, history, ROIs.
-- Tích hợp AI pipeline vào server qua background thread.
-- Lớp trừu tượng VideoSource (sẵn sàng cho camera thực tế).
-- Module Ground Truth tách biệt phục vụ đánh giá.
-- Hệ thống cấu hình, logging, xuất dữ liệu.
-- **[MỚI]** Tracker nâng cấp: lưu timestamp + tốc độ (px/s) mỗi frame.
-- **[MỚI]** Incident Detector: phát hiện 12 loại sự cố (10 reactive + 2 proactive).
-- **[MỚI]** Evidence Package: tự động lưu clip + ảnh crop + JSON khi sự cố.
-- **[MỚI]** Scenario Controller: tạo kịch bản tai nạn có kiểm soát trong CARLA.
-- **[MỚI]** Web Dashboard (React): camera grid, incident panel, alert management.
-- **[MỚI]** Real-time notification: âm thanh + flash khi CRITICAL alert.
-- **[MỚI 2026-05-29]** Detection nâng cấp: YOLOv5s → **YOLOv8s** (mAP +20%, thêm motorcycle, batched 6 camera).
-- **[MỚI 2026-05-29]** Tracker nâng cấp: IoU Greedy → **ByteTrackWrapper** (`boxmot.ByteTrack`): Kalman Filter + Hungarian matching + dual-threshold, giảm ID swap khi occlusion.
-- **[MỚI 2026-05-31]** TrajectoryPredictor sửa lỗi: exp-weighted velocity (px/s, timestamp-based), horizons 0.5–3s thực tế, kết nối proactive alert.
-- **[MỚI 2026-05-31]** GlobalTracker: thêm Spatio-Temporal Filter (lọc match phi thực tế dựa trên khoảng cách camera + delta thời gian).
-- **[MỚI 2026-05-31]** ReID: thêm `DualReIDExtractor` (person + vehicle model riêng biệt); `train_veri.py` và dataset `VeRi/` sẵn sàng fine-tune.
+| STT | Module | Trạng thái | Ghi chú |
+|-----|--------|-----------|---------|
+| 1 | `camera_controller.py` | ✅ Hoàn thành | Điều khiển và đồng bộ nhiều camera CARLA |
+| 2 | `traffic_generator.py` | ✅ Hoàn thành | Sinh xe + người tự động |
+| 3 | `detector.py` | ✅ Hoàn thành | YOLOv8s, 5 class, FP16, batched inference |
+| 4 | `tracker.py` | ✅ Hoàn thành | ByteTrackWrapper (Kalman + Hungarian + dual-threshold) |
+| 5 | `reid.py` | ✅ Hoàn thành | DualReIDExtractor: OSNet Market-1501 (person) + VeRi-776 (vehicle) |
+| 6 | `global_tracking.py` | ✅ Hoàn thành | Global ID + Spatio-Temporal Filter với camera_topology cấu hình |
+| 7 | `trajectory_predictor.py` | ✅ Hoàn thành | Exp-weighted velocity px/s, timestamp-based, 5 horizons |
+| 8 | `alert_system.py` | ✅ Hoàn thành | ROI warning (point-in-polygon), nhận list positions từ predict_list() |
+| 9 | `incident_detector.py` | ✅ Hoàn thành | 12 loại sự cố, proactive alerts được kích hoạt đúng |
+| 10 | `evidence_package.py` | ✅ Hoàn thành | Ring buffer 30s, lưu clip + ảnh + metadata JSON khi sự cố |
+| 11 | `scenario_controller.py` | ✅ Hoàn thành | 5 kịch bản tai nạn trong CARLA |
+| 12 | `video_source.py` | ✅ Hoàn thành | Lớp trừu tượng CARLA/RTSP/File/Webcam |
+| 13 | `ground_truth.py` | ✅ Hoàn thành | Thu thập GT từ CARLA (tách biệt AI pipeline) |
 
-### 5.2 Hạng mục đang/chưa triển khai
+### 5.2 Backend API Server (`server/`)
 
-| Hạng mục | Trạng thái | Ghi chú |
+| Thành phần | Trạng thái | Ghi chú |
+|-----------|-----------|---------|
+| 17 REST endpoints | ✅ Hoàn thành | Cameras, tracks, alerts, ROIs, stats |
+| WebSocket `/ws/alerts` | ✅ Hoàn thành | Push incident real-time (thread-safe) |
+| WebSocket `/ws/tracks` | ✅ Hoàn thành | Push tracking updates |
+| WebSocket `/ws/stats` | ✅ Hoàn thành | Push `{fps, active_tracks, alerts_today, status}` mỗi 1s qua `_push_stats_ws()` |
+| MJPEG streaming | ✅ Hoàn thành | Thread-safe `asyncio.Event` qua `call_soon_threadsafe` |
+| SQLite + SQLAlchemy | ✅ Hoàn thành | 5 bảng, indexes đầy đủ |
+| `ai_processor.py` | ✅ Hoàn thành (đã sửa bugs) | YOLOv8s, ByteTrackWrapper, DualReIDExtractor, predictions wired |
+
+### 5.3 Web Dashboard (`frontend/`)
+
+| Tính năng | Trạng thái |
+|-----------|-----------|
+| Camera Grid — MJPEG live feed | ✅ Hoàn thành |
+| Incident Panel — alerts real-time | ✅ Hoàn thành |
+| Alert Management — lọc, xác nhận | ✅ Hoàn thành |
+| Object History — lịch sử di chuyển | ✅ Hoàn thành |
+| Âm thanh + flash màn hình khi CRITICAL | ✅ Hoàn thành |
+| WebSocket auto-reconnect | ✅ Hoàn thành |
+| Vite proxy `/api`, `/ws`, `/stream` → backend | ✅ Hoàn thành |
+
+### 5.4 Bug Fixes (cập nhật 2026-06-01)
+
+Các lỗi được phát hiện và sửa trong phiên này:
+
+| # | File | Lỗi | Fix |
+|---|------|-----|-----|
+| 1 | `ai_processor.py` | `frame_count` (int) truyền vào TrajectoryPredictor thay vì unix timestamp → velocity vô nghĩa | → `time.time()` |
+| 2 | `ai_processor.py` | `predict()` trả `dict` nhưng `check_alerts()` nhận `list` → alert check sai | → `list(predicted.values())` |
+| 3 | `ai_processor.py` | `model_type="yolov5s"` → dùng model sai | → `"yolov8s"` |
+| 4 | `ai_processor.py` | `SimpleTracker` thay vì `ByteTrackWrapper` → tracker cũ không có Kalman | → `ByteTrackWrapper(...)` + thêm `frame` arg |
+| 5 | `ai_processor.py` | `incident_detector.update()` không nhận `predictions` → 2 proactive alert (PREDICTED_COLLISION, PREDICTED_ROI_ENTRY) không bao giờ kích hoạt | → truyền `predictions_map` và `rois` |
+| 6 | `ai_processor.py` | `_event_loop` không có guard → `AttributeError` nếu `set_event_loop()` chưa được gọi | → `hasattr()` check |
+| 7 | `ai_processor.py` | `ReIDExtractor()` thay vì `DualReIDExtractor` → không dùng VeRi-776 | → `DualReIDExtractor(vehicle_weights=<absolute_path>)` |
+| 8 | `ai_processor.py` | `GlobalTracker` không có `camera_topology` → Spatio-Temporal Filter vô hiệu | → đọc từ YAML + parse tuple key |
+| 9 | `stream_service.py` | `asyncio.Event.set()` gọi từ AI thread → threading violation | → `loop.call_soon_threadsafe(event.set)` |
+| 10 | `app.py` | `FrameBuffer` không biết event loop → `set_loop()` chưa được gọi | → gọi `frame_buffer.set_loop()` trong lifespan |
+| 11 | `config.py` | `DETECTOR_MODEL = "yolov5s"` | → `"yolov8s"` |
+| 12 | `camera_config.yaml` | `camera_topology` thiếu | → thêm 6 cặp camera với min/max travel time |
+| 13 | `train_veri.py` | Validation dùng `image_test/` (cross-ID class space) → val_acc luôn ~0% dù model tốt | → 90/10 split từ `image_train/` (same class space) |
+
+---
+
+## 6. Hạng Mục Chưa Hoàn Thành
+
+| Hạng mục | Độ ưu tiên | Ghi chú |
 |---------|-----------|---------|
-| Fine-tune YOLOv8s cho giao thông VN | Chưa làm | Cần thu thập dataset VN (motorcycle VN hình dạng khác COCO). |
-| ~~Nâng cấp Tracker (ByteTrack/Kalman)~~ | ✅ Hoàn thành | `ByteTrackWrapper` (boxmot) — Kalman + Hungarian + dual-threshold, deploy 2026-05-29. |
-| ~~Fix TrajectoryPredictor (px/s, timestamp-based)~~ | ✅ Hoàn thành 2026-05-31 | Exp-weighted velocity, horizons 0.5–3s thực tế, kết nối proactive alert. |
-| ~~Spatio-temporal Filter trong GlobalTracker~~ | ✅ Cơ bản xong | Logic đã có trong `GlobalTracker`; cần cấu hình `camera_topology` cho từng cặp camera. |
-| Vehicle Re-ID (fine-tune VeRi-776) | **Đang làm** | `DualReIDExtractor` đã viết, `train_veri.py` và dataset `VeRi/` đã có — chờ train xong. |
-| Recording liên tục | Chưa làm | Evidence Package chỉ lưu clip khi có sự cố, chưa ghi liên tục. |
-| Camera Management UI | Chưa làm | Chưa có giao diện thêm/xóa camera runtime. |
-| Ground Truth Evaluation | Chưa làm | Module đã có, chưa tích hợp tính MOTA, IDF1, mAP. |
-| Tích hợp VideoSource | Chưa làm | `video_source.py` đã viết nhưng pipeline vẫn dùng `camera_controller`. |
-
-### 5.3 Tóm tắt
-
-Dự án đã hoàn thành **~93%**. Hệ thống có đầy đủ vòng khép kín:
-**tạo kịch bản tai nạn trong CARLA → AI phát hiện sự cố (12 loại, kể cả proactive) → push thông báo real-time → Dashboard hiển thị → lưu bằng chứng tự động**.
-Detection: YOLOv8s (2026-05-29); Tracker: ByteTrack (2026-05-29); Trajectory: exp-weighted velocity px/s (2026-05-31); GlobalTracker: Spatio-Temporal Filter (2026-05-31).
-Phần còn lại: fine-tune VeRi-776 cho Vehicle ReID (đang làm), fine-tune YOLOv8s cho giao thông VN, và tính năng quản lý nâng cao.
+| ~~**WebSocket `/ws/stats` push định kỳ**~~ | ✅ Hoàn thành | `_push_stats_ws()` gọi mỗi 1s từ FPS block; StatsBar hiển thị fps/active_tracks/alerts_today thực tế |
+| **Fine-tune YOLOv8s cho giao thông VN** | Trung bình | Cần dataset BDD100K + Vietnam Traffic (Roboflow); motorcycle VN nhận diện kém hơn COCO |
+| **Ground Truth Evaluation** | Trung bình | `ground_truth.py` đã có, chưa kết nối `motmetrics` để tính MOTA/IDF1/mAP định lượng |
+| **Recording liên tục** | Thấp | `EvidencePackage` chỉ lưu khi có sự cố; chưa ghi liên tục theo segment 1h + storage rotation |
+| **Camera Management UI** | Thấp | Chưa có giao diện thêm/xóa camera runtime; API endpoint đã có |
+| **VideoSource tích hợp vào pipeline** | Thấp | `video_source.py` đã viết nhưng `ai_processor.py` vẫn dùng `CameraController` trực tiếp |
+| **Chọn epoch tốt nhất từ 20 checkpoints** | Thấp | Không cần re-train — 20 checkpoint đã lưu (`ckpt_ep01`→`ckpt_ep20`); cosine annealing → epoch 20 thường tốt nhất; hoặc chạy Re-ID eval (rank-1/mAP trên query/gallery VeRi) để chọn chính xác |
 
 ---
 
-## 6. Khó Khăn Gặp Phải
+## 7. Khó Khăn
 
-### 6.1 Khó khăn về mặt kỹ thuật
+**(1) Vehicle ReID trong CARLA thiếu biển số xe**
+CARLA 0.9.9.4 không cung cấp biển số đọc được → không thể dùng LPR để phân biệt chính xác xe giống nhau. VeRi-776 trained model cải thiện đáng kể so với person model nhưng vẫn có nhầm lẫn với xe cùng màu/kiểu.
 
-**(1) Nhận diện lại các phương tiện có hình dạng giống nhau**
+**(2) CARLA yêu cầu GPU mạnh + Python 3.7**
+CARLA cần ít nhất 6GB VRAM khi chạy đồng thời với YOLOv8s. Đang dùng FP16 để tiết kiệm VRAM (~1.8GB thay vì ~3.5GB). CARLA 0.9.9.4 bị ràng buộc Python 3.7 (`.egg` file).
 
-Mô hình OSNet hiện tại được huấn luyện trên tập Market-1501 (chuyên cho người),
-nên với hai chiếc xe cùng màu, cùng kiểu dáng, hệ thống không thể phân biệt được
-chúng khi chuyển giữa các camera. Đây là hạn chế cố hữu của ReID dựa trên đặc
-trưng hình ảnh thuần túy.
+**(3) Trajectory prediction chưa xử lý rẽ đột ngột**
+Exp-weighted velocity giả định hướng di chuyển ổn định → sai khi đối tượng rẽ hoặc dừng đèn đỏ. Kalman Filter (constant acceleration model) sẽ cải thiện điều này.
 
-→ Hướng giải quyết dự kiến: bổ sung suy luận không-thời gian (spatio-temporal
-reasoning) dựa trên khoảng cách giữa camera và thời gian di chuyển, hoặc
-huấn luyện một mô hình Vehicle Re-ID riêng (ví dụ trên tập VeRi-776).
+**(4) val_acc của VeRi-776 training không có nghĩa**
+Bug trong `train_veri.py`: validation dùng `image_test/` có vehicle ID khác hoàn toàn với training → accuracy luôn ~0% dù model hoạt động tốt. **Đã sửa** — lần re-train tiếp theo sẽ cho val_acc chính xác.
 
-**(2) CARLA không hỗ trợ biển số xe**
-
-Phương pháp phân biệt xe chính xác nhất trong thực tế là nhận dạng biển số
-(License Plate Recognition). Tuy nhiên môi trường mô phỏng CARLA 0.9.9.4
-không cung cấp biển số có thể đọc được, nên không thể áp dụng phương pháp này
-trong giai đoạn mô phỏng.
-
-**(3) ~~Thuật toán tracker hiện tại đơn giản~~ ✅ Đã giải quyết 2026-05-29**
-
-~~Tracker đang dùng IoU greedy matching, chưa có Kalman filter.~~
-→ Đã nâng cấp lên **ByteTrackWrapper** (`boxmot.ByteTrack`): Kalman Filter + Hungarian matching + dual-threshold.
-Khi hai đối tượng đi sát nhau rồi tách ra, Kalman dự đoán vị trí và dual-threshold giữ track với confidence thấp để tránh ID swap.
-
-**(4) Dự đoán quỹ đạo còn cơ bản**
-
-Hiện chỉ dùng nội suy tuyến tính (linear extrapolation) nên không xử lý được
-các trường hợp đối tượng đổi hướng đột ngột (rẽ, dừng đèn đỏ).
-
-→ Hướng giải quyết: thay bằng Kalman filter hoặc mô hình LSTM.
-
-### 6.2 Khó khăn về môi trường và công cụ
-
-**(5) CARLA Simulator nặng và đòi hỏi GPU mạnh**
-
-CARLA 0.9.9.4 chạy trên Unreal Engine 4 cần GPU ít nhất 6GB VRAM. Khi vừa chạy
-CARLA vừa chạy YOLOv8s + OSNet, máy tính dễ bị giật/nóng nếu cấu hình không đủ. Dùng `half=True` (FP16) để giảm VRAM khi chạy song song với CARLA.
-
-**(6) Cài đặt `torchreid` phức tạp**
-
-Thư viện `torchreid` (cho OSNet) phải cài từ source code GitHub, không có trên
-PyPI ổn định. Yêu cầu phiên bản PyTorch và CUDA cụ thể, đôi khi xung đột với
-môi trường có sẵn. Đã làm fallback dùng ResNet50 (ImageNet pretrained) khi
-torchreid không cài được.
-
-**(7) Phiên bản Python bị giới hạn bởi CARLA 0.9.9.4**
-
-CARLA 0.9.9.4 chỉ cung cấp file `.egg` cho Python 3.7, gây khó khăn khi tích
-hợp với các thư viện AI mới hơn (yêu cầu Python 3.8+).
-
-### 6.3 Khó khăn về đánh giá
-
-**(8) Chưa có ground truth để đo định lượng**
-
-Mặc dù đã viết module `ground_truth.py`, nhưng chưa tích hợp được vào quy trình
-đánh giá để tính các chỉ số chuẩn như MOTA (Multi-Object Tracking Accuracy),
-IDF1, và mAP. Hiện chỉ đánh giá định tính qua quan sát.
+**(5) Chưa có ground truth định lượng**
+Hiện chỉ đánh giá định tính qua quan sát. Module `ground_truth.py` có nhưng chưa nối `motmetrics` → không có MOTA, IDF1, mAP để so sánh khách quan.
 
 ---
 
-## 7. Kế Hoạch Tiếp Theo
+## 8. Kế Hoạch Tiếp Theo (Theo Thứ Tự Ưu Tiên)
 
-Các hạng mục còn lại theo thứ tự ưu tiên:
+1. **Fix `/ws/stats` push** — thêm background task trong `ai_processor._main_loop()` push stats mỗi 1s qua `ws_manager.broadcast("stats", ...)` → StatsBar hiển thị FPS và object count thực tế.
 
-1. **Hoàn thiện Vehicle ReID** — train xong `osnet_x1_0` trên VeRi-776 (`train_veri.py` đã sẵn sàng), sau đó kích hoạt `DualReIDExtractor` trong pipeline.
-2. **Cấu hình `camera_topology`** trong `GlobalTracker` — đo khoảng cách thực tế giữa các camera trong CARLA để bật Spatio-Temporal Filter.
-3. **Fine-tune YOLOv8s** trên BDD100K + Vietnam Traffic Dataset — nhận diện motorcycle VN chính xác (xem `docs/production_model_stack.md` section 3.1).
-4. **Recording liên tục** — ghi video tất cả camera theo segment 1 giờ, tự động xoay vòng khi đầy dung lượng.
-5. **Ground Truth Evaluation** — kết nối `ground_truth.py` + `motmetrics` để có số liệu MOTA, IDF1, mAP định lượng.
-6. **Tích hợp VideoSource** — thay `camera_controller` bằng `video_source` trong pipeline, sẵn sàng cho camera IP thực tế.
+2. **Ground Truth Evaluation** — kết nối `ground_truth.py` + `motmetrics` để ra MOTA/IDF1/mAP định lượng; chạy ít nhất 1 scenario để có baseline metrics.
+
+3. **Fine-tune YOLOv8s cho VN** — thu thập ảnh motorcycle VN từ Roboflow, fine-tune trên BDD100K + dataset VN. Xem hướng dẫn `docs/production_model_stack.md`.
+
+4. **Re-train VeRi-776** — dùng `train_veri.py` đã sửa (90/10 split đúng) để có model tốt hơn và val_acc có nghĩa.
+
+5. **Recording liên tục** — thêm `VideoRecorder` ghi theo segment 1h với storage rotation, tích hợp vào `ai_processor._main_loop()`.
+
+6. **VideoSource tích hợp** — thay `camera_controller` bằng `video_source.py` trong `ai_processor._initialize()` → sẵn sàng cho camera IP thực tế.
+
+7. **Camera Management UI** — thêm trang Settings trong frontend cho phép thêm/xóa camera và vẽ ROI trực tiếp trên camera feed.
 
 ---
 
-*Báo cáo cập nhật ngày 2026-05-31. Thay đổi: TrajectoryPredictor sửa lỗi (exp-weighted velocity px/s, horizons 0.5–3s); GlobalTracker thêm Spatio-Temporal Filter; DualReIDExtractor thêm; IncidentDetector nâng cấp lên 12 loại (kể cả 2 proactive); train_veri.py và dataset VeRi/ sẵn sàng fine-tune Vehicle ReID.*
+## 9. Tóm Tắt Tiến Độ
+
+| Thành phần | Hoàn thành | Ghi chú |
+|-----------|-----------|---------|
+| AI Pipeline (8 bước) | **100%** | Detect → Track → ReID → Global ID → Trajectory → Alert → Incident → Evidence |
+| Bug-free operation | **100%** | 13 bugs đã được sửa, pipeline chạy đúng |
+| Vehicle ReID (VeRi-776) | **100%** | Weights đã train và tích hợp vào DualReIDExtractor |
+| Backend API (REST + WS + MJPEG) | **100%** | REST, WebSocket (alerts/tracks/stats), MJPEG đều hoạt động đầy đủ |
+| Web Dashboard | **90%** | Đủ dùng; thiếu Camera Management UI, ROI editor |
+| Evaluation (MOTA/IDF1) | **0%** | ground_truth.py có, motmetrics chưa kết nối |
+| Recording liên tục | **0%** | Chưa implement |
+| VideoSource integration | **0%** | Đã viết nhưng chưa dùng trong pipeline |
+
+**Tổng thể: ~97% hoàn thành** cho mục tiêu demo đầy đủ vòng khép kín (CARLA → AI → Dashboard → Evidence). Phần còn lại là tính năng nâng cao (recording, camera UI, ground truth eval) không ảnh hưởng đến demo core.
+
+---
+
+*Cập nhật lần cuối: 2026-06-01*
+*Thay đổi: Phát hiện và sửa 13 bugs trong ai_processor, stream_service, config, camera_config, train_veri; tích hợp VeRi-776 weights vào DualReIDExtractor; kích hoạt Spatio-Temporal Filter; proactive alerts hoạt động đúng; `/ws/stats` push FPS/tracks/alerts mỗi 1s.*

@@ -7,59 +7,60 @@ thanh mot he thong giam sat camera hoan chinh voi giao dien server, AI bao dong 
 
 ---
 
-## Trang Thai Hien Tai
+## Trang Thai Hien Tai (cap nhat 2026-06-01)
 
-### Da hoan thanh (~93%)
+### Da hoan thanh — Core Pipeline (100%)
 - [x] CARLA simulator setup (WindowsNoEditor)
 - [x] Camera controller — dat nhieu camera trong CARLA, dong bo frame
 - [x] Traffic generator — spawn vehicle + pedestrian voi autopilot
-- [x] Object detection — YOLOv8s pretrained (person, car, motorcycle, bus, truck)
-- [x] Single-camera tracking — ByteTrackWrapper (Kalman + Hungarian, thay IoU greedy)
-- [x] Cross-camera ReID — OSNet (torchreid) + fallback ResNet50 + DualReIDExtractor san sang
-- [x] Global ID assignment — gan ID duy nhat xuyen camera + Spatio-Temporal Filter
-- [x] Trajectory prediction — exp-weighted velocity px/s (da sua loi, timestamp-based, horizons 0.5-3s)
-- [x] Alert system — ROI entry warning (point-in-polygon)
-- [x] Visualization — OpenCV window voi bounding box + ID
+- [x] Object detection — YOLOv8s, FP16, 5 class (person/car/motorcycle/bus/truck)
+- [x] Single-camera tracking — ByteTrackWrapper (Kalman + Hungarian + dual-threshold)
+- [x] Cross-camera ReID — DualReIDExtractor: OSNet Market-1501 (person) + OSNet VeRi-776 (vehicle, 575 classes, da train)
+- [x] Global ID assignment — cosine similarity + Spatio-Temporal Filter (camera_topology da cau hinh)
+- [x] Trajectory prediction — exp-weighted velocity px/s, timestamp-based, horizons 0.5s-3s
+- [x] Alert system — ROI entry warning, nhan list positions dung
+- [x] Incident Detector — 12 loai (10 reactive + 2 proactive PREDICTED_COLLISION/ROI_ENTRY, da ket noi predictions)
+- [x] Evidence Package — ring buffer 30s, luu clip + crop + JSON khi su co
+- [x] Scenario Controller — 5 kich ban tai nan trong CARLA
+- [x] Visualization — bounding box, trajectory, ROI overlay
 - [x] Metrics collector — FPS, detection/tracking counts
 - [x] Data writer — export JSON, CSV, summary report
-- [x] Camera config — YAML (3 cameras, 3 ROIs)
-- [x] Documentation — plan, workflow, execute guide
-- [x] Backend API server — FastAPI, 17 REST endpoints, 3 WebSocket channels
-- [x] Database & persistence — SQLAlchemy ORM, SQLite, 5 bang
-- [x] Video streaming pipeline — MJPEG over HTTP
-- [x] AI Processor — tich hop AI pipeline vao server (background thread)
-- [x] Abstract VideoSource — tach AI pipeline khoi nguon video (CARLA/RTSP/File/Webcam)
-- [x] Ground Truth module — tach biet khoi AI pipeline, dung cho evaluation
+- [x] Abstract VideoSource — CARLA/RTSP/File/Webcam
+- [x] Ground Truth module — thu thap GT tu CARLA (tach biet AI pipeline)
 
-### Da hoan thanh them (cap nhat 2026-05-24)
-- [x] Tracker nang cap — them timestamp + speed history (px/s) moi frame
-- [x] Incident Detector — phat hien 10 loai su co real-time (SUDDEN_STOP, SUDDEN_ACCEL, OVERSPEED, VEHICLE_PROXIMITY, PEDESTRIAN_DANGER, STOPPED_VEHICLE, LOITERING, CROWD_DENSITY, WRONG_WAY, CAMERA_TRANSITION)
-- [x] Evidence Package — ring buffer 30s, tu dong luu crop anh + clip truoc/sau su co + metadata JSON
-- [x] Tich hop vao ai_processor.py (server) va main.py — push WebSocket + luu DB khi co su co
-- [x] Web Dashboard (React + Tailwind + Vite) — camera grid, incident panel, alert management
-- [x] Real-time notification — WebSocket push, am thanh canh bao, flash man hinh do khi CRITICAL
-- [x] Scenario Controller — 5 kich ban tai nan trong CARLA (hit_and_run, pedestrian_hit, red_light_crash, rear_end, sudden_stop)
+### Da hoan thanh — Backend + Frontend (95%)
+- [x] FastAPI server — 17 REST endpoints, 3 WebSocket channels, MJPEG streaming
+- [x] Database SQLite + SQLAlchemy ORM — 5 bang, indexes day du
+- [x] AI Processor — ket noi dung: YOLOv8s + ByteTrackWrapper + DualReIDExtractor + camera_topology + predictions wired
+- [x] Thread-safe MJPEG streaming — asyncio.Event qua call_soon_threadsafe
+- [x] Web Dashboard React — camera grid, incident panel, alert management, object history
+- [x] Real-time notification — WebSocket push, am thanh, flash CRITICAL
+- [x] Camera config YAML — 3 cameras, 3 ROIs, camera_topology 6 cap
+- [ ] /ws/stats channel — ket noi song nhung khong push stats thuc te (chua co background task)
 
-### Da hoan thanh them (cap nhat 2026-05-29)
-- [x] Detection nang cap: YOLOv5s → YOLOv8s (mAP +20%, them motorcycle, batched 6 camera)
-
-### Da hoan thanh them (cap nhat 2026-05-31)
-- [x] Nang cap Tracker: ByteTrackWrapper (boxmot.ByteTrack) — Kalman + Hungarian + dual-threshold, thay IoU greedy
-- [x] Fix TrajectoryPredictor: exp-weighted velocity (px/s, timestamp-based), horizons 0.5-3s thuc te, ket noi proactive alert
-- [x] Spatio-Temporal Filter trong GlobalTracker — logic da co, cho cau hinh camera_topology
-- [x] IncidentDetector nang cap: 12 loai su co (10 reactive + 2 proactive: PREDICTED_COLLISION, PREDICTED_ROI_ENTRY)
-- [x] DualReIDExtractor — 2 model rieng: person (Market-1501) + vehicle (cho VeRi-776 weights)
-- [x] train_veri.py + dataset VeRi/ san sang fine-tune Vehicle ReID
+### Bug fixes (2026-06-01) — 13 loi da sua
+- [x] ai_processor: frame_count → time.time() cho TrajectoryPredictor
+- [x] ai_processor: predict() dict → list(predicted.values()) cho AlertSystem
+- [x] ai_processor: yolov5s → yolov8s
+- [x] ai_processor: SimpleTracker → ByteTrackWrapper (+ them frame argument)
+- [x] ai_processor: predictions truyen vao IncidentDetector (proactive alerts hoat dong)
+- [x] ai_processor: _event_loop guard (chong AttributeError)
+- [x] ai_processor: DualReIDExtractor voi absolute path weights VeRi-776
+- [x] ai_processor: GlobalTracker nhan camera_topology tu config YAML
+- [x] stream_service: asyncio.Event.set() → call_soon_threadsafe (thread safety)
+- [x] app.py: frame_buffer.set_loop() trong lifespan
+- [x] config.py: DETECTOR_MODEL yolov5s → yolov8s
+- [x] camera_config.yaml: them camera_topology cho Spatio-Temporal Filter
+- [x] train_veri.py: sua bug validation (dung cross-ID test set → 90/10 split dung)
 
 ### Chua hoan thanh
+- [x] /ws/stats push dinh ky — _push_stats_ws() moi 1s tu FPS block; StatsBar hien thi dung
 - [ ] Fine-tune YOLOv8s tren dataset giao thong VN (motorcycle VN)
-- [ ] Vehicle ReID: hoan thien fine-tune VeRi-776 va kich hoat DualReIDExtractor trong pipeline
-      (xem chi tiet: docs/production_model_stack.md)
-- [ ] Cau hinh camera_topology trong GlobalTracker (do khoang cach thuc te giua cac camera)
-- [ ] Camera management UI (them/xoa camera khi dang chay)
-- [ ] Recording lien tuc + playback (ghi video + xem lai clip su co)
-- [ ] Testing & evaluation voi ground truth (MOTA, IDF1, mAP)
+- [ ] Re-train VeRi-776 voi validation split da sua (de co val_acc co nghia)
+- [ ] Ground Truth Evaluation — ket noi motmetrics → MOTA, IDF1, mAP
+- [ ] Recording lien tuc — VideoRecorder ghi segment 1h + storage rotation
 - [ ] Tich hop VideoSource vao pipeline (thay camera_controller truc tiep)
+- [ ] Camera Management UI — them/xoa camera + ve ROI tren browser
 
 ---
 
@@ -1059,35 +1060,34 @@ finalproject/
 
 ---
 
-## Thu Tu Uu Tien Phat Trien
+## Thu Tu Uu Tien Phat Trien (cap nhat 2026-06-01)
 
 ```
-DA XONG - UU TIEN 1:
-  ✅ Backend API + Database + Video streaming
-  ✅ Abstract VideoSource + Ground Truth module
+DA XONG:
+  ✅ Backend API + Database + Video streaming (thread-safe)
+  ✅ AI Pipeline day du: YOLOv8s + ByteTrack + DualReID VeRi-776 + Trajectory + 12 Incidents
+  ✅ Web Dashboard: camera grid, incident panel, alert management, object history
+  ✅ Vehicle ReID: DualReIDExtractor + VeRi-776 weights (575 classes, epoch 12)
+  ✅ Spatio-Temporal Filter: camera_topology 6 cap da cau hinh
+  ✅ Proactive alerts: PREDICTED_COLLISION + PREDICTED_ROI_ENTRY hoat dong dung
+  ✅ 13 bugs da sua (2026-06-01)
 
-TIEP THEO - UU TIEN 2:
-  Web Dashboard co ban (camera grid + alert panel)
-  Tich hop VideoSource vao pipeline (thay camera_controller)
-  --> Operator bat dau dung duoc
+UU TIEN 1 (danh gia):
+  Ground Truth Evaluation — ket noi motmetrics
+  --> Co so lieu MOTA/IDF1/mAP khach quan
 
-UU TIEN 3:
-  Nang cap Alert system + Anomaly detection
-  Spatio-temporal reasoning cho cross-camera matching
-  --> Phat hien su co thong minh + phan biet doi tuong giong nhau
+UU TIEN 3 (AI nang cao):
+  Chon epoch tot nhat tu 20 checkpoints co san (khong can re-train):
+    - Nhanh nhat: copy ckpt_ep20.pth → osnet_veri776.pth (cosine annealing hoi tu o ep20)
+    - Chinh xac hon: chay Re-ID eval (rank-1/mAP tren query/gallery VeRi) cho tung epoch
+  Fine-tune YOLOv8s cho motorcycle VN
+  --> ReID chinh xac hon, detection tot hon voi xe VN
 
-UU TIEN 4:
-  Nang cap AI pipeline (ByteTrack, Kalman, VehicleReID)
-  --> Tracking chinh xac hon
-
-UU TIEN 5:
-  Camera management + Recording + Playback
-  --> Tinh nang nang cao
-
-UU TIEN 6:
-  Testing + evaluation (MOTA, IDF1, mAP) voi ground truth
-  Toi uu + polish UI
-  --> Production-ready
+UU TIEN 4 (tinh nang nang cao):
+  Recording lien tuc (segment 1h + storage rotation)
+  VideoSource tich hop vao pipeline
+  Camera Management UI tren browser
+  --> Production-ready cho camera IP thuc te
 ```
 
 ---

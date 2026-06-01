@@ -38,6 +38,17 @@ rois:
       - name: "parking_area"
         polygon: [[200, 200], [400, 200], [400, 300], [200, 300]]
 
+# Spatio-Temporal Filter — thời gian đi lại hợp lệ giữa các cặp camera (giây)
+# Tính từ khoảng cách thực tế trong CARLA: CAM_001↔CAM_002 ~50m, CAM_001↔CAM_003 ~39m, CAM_002↔CAM_003 ~39m
+# min = 1s (xe nhanh nhất), max = 120s (người đi bộ + vòng đường)
+camera_topology:
+  CAM_001__CAM_002: [1, 120]
+  CAM_002__CAM_001: [1, 120]
+  CAM_001__CAM_003: [1, 120]
+  CAM_003__CAM_001: [1, 120]
+  CAM_002__CAM_003: [1, 120]
+  CAM_003__CAM_002: [1, 120]
+
 # System settings
 system:
   synchronous_mode: true

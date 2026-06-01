@@ -38,6 +38,10 @@ async def lifespan(application: FastAPI):
     # Khoi tao database (tao bang neu chua co)
     init_db()
 
+    # Ghi event loop vao FrameBuffer de put_frame() co the signal thread-safe
+    from services.stream_service import frame_buffer
+    frame_buffer.set_loop(asyncio.get_running_loop())
+
     # Khoi dong AI processor neu duoc yeu cau (--with-ai flag)
     _ai = None
     if getattr(application.state, "start_ai", False):
