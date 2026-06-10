@@ -129,16 +129,24 @@ class TrafficGenerator:
                 logger.error(f"Error starting walker controller: {e}")
 
     def update_pedestrians(self):
-        """Update pedestrian destinations periodically"""
+        """Periodically retarget pedestrians to a new random destination.
+
+        WalkerAIController has no is_at_goal() in this CARLA version, so
+        instead of waiting for arrival we just re-randomize on a fixed
+        interval (every ~10s at 10fps).
+        """
+        self._pedestrian_tick = getattr(self, '_pedestrian_tick', 0) + 1
+        if self._pedestrian_tick % 100 != 0:
+            return
+
+        spawn_points = self.world.get_map().get_spawn_points()
+        if not spawn_points:
+            return
+
         for controller in self.walker_controllers:
             try:
-                # Check if pedestrian reached destination
-                if controller.is_at_goal():
-                    # Set new random destination
-                    spawn_points = self.world.get_map().get_spawn_points()
-                    if spawn_points:
-                        destination = random.choice(spawn_points).location
-                        controller.go_to_location(destination)
+                destination = random.choice(spawn_points).location
+                controller.go_to_location(destination)
             except Exception as e:
                 logger.error(f"Error updating pedestrian: {e}")
 

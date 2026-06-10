@@ -10,14 +10,13 @@ import time
 import argparse
 import logging
 import cv2
+import yaml
 from pathlib import Path
 
 # Add project root to path
 project_root = Path(__file__).parent
 sys.path.append(str(project_root))
 
-from modules.camera_controller import CameraController
-from modules.traffic_generator import TrafficGenerator
 from modules.detector import ObjectDetector
 from modules.tracker import ByteTrackWrapper
 from modules.reid import ReIDExtractor
@@ -26,6 +25,10 @@ from modules.trajectory_predictor import TrajectoryPredictor
 from modules.alert_system import AlertSystem
 from modules.incident_detector import IncidentDetector
 from modules.evidence_package import EvidencePackage
+from modules.video_source import (
+    CARLABridgeClient, MultiVideoSource,
+    RTSPVideoSource, FileVideoSource, WebcamVideoSource,
+)
 from utils.visualization import Visualizer
 from utils.metrics import MetricsCollector
 
@@ -44,11 +47,25 @@ _CARLA_FPS = 10
 
 
 class TrackingSystem:
-    def __init__(self, config_path, half: bool = False):
+    def __init__(self, config_path, half: bool = False, source: str = 'carla',
+                 bridge_host: str = '127.0.0.1', bridge_port: int = 8765,
+                 video_paths: list = None, rtsp_urls: list = None,
+                 webcam_indices: list = None, camera_ids: list = None,
+                 loop_video: bool = False):
         self.config_path = config_path
         self.half = half        # FP16 inference — saves ~800 MB VRAM alongside CARLA
+        self.source = source    # 'carla'/'bridge' (CARLA) or 'rtsp'/'file'/'webcam' (real cameras)
+        self.bridge_host = bridge_host
+        self.bridge_port = bridge_port
+        self.video_paths = video_paths or []
+        self.rtsp_urls = rtsp_urls or []
+        self.webcam_indices = webcam_indices or []
+        self.camera_ids = camera_ids
+        self.loop_video = loop_video
         self.carla_client = None
         self.world = None
+        # camera_controller (carla) / CARLABridgeClient (bridge) / MultiVideoSource (rtsp/file/webcam)
+        self.frame_source = None
         self.modules = {}
 
     # ------------------------------------------------------------------
@@ -84,16 +101,65 @@ class TrackingSystem:
             logger.info("Initializing: %s", name)
 
         try:
-            step("CameraController")
-            self.modules['camera_controller'] = CameraController(
-                self.carla_client, self.world, self.config_path)
-            self.modules['camera_controller'].setup_cameras()
-            cam_ids = list(self.modules['camera_controller'].cameras.keys())
+            if self.source == 'carla':
+                from modules.camera_controller import CameraController
+                from modules.traffic_generator import TrafficGenerator
 
-            step("TrafficGenerator")
-            self.modules['traffic_generator'] = TrafficGenerator(
-                self.world, num_vehicles=10, num_pedestrians=5)
-            self.modules['traffic_generator'].spawn_actors()
+                step("CameraController")
+                self.modules['camera_controller'] = CameraController(
+                    self.carla_client, self.world, self.config_path)
+                self.modules['camera_controller'].setup_cameras()
+                cam_ids = list(self.modules['camera_controller'].cameras.keys())
+                self.frame_source = self.modules['camera_controller']
+                rois_config = self.modules['camera_controller'].config['rois']
+
+                step("TrafficGenerator")
+                self.modules['traffic_generator'] = TrafficGenerator(
+                    self.world, num_vehicles=10, num_pedestrians=5)
+                self.modules['traffic_generator'].spawn_actors()
+            elif self.source == 'bridge':
+                step("CARLABridgeClient")
+                self.frame_source = CARLABridgeClient(
+                    host=self.bridge_host, port=self.bridge_port)
+                with open(self.config_path, 'r', encoding='utf-8') as f:
+                    cfg = yaml.safe_load(f)
+                cam_ids = [c['camera_id'] for c in cfg['cameras'].values()]
+                rois_config = cfg['rois']
+            else:
+                # 'rtsp' / 'file' / 'webcam' — real camera sources via VideoSource
+                step(f"VideoSource ({self.source})")
+                if self.source == 'rtsp':
+                    sources_input = self.rtsp_urls
+                elif self.source == 'file':
+                    sources_input = self.video_paths
+                else:
+                    sources_input = self.webcam_indices
+
+                if not sources_input:
+                    raise ValueError(
+                        f"--source {self.source} requires at least one "
+                        f"--rtsp-url / --video-path / --webcam-index")
+
+                cam_ids = self.camera_ids or [
+                    f"CAM_{i + 1:03d}" for i in range(len(sources_input))]
+                if len(cam_ids) != len(sources_input):
+                    raise ValueError(
+                        "--camera-ids must list exactly one ID per source "
+                        f"({len(sources_input)} source(s), {len(cam_ids)} ID(s))")
+
+                self.frame_source = MultiVideoSource()
+                for cam_id, src in zip(cam_ids, sources_input):
+                    if self.source == 'rtsp':
+                        self.frame_source.add_source(RTSPVideoSource(src, cam_id))
+                    elif self.source == 'file':
+                        self.frame_source.add_source(
+                            FileVideoSource(src, cam_id, loop=self.loop_video))
+                    else:
+                        self.frame_source.add_source(WebcamVideoSource(src, cam_id))
+
+                with open(self.config_path, 'r', encoding='utf-8') as f:
+                    cfg = yaml.safe_load(f)
+                rois_config = cfg.get('rois', {})
 
             step("ObjectDetector")
             self.modules['detector'] = ObjectDetector(
@@ -131,7 +197,7 @@ class TrackingSystem:
 
             step("AlertSystem")
             self.modules['alert_system'] = AlertSystem(self.modules['trajectory_predictor'])
-            self.modules['alert_system'].set_rois(self.modules['camera_controller'].config['rois'])
+            self.modules['alert_system'].set_rois(rois_config)
 
             step("IncidentDetector")
             self.modules['incident_detector'] = IncidentDetector()
@@ -177,11 +243,12 @@ class TrackingSystem:
                 # ----------------------------------------------------------
                 # Grab frames from all cameras
                 # ----------------------------------------------------------
-                sync_frames = self.modules['camera_controller'].get_synchronized_frames()
+                sync_frames = self.frame_source.get_synchronized_frames()
 
                 if not sync_frames:
                     logger.warning("No frames received, skipping...")
-                    self.world.tick()
+                    if self.source == 'carla':
+                        self.world.tick()
                     continue
 
                 cam_ids = list(sync_frames.keys())
@@ -270,7 +337,8 @@ class TrackingSystem:
                 # End-of-frame housekeeping
                 # ----------------------------------------------------------
                 self.modules['metrics'].update(frame_count, all_global_tracks)
-                self.world.tick()
+                if self.source == 'carla':
+                    self.world.tick()
 
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     logger.info("Exit signal received, stopping.")
@@ -298,17 +366,22 @@ class TrackingSystem:
         logger.info("Cleaning up...")
         cv2.destroyAllWindows()
 
-        if 'camera_controller' in self.modules:
-            self.modules['camera_controller'].cleanup()
+        if self.frame_source is not None:
+            if hasattr(self.frame_source, 'cleanup'):
+                self.frame_source.cleanup()
+            elif hasattr(self.frame_source, 'release_all'):
+                self.frame_source.release_all()
         if 'evidence' in self.modules:
             self.modules['evidence'].flush()
-        if 'traffic_generator' in self.modules:
-            self.modules['traffic_generator'].cleanup()
 
-        if self.world:
-            settings = self.world.get_settings()
-            settings.synchronous_mode = False
-            self.world.apply_settings(settings)
+        if self.source == 'carla':
+            if 'traffic_generator' in self.modules:
+                self.modules['traffic_generator'].cleanup()
+
+            if self.world:
+                settings = self.world.get_settings()
+                settings.synchronous_mode = False
+                self.world.apply_settings(settings)
 
         logger.info("Cleanup completed")
 
@@ -327,16 +400,43 @@ def main():
                         help='FP16 inference — saves ~800 MB VRAM when running with CARLA')
     parser.add_argument('--log-level', default='INFO',
                         choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'])
+    parser.add_argument('--source', choices=['carla', 'bridge', 'rtsp', 'file', 'webcam'],
+                        default='carla',
+                        help="'carla': connect to CARLA directly (in-process). "
+                             "'bridge': receive frames from carla_bridge/server.py over TCP. "
+                             "'rtsp'/'file'/'webcam': real camera sources via VideoSource")
+    parser.add_argument('--bridge-host', default='127.0.0.1',
+                        help='Host of carla_bridge/server.py (--source bridge)')
+    parser.add_argument('--bridge-port', type=int, default=8765,
+                        help='Port of carla_bridge/server.py (--source bridge)')
+    parser.add_argument('--rtsp-url', action='append', default=None,
+                        help='RTSP/HTTP stream URL (--source rtsp). Repeat for multiple cameras.')
+    parser.add_argument('--video-path', action='append', default=None,
+                        help='Path to a video file (--source file). Repeat for multiple cameras.')
+    parser.add_argument('--webcam-index', action='append', type=int, default=None,
+                        help='Webcam device index (--source webcam). Repeat for multiple cameras.')
+    parser.add_argument('--camera-ids', default=None,
+                        help='Comma-separated camera IDs matching --rtsp-url/--video-path/'
+                             '--webcam-index order (default: CAM_001, CAM_002, ...)')
+    parser.add_argument('--loop-video', action='store_true',
+                        help='Loop video file(s) when reaching the end (--source file)')
     args = parser.parse_args()
 
     logging.getLogger().setLevel(getattr(logging, args.log_level))
 
-    system = TrackingSystem(args.config, half=args.half)
+    camera_ids = args.camera_ids.split(',') if args.camera_ids else None
 
-    if not system.initialize_carla():
-        sys.exit(1)
+    system = TrackingSystem(args.config, half=args.half, source=args.source,
+                             bridge_host=args.bridge_host, bridge_port=args.bridge_port,
+                             video_paths=args.video_path, rtsp_urls=args.rtsp_url,
+                             webcam_indices=args.webcam_index, camera_ids=camera_ids,
+                             loop_video=args.loop_video)
 
-    system.setup_synchronous_mode()
+    if system.source == 'carla':
+        if not system.initialize_carla():
+            sys.exit(1)
+
+        system.setup_synchronous_mode()
 
     if not system.initialize_modules():
         sys.exit(1)

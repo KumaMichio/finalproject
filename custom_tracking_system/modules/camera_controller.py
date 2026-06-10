@@ -37,7 +37,7 @@ class CameraController:
     def load_config(self, config_path):
         """Load camera configuration from YAML file"""
         try:
-            with open(config_path, 'r') as f:
+            with open(config_path, 'r', encoding='utf-8') as f:
                 self.config = yaml.safe_load(f)
             logger.info("Configuration loaded successfully")
         except Exception as e:

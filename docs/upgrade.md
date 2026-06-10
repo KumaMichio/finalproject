@@ -1,7 +1,7 @@
 # Kế Hoạch Nâng Cấp Hệ Thống — Hướng Thực Tế
 
-> **Trạng thái cập nhật: 2026-05-29**
-> Giai đoạn 1–3 đã hoàn thành. Giai đoạn 4 đang làm: step 11 (YOLOv8s) và step 12 (ByteTrack) hoàn thành. Xem chi tiết tại mục "Trạng thái triển khai" bên dưới.
+> **Trạng thái cập nhật: 2026-06-10**
+> Tất cả các hạng mục trong tài liệu này đã hoàn thành (xem bảng "Những gì còn thiếu" bên dưới — đã cập nhật). Xung đột môi trường Python/CARLA (CARLA 0.9.9.4 yêu cầu Python 3.7, nhưng boxmot/ultralytics yêu cầu Python 3.8+) **đã được giải quyết** bằng kiến trúc `carla_bridge` (2 process Python giao tiếp qua TCP — xem `bao_cao_tien_do.md` mục 7 item 2 và `execute.md` mục 2.0/Cách 4). Không còn hạng mục chặn nào trước khi chạy full pipeline.
 
 ## Mục Tiêu Nâng Cấp
 
@@ -36,16 +36,17 @@ Object vào frame
 
 ### Những gì còn thiếu
 
-| Hạng mục | Trạng thái | Tác động |
+| Hạng mục | Trạng thái | Ghi chú |
 |---|---|---|
-| Web Dashboard | Chưa có | Operator không thể xem gì |
-| Incident Detection | Chưa có | Không phát hiện tai nạn, bỏ trốn |
-| Velocity history trong Tracker | Chưa có | Không tính được sudden stop / acceleration |
-| Evidence package | Chưa có | Không có bằng chứng khi sự cố xảy ra |
-| CARLA scenario scripting | Chưa có | Không tạo được kịch bản test tai nạn |
-| ~~ByteTrack / Kalman filter~~ | ✅ Hoàn thành | `ByteTrackWrapper` (boxmot) deploy 2026-05-29 |
-| Vehicle ReID | Chưa có | OSNet chỉ train cho người, nhận diện xe kém |
-| Recording & Playback | Chưa có | Không lưu được video sự cố |
+| Web Dashboard | ✅ Hoàn thành | React + Vite + Tailwind; camera grid, incident panel, alert mgmt, object history |
+| Incident Detection | ✅ Hoàn thành | 12 loại sự cố (10 reactive + 2 proactive); cooldown 4s |
+| Velocity history trong Tracker | ✅ Hoàn thành | ByteTrackWrapper lưu velocity; IncidentDetector tính sudden stop/accel |
+| Evidence package | ✅ Hoàn thành | Ring buffer 30s; lưu clip + crop + JSON khi CRITICAL incident |
+| CARLA scenario scripting | ✅ Hoàn thành | `scenario_controller.py` — 5 kịch bản tai nạn |
+| ByteTrack / Kalman filter | ✅ Hoàn thành | `ByteTrackWrapper` (boxmot.ByteTrack) — Kalman + Hungarian |
+| Vehicle ReID | ✅ Hoàn thành | `DualReIDExtractor` — OSNet VeRi-776 fine-tuned (575 classes, 20 checkpoints) |
+| Recording & Playback | ⚠️ Một phần | EvidencePackage lưu clip khi sự cố; chưa có continuous recording theo giờ |
+| Môi trường Python/CARLA | ⚠️ Cần xử lý | CARLA 0.9.9.4 (Python 3.7) xung đột với boxmot/ultralytics (Python 3.8+) |
 
 ---
 
@@ -931,10 +932,11 @@ GIAI ĐOẠN 4 — Nâng cấp độ chính xác AI ⏳ ĐANG LÀM
   12. ✅ IoU Greedy → ByteTrack (hoàn thành 2026-05-29 — Kalman + Hungarian + dual-threshold, boxmot)
   13. Sửa FPS-normalized speed + proactive incident (dùng predicted positions)
   14. Thêm Spatio-Temporal Filter cho cross-camera matching
-  15. Sửa TrajectoryPredictor dùng timestamp thay frame_idx
+  15. ✅ Sửa TrajectoryPredictor dùng timestamp thay frame_idx (hoàn thành 2026-06-01)
   16. Fine-tune YOLOv8s trên dataset giao thông VN (thêm motorcycle)
   17. Fine-tune OSNet trên VeRi-776 (xe thay người)
-  18. Tích hợp VideoSource vào pipeline — hỗ trợ real CCTV footage
+  18. ✅ Tích hợp VideoSource vào main.py (--source rtsp/file/webcam/bridge, hoàn thành 2026-06-10)
+  19. ✅ TrajectoryPredictor: exp-weighted velocity → Kalman Filter constant-acceleration (hoàn thành 2026-06-10)
   → Xem chi tiết: docs/production_model_stack.md
 
 GIAI ĐOẠN 5 — Hoàn thiện ⏳ CHƯA LÀM
@@ -1052,33 +1054,41 @@ Hungarian: optimal matching thay greedy
 
 **Dependencies đã thêm:** `boxmot>=10.0` (thay `filterpy>=1.4`)
 
-#### B2. Tích hợp VideoSource vào pipeline — Real CCTV Footage
+#### B2. Tích hợp VideoSource vào pipeline — Real CCTV Footage ✅ Hoàn thành 2026-06-10 (cho main.py)
 
-**Vấn đề cụ thể:**
-`video_source.py` đã viết đủ 4 class: `CARLAVideoSource`, `RTSPVideoSource`,
-`FileVideoSource`, `WebcamVideoSource`. Tuy nhiên `ai_processor.py` (server) và
-`main.py` vẫn gọi trực tiếp `CameraController` (CARLA-only) trong vòng lặp chính.
-Kết quả: hệ thống **không thể chạy với real CCTV footage** mà không sửa code thủ công.
+**Đã làm:** `main.py` giờ hỗ trợ `--source {carla, bridge, rtsp, file, webcam}`.
+Với `rtsp`/`file`/`webcam`, `initialize_modules()` dựng `MultiVideoSource` từ
+`RTSPVideoSource`/`FileVideoSource`/`WebcamVideoSource` (`modules/video_source.py`),
+truyền qua `--rtsp-url`/`--video-path`/`--webcam-index` (lặp lại cho nhiều camera)
++ `--camera-ids`. `frame_source.get_synchronized_frames()` trả về cùng format
+`{camera_id: {camera_id, frame, timestamp}}` như `CameraController`, nên pipeline
+AI (detector → tracker → reid → global tracker → incident detector) không cần sửa.
+Xem `docs/execute.md` mục 4 — Cách 5.
 
-**Giải pháp — thay thế camera_controller bằng VideoSource trong ai_processor.py:**
+**Còn thiếu (server):** `ai_processor.py` (server, dùng cho frontend) **vẫn**
+gọi trực tiếp `CameraController` (CARLA-only). Áp dụng cách làm tương tự
+`main.py` để server cũng chạy được với real CCTV footage:
 
 ```python
 # Thay:
-self.camera_controller = CameraController(config, carla_client)
-frames = self.camera_controller.get_frames()
+self.camera_controller = CameraController(self.carla_client, self.world, config_path)
+frames = self.camera_controller.get_synchronized_frames()
 
-# Bằng:
-from modules.video_source import RTSPVideoSource, FileVideoSource
-sources = {
-    cam_id: RTSPVideoSource(cam_id, rtsp_url)   # hoặc FileVideoSource
-    for cam_id, rtsp_url in config['cameras'].items()
-}
-frames = {sid: src.get_frame() for sid, src in sources.items()}
+# Bằng (ví dụ RTSP):
+from modules.video_source import MultiVideoSource, RTSPVideoSource
+self.frame_source = MultiVideoSource()
+for cam_id, rtsp_url in real_camera_urls.items():
+    self.frame_source.add_source(RTSPVideoSource(rtsp_url, cam_id))
+frames = self.frame_source.get_synchronized_frames()
 ```
 
-**Điều kiện để chạy real footage:** Chỉ cần đổi nguồn video trong config YAML.
-Pipeline AI (detector → tracker → reid → global tracker → incident detector) không cần
-sửa vì chúng chỉ nhận numpy array.
+**Trạng thái test:** Các source `rtsp`/`file`/`webcam` mới wire xong, **chưa
+test với camera/luồng thật** — cần kiểm tra thực tế trước khi dùng cho demo.
+
+**Chưa làm — Calibration pixel↔world:** Để dự đoán quỹ đạo (mục B5/Kalman) có
+thể hiển thị lên 1 bản đồ chung, cần thêm bước calibration (homography) chuyển
+toạ độ pixel của từng camera sang toạ độ world/map — xem `bao_cao_tien_do.md`
+mục 7 item (3).
 
 #### B3. Spatio-temporal reasoning cho cross-camera matching
 

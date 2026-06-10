@@ -16,6 +16,8 @@ Tat ca source deu implement cung interface:
 """
 
 import time
+import socket
+import struct
 import logging
 from abc import ABC, abstractmethod
 from typing import Optional
@@ -313,3 +315,55 @@ class WebcamVideoSource(VideoSource):
     @property
     def camera_id(self) -> str:
         return self._camera_id
+
+
+# ---------------------------------------------------------------------------
+# CARLA bridge client — nhan frames tu carla_bridge/server.py (Python 3.7)
+# qua TCP socket. Dung khi CARLA PythonAPI (cp37) khong tuong thich voi
+# moi truong AI (Python 3.10 + torch CUDA cho GPU moi).
+# ---------------------------------------------------------------------------
+
+class CARLABridgeClient:
+    """Nhan synchronized frames tu carla_bridge server qua TCP socket.
+
+    Cung interface get_synchronized_frames() nhu CameraController, de
+    drop-in thay the trong main.py khi chay o che do --source bridge.
+    """
+
+    def __init__(self, host: str = '127.0.0.1', port: int = 8765, connect_timeout: float = 60.0):
+        logger.info(f"CARLABridgeClient connecting to {host}:{port} ...")
+        self._sock = socket.create_connection((host, port), timeout=connect_timeout)
+        self._sock.settimeout(None)
+        logger.info(f"CARLABridgeClient connected to {host}:{port}")
+
+    def _recv_exact(self, n: int) -> bytes:
+        buf = bytearray()
+        while len(buf) < n:
+            chunk = self._sock.recv(n - len(buf))
+            if not chunk:
+                raise ConnectionError("CARLA bridge connection closed")
+            buf.extend(chunk)
+        return bytes(buf)
+
+    def get_synchronized_frames(self) -> dict:
+        n_cameras = struct.unpack('<I', self._recv_exact(4))[0]
+        frames = {}
+        for _ in range(n_cameras):
+            id_len = struct.unpack('<I', self._recv_exact(4))[0]
+            camera_id = self._recv_exact(id_len).decode('utf-8')
+            timestamp = struct.unpack('<d', self._recv_exact(8))[0]
+            h, w, c = struct.unpack('<III', self._recv_exact(12))
+            frame_bytes = self._recv_exact(h * w * c)
+            frame = np.frombuffer(frame_bytes, dtype=np.uint8).reshape(h, w, c)
+            frames[camera_id] = {
+                'camera_id': camera_id,
+                'frame': frame,
+                'timestamp': timestamp,
+            }
+        return frames
+
+    def cleanup(self):
+        try:
+            self._sock.close()
+        except Exception:
+            pass

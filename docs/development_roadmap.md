@@ -1,4 +1,4 @@
-# Development Roadmap: He Thong Giam Sat Camera AI Real-time
+﻿# Development Roadmap: He Thong Giam Sat Camera AI Real-time
 
 ## Tong Quan
 
@@ -7,7 +7,7 @@ thanh mot he thong giam sat camera hoan chinh voi giao dien server, AI bao dong 
 
 ---
 
-## Trang Thai Hien Tai (cap nhat 2026-06-01)
+## Trang Thai Hien Tai (cap nhat 2026-06-10)
 
 ### Da hoan thanh — Core Pipeline (100%)
 - [x] CARLA simulator setup (WindowsNoEditor)
@@ -17,7 +17,7 @@ thanh mot he thong giam sat camera hoan chinh voi giao dien server, AI bao dong 
 - [x] Single-camera tracking — ByteTrackWrapper (Kalman + Hungarian + dual-threshold)
 - [x] Cross-camera ReID — DualReIDExtractor: OSNet Market-1501 (person) + OSNet VeRi-776 (vehicle, 575 classes, da train)
 - [x] Global ID assignment — cosine similarity + Spatio-Temporal Filter (camera_topology da cau hinh)
-- [x] Trajectory prediction — exp-weighted velocity px/s, timestamp-based, horizons 0.5s-3s
+- [x] Trajectory prediction — Kalman Filter (constant-acceleration, dt-aware), horizons 0.5s-3s
 - [x] Alert system — ROI entry warning, nhan list positions dung
 - [x] Incident Detector — 12 loai (10 reactive + 2 proactive PREDICTED_COLLISION/ROI_ENTRY, da ket noi predictions)
 - [x] Evidence Package — ring buffer 30s, luu clip + crop + JSON khi su co
@@ -25,8 +25,9 @@ thanh mot he thong giam sat camera hoan chinh voi giao dien server, AI bao dong 
 - [x] Visualization — bounding box, trajectory, ROI overlay
 - [x] Metrics collector — FPS, detection/tracking counts
 - [x] Data writer — export JSON, CSV, summary report
-- [x] Abstract VideoSource — CARLA/RTSP/File/Webcam
+- [x] Abstract VideoSource — CARLA/RTSP/File/Webcam/CARLABridgeClient
 - [x] Ground Truth module — thu thap GT tu CARLA (tach biet AI pipeline)
+- [x] carla_bridge — process Python 3.7 rieng stream frame qua TCP cho main.py --source bridge (Python 3.10+)
 
 ### Da hoan thanh — Backend + Frontend (95%)
 - [x] FastAPI server — 17 REST endpoints, 3 WebSocket channels, MJPEG streaming
@@ -54,12 +55,14 @@ thanh mot he thong giam sat camera hoan chinh voi giao dien server, AI bao dong 
 - [x] train_veri.py: sua bug validation (dung cross-ID test set → 90/10 split dung)
 
 ### Chua hoan thanh
-- [x] /ws/stats push dinh ky — _push_stats_ws() moi 1s tu FPS block; StatsBar hien thi dung
+- [x] /ws/stats push dinh ky -- _push_stats_ws() moi 1s tu FPS block; StatsBar hien thi dung
+- [x] Giai quyet xung dot Python/CARLA -- da trien khai kien truc `carla_bridge`: process Python 3.7 (carla_bridge/server.py) chay CARLA, stream frame qua TCP cho process Python 3.10+ (main.py --source bridge) chay AI pipeline. Khong can nang CARLA len 0.9.15. Chi tiet: bao_cao_tien_do.md muc 7 item 2.
 - [ ] Fine-tune YOLOv8s tren dataset giao thong VN (motorcycle VN)
 - [ ] Re-train VeRi-776 voi validation split da sua (de co val_acc co nghia)
 - [ ] Ground Truth Evaluation — ket noi motmetrics → MOTA, IDF1, mAP
 - [ ] Recording lien tuc — VideoRecorder ghi segment 1h + storage rotation
-- [ ] Tich hop VideoSource vao pipeline (thay camera_controller truc tiep)
+- [x] Tich hop VideoSource vao main.py (--source {bridge,rtsp,file,webcam}); server ai_processor.py van dung camera_controller truc tiep
+- [ ] Calibration pixel<->world (homography) cho trajectory prediction "len map" -- chua bat dau
 - [ ] Camera Management UI — them/xoa camera + ve ROI tren browser
 
 ---
@@ -724,12 +727,22 @@ class DeepSORTTracker:
         ...
 ```
 
-### 6.2 Trajectory Prediction: Linear --> Kalman Filter / LSTM
+### 6.2 Trajectory Prediction: Linear --> Kalman Filter / LSTM ✅ Kalman da xong (2026-06-10)
 
-#### Option A: Kalman Filter (khuyen dung, khong can training)
+#### Option A: Kalman Filter ✅ DA TRIEN KHAI (khong dung filterpy — tu viet KalmanFilter2D)
+
+`modules/trajectory_predictor.py` da duoc viet lai: state `[x, y, vx, vy, ax, ay]`
+(constant-acceleration), measurement `[x, y]`, dt-aware predict/update. Interface
+cu (`update_trajectory`/`predict`/`predict_list`/`get_velocity`/`get_speed`) giu
+nguyen, them `get_acceleration()`. Khong can them dependency `filterpy`.
+
+Con thieu: calibration pixel<->world (homography) de dua du doan ra toa do
+chung tren map — xem muc "Chua hoan thanh" o tren.
+
+#### Option B: LSTM (chua trien khai — chi can khi Kalman khong du)
 
 ```python
-# modules/trajectory_predictor.py — them method
+# modules/trajectory_predictor.py — them method (THAM KHAO, CHUA LAM)
 
 class KalmanPredictor:
     """Kalman Filter cho trajectory prediction"""
@@ -1002,7 +1015,8 @@ finalproject/
         tracker.py                # NANG CAP: ByteTrack/DeepSORT
         reid.py                   # NANG CAP: DualReID (person + vehicle)
         global_tracking.py
-        trajectory_predictor.py   # NANG CAP: Kalman / LSTM
+        trajectory_predictor.py   # DA NANG CAP: Kalman constant-acceleration
+        calibration.py            # MOI (chua lam): pixel<->world homography
         alert_system.py
         anomaly_detector.py       # MOI: phat hien su co thong minh
         recorder.py               # MOI: recording & event clips
@@ -1060,7 +1074,7 @@ finalproject/
 
 ---
 
-## Thu Tu Uu Tien Phat Trien (cap nhat 2026-06-01)
+## Thu Tu Uu Tien Phat Trien (cap nhat 2026-06-09)
 
 ```
 DA XONG:
@@ -1070,24 +1084,39 @@ DA XONG:
   ✅ Vehicle ReID: DualReIDExtractor + VeRi-776 weights (575 classes, epoch 12)
   ✅ Spatio-Temporal Filter: camera_topology 6 cap da cau hinh
   ✅ Proactive alerts: PREDICTED_COLLISION + PREDICTED_ROI_ENTRY hoat dong dung
+  ✅ /ws/stats push FPS/tracks/alerts moi 1s
   ✅ 13 bugs da sua (2026-06-01)
 
+UU TIEN 0 (moi truong): ✅ HOAN THANH
+  Giai quyet xung dot Python/CARLA:
+    CARLA 0.9.9.4 = Python 3.7, nhung boxmot + ultralytics = Python 3.8+
+  --> Da trien khai kien truc carla_bridge (2 process qua TCP), khong can nang CARLA
+      (xem bao_cao_tien_do.md muc 7 item 2)
+
 UU TIEN 1 (danh gia):
-  Ground Truth Evaluation — ket noi motmetrics
+  Ground Truth Evaluation -- ket noi motmetrics
   --> Co so lieu MOTA/IDF1/mAP khach quan
 
-UU TIEN 3 (AI nang cao):
+UU TIEN 2 (AI nang cao):
   Chon epoch tot nhat tu 20 checkpoints co san (khong can re-train):
-    - Nhanh nhat: copy ckpt_ep20.pth → osnet_veri776.pth (cosine annealing hoi tu o ep20)
+    - Nhanh nhat: copy ckpt_ep20.pth -> osnet_veri776.pth (cosine annealing hoi tu o ep20)
     - Chinh xac hon: chay Re-ID eval (rank-1/mAP tren query/gallery VeRi) cho tung epoch
   Fine-tune YOLOv8s cho motorcycle VN
   --> ReID chinh xac hon, detection tot hon voi xe VN
 
-UU TIEN 4 (tinh nang nang cao):
+UU TIEN 3 (tinh nang nang cao):
   Recording lien tuc (segment 1h + storage rotation)
-  VideoSource tich hop vao pipeline
+  ~~VideoSource tich hop vao pipeline~~ -- DA XONG cho main.py (--source rtsp/file/webcam/bridge)
+  Calibration pixel<->world (homography) -- can cho trajectory prediction "len map"
   Camera Management UI tren browser
   --> Production-ready cho camera IP thuc te
+
+UU TIEN 4 (GPU-dependent, neu nang cap len RTX 4060 8GB):
+  YOLOv8s -> YOLOv11s/m (detector, gan nhu mien phi)
+  ByteTrack -> BoT-SORT/OC-SORT (tracker, cung thu vien boxmot)
+  Trajectory Kalman -> deep learning (Trajectron++/Social-GAN/MTR) -- chi khi Kalman khong du
+  OSNet -> CLIP-ReID/TransReID (Re-ID, can >=8GB)
+  --> Xem chi tiet bao_cao_tien_do.md muc 10
 ```
 
 ---
@@ -1108,7 +1137,7 @@ aiofiles>=23.0
 
 # AI nang cap
 motmetrics>=1.4         # MOT evaluation
-filterpy>=1.4           # Kalman filter
+# filterpy KHONG can -- KalmanFilter2D da tu implement trong trajectory_predictor.py
 deep-sort-realtime>=1.3 # DeepSORT (optional)
 
 # Video

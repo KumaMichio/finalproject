@@ -17,59 +17,201 @@
 | OS | Windows 10 64-bit | Windows 11 64-bit |
 | CPU | Intel i5 / AMD Ryzen 5 | Intel i7 / AMD Ryzen 7 |
 | RAM | 16 GB | 32 GB |
-| GPU | NVIDIA GTX 1060 (6GB VRAM) | NVIDIA RTX 3070+ (8GB+ VRAM) |
-| Disk | 50 GB trống | 100 GB SSD |
-| Python | 3.7 | 3.7 (CARLA 0.9.9.4 yêu cầu chính xác Python 3.7) |
-| CARLA | 0.9.9.4 | 0.9.9.4 |
+| GPU | NVIDIA GTX 1060 6GB VRAM | NVIDIA RTX 3060+ (6GB+ VRAM, Ampere/Turing) |
+| Disk | 70 GB trống (CARLA ~12 GB) | 100 GB SSD |
+| Python | 3.7 (carla_bridge) + 3.10+ (AI pipeline) | như khuyến nghị |
+| CARLA | 0.9.9.4 (đã có sẵn, không cần nâng cấp) | 0.9.9.4 |
+| Node.js | 18+ | 20+ (cho frontend) |
+
+> **Xung đột Python/CARLA — đã giải quyết bằng `carla_bridge`**
+> CARLA 0.9.9.4 yêu cầu Python 3.7, nhưng `boxmot>=10.0` (ByteTrack) và
+> `ultralytics>=8.0` (YOLOv8) yêu cầu Python 3.8+. Hai thư viện này không thể
+> cài đặt trong cùng môi trường Python 3.7.
+>
+> Giải pháp: chạy **2 process Python riêng biệt** giao tiếp qua TCP socket —
+> `carla_bridge/server.py` (venv Python 3.7, dùng CARLA `.egg` 0.9.9.4 hiện có)
+> kết nối CARLA và stream frame; `main.py --source bridge` (venv Python 3.10+,
+> đầy đủ boxmot/ultralytics/torchreid) nhận frame và chạy AI pipeline. Không
+> cần tải CARLA 0.9.15 (~12 GB) hay sửa type annotations. Xem **mục 2 (cài đặt
+> 2 venv)** và **Cách 4 ở mục 4** để chạy.
+>
+> Phương án nâng cấp lên CARLA 0.9.15 + Python 3.8 (mô tả ở các bước bên dưới)
+> vẫn được giữ lại làm phương án thay thế nếu sau này cần chạy mọi thứ trong
+> 1 process duy nhất, nhưng **không bắt buộc** với kiến trúc carla_bridge.
 
 ---
 
 ## 2. Cài đặt môi trường
 
-### Bước 1: Tạo môi trường Python 3.7
+> **Lưu ý đường dẫn:** Project nằm tại `e:\School_project\finalproject\`.
 
-```bash
-# Tạo virtual environment với Python 3.7
-python3.7 -m venv venv_tracking
+### 2.0 Phương án khuyến nghị: carla_bridge (2 venv, dùng CARLA hiện có)
 
-# Kích hoạt (Windows)
-venv_tracking\Scripts\activate
+Không cần tải CARLA mới. Tạo **2 virtual environment** riêng biệt:
+
+#### venv_bridge (Python 3.7 — chạy carla_bridge/server.py)
+
+```cmd
+cd e:\School_project\finalproject\custom_tracking_system
+
+py -3.7 -m venv venv_bridge
+venv_bridge\Scripts\activate
+
+pip install numpy pyyaml
+pip install WindowsNoEditor\PythonAPI\carla\dist\carla-0.9.9-cp37-cp37m-win_amd64.egg
 ```
 
-### Bước 2: Cài đặt dependencies
+> Nếu cài `.egg` bằng pip thất bại, thêm vào PYTHONPATH thay vì cài đặt:
+> ```cmd
+> set PYTHONPATH=%PYTHONPATH%;e:\School_project\finalproject\WindowsNoEditor\PythonAPI;e:\School_project\finalproject\WindowsNoEditor\PythonAPI\carla\dist\carla-0.9.9-py3.7-win-amd64.egg
+> ```
 
-```bash
-cd e:\finalproject\PythonAPI\custom_tracking_system
+#### venv_tracking (Python 3.10+ — chạy main.py AI pipeline)
 
+```cmd
+cd e:\School_project\finalproject\custom_tracking_system
+
+py -3.10 -m venv venv_tracking
+venv_tracking\Scripts\activate
+
+# Cài PyTorch GPU trước (CUDA 11.8 cho RTX 3060 / GTX 1050Ti)
+pip install torch==2.0.1+cu118 torchvision==0.15.2+cu118 --extra-index-url https://download.pytorch.org/whl/cu118
+
+# Cài các dependency còn lại (KHÔNG cần gói carla — process này không import carla)
 pip install -r requirements.txt
 ```
 
-> **Lưu ý**: `torchreid` có thể cần cài từ source nếu pip thất bại:
-> ```bash
+> **Lưu ý `torchreid`**: nếu pip thất bại, cài từ source:
+> ```cmd
 > git clone https://github.com/KaiyangZhou/deep-person-reid.git
-> cd deep-person-reid
-> pip install -r requirements.txt
-> python setup.py develop
+> cd deep-person-reid && pip install -e .
 > ```
 
-### Bước 3: Thêm CARLA Python API vào PYTHONPATH
+Cài đặt dependencies Server (cùng venv_tracking hoặc venv riêng):
 
-```bash
-# Windows (thêm vào System Environment Variables hoặc chạy mỗi lần)
-set PYTHONPATH=%PYTHONPATH%;e:\finalproject\PythonAPI;e:\finalproject\PythonAPI\carla\dist\carla-0.9.9-py3.7-win-amd64.egg
+```cmd
+cd e:\School_project\finalproject\server
+pip install -r requirements.txt
 ```
 
-### Bước 4: Kiểm tra cài đặt
+Cài đặt frontend:
 
-```bash
+```cmd
+cd e:\School_project\finalproject\frontend
+npm install
+```
+
+Sau khi cài xong, xem **Cách 4 ở mục 4** để chạy carla_bridge + main.py.
+
+---
+
+### Phương án thay thế: Nâng cấp CARLA 0.9.15 + Python 3.8
+
+> Phương án này KHÔNG bắt buộc nếu đã dùng carla_bridge ở mục 2.0. Chỉ cân
+> nhắc nếu cần chạy CARLA + AI pipeline trong cùng 1 process Python.
+
+> CARLA 0.9.15 cần được tải và giải nén vào `e:\School_project\finalproject\WindowsNoEditor\`.
+
+### Bước 1: Tải CARLA 0.9.15
+
+Tải `CARLA_0.9.15.zip` (hoặc Windows installer) từ GitHub Releases của CARLA.
+Giải nén vào `e:\School_project\finalproject\WindowsNoEditor\`.
+
+Sau khi giải nén, Python API nằm tại:
+```
+WindowsNoEditor\PythonAPI\carla\dist\carla-0.9.15-py3.8-win-amd64.egg
+```
+
+### Bước 2: Tạo môi trường Python 3.8
+
+```cmd
+# Tạo virtual environment với Python 3.8
+py -3.8 -m venv venv_tracking
+
+# Kích hoạt (Windows cmd)
+venv_tracking\Scripts\activate
+```
+
+### Bước 3: Cài đặt dependencies AI Pipeline
+
+```cmd
+cd e:\School_project\finalproject\custom_tracking_system
+
+# Cài PyTorch GPU trước (CUDA 11.8 cho RTX 3060)
+pip install torch==2.0.1+cu118 torchvision==0.15.2+cu118 --extra-index-url https://download.pytorch.org/whl/cu118
+
+# Cài các dependency còn lại
+pip install -r requirements.txt
+```
+
+> **Lưu ý `torchreid`**: nếu pip thất bại, cài từ source:
+> ```cmd
+> git clone https://github.com/KaiyangZhou/deep-person-reid.git
+> cd deep-person-reid && pip install -e .
+> ```
+
+### Bước 4: Cài đặt dependencies Server
+
+```cmd
+cd e:\School_project\finalproject\server
+pip install -r requirements.txt
+```
+
+### Bước 5: Thêm CARLA Python API vào PYTHONPATH
+
+```cmd
+# Thêm vào System Environment Variables (một lần duy nhất) hoặc chạy mỗi lần:
+set PYTHONPATH=%PYTHONPATH%;e:\School_project\finalproject\WindowsNoEditor\PythonAPI;e:\School_project\finalproject\WindowsNoEditor\PythonAPI\carla\dist\carla-0.9.15-py3.8-win-amd64.egg
+```
+
+Hoặc dùng `start.bat` — script này đã tự set PYTHONPATH đúng.
+
+### Bước 6: Cài đặt frontend
+
+```cmd
+cd e:\School_project\finalproject\frontend
+npm install
+```
+
+### Bước 7: Sửa type annotations cho Python 3.8
+
+Thêm dòng sau làm dòng đầu tiên vào 4 file (cần thiết vì syntax `X | Y` là Python 3.10+):
+
+```python
+from __future__ import annotations
+```
+
+Các file cần sửa:
+- `server/services/ai_processor.py`
+- `server/services/stream_service.py`
+- `server/routers/websocket.py`
+- `custom_tracking_system/modules/trajectory_predictor.py`
+
+### Bước 8: Sửa traffic_generator.py cho CARLA 0.9.14+
+
+Mở `custom_tracking_system/modules/traffic_generator.py`, dòng 83, đổi:
+```python
+vehicle.set_autopilot(True)
+```
+thành:
+```python
+vehicle.set_autopilot(True, 8000)
+```
+
+### Bước 9: Kiểm tra cài đặt
+
+```cmd
 # Test CARLA API
 python -c "import carla; print('CARLA version:', carla.__version__)"
 
-# Test PyTorch
-python -c "import torch; print('CUDA available:', torch.cuda.is_available())"
+# Test PyTorch + CUDA
+python -c "import torch; print('CUDA available:', torch.cuda.is_available(), '| Device:', torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU')"
 
 # Test YOLOv8
 python -c "from ultralytics import YOLO; m = YOLO('yolov8s.pt'); print('YOLOv8 OK')"
+
+# Test ByteTrack
+python -c "from boxmot import ByteTrack; print('ByteTrack OK')"
 ```
 
 ---
@@ -157,25 +299,20 @@ Format output: ảnh JPG + label YOLO (`.txt`) với format `class cx cy w h`.
 
 ### 3.2 Multi-Object Tracking — Không cần train riêng
 
-Tracker (`SimpleTracker`) dùng IoU-based matching — **không cần train**, hoạt động trực tiếp trên output của detector.
+Tracker hiện tại là `ByteTrackWrapper` (dùng `boxmot.ByteTrack`) — **không cần train**, hoạt động trực tiếp trên output của detector. Sử dụng Kalman Filter để dự đoán vị trí khi bị che khuất và Hungarian matching để gán ID tối ưu.
 
-Để nâng cấp lên ByteTrack/DeepSORT:
-
-```bash
-# Cài ByteTrack
-git clone https://github.com/ifzhang/ByteTrack.git
-cd ByteTrack && pip install -r requirements.txt
-
-# Cài DeepSORT
-pip install deep-sort-realtime
+```python
+# tracker.py — cấu hình mặc định
+tracker = ByteTrackWrapper(
+    track_activation_threshold=0.25,
+    lost_track_buffer=30,
+    minimum_matching_threshold=0.8,
+    frame_rate=10
+)
 ```
 
-Evaluate tracker trên MOT17:
-```bash
-# Download MOT17
-wget https://motchallenge.net/data/MOT17.zip
-
-# Evaluate (dùng py-motmetrics)
+Để evaluate tracker trên MOT17:
+```cmd
 pip install motmetrics
 python -m motmetrics.apps.evaluateTracking MOT17/train predictions/
 ```
@@ -247,11 +384,13 @@ engine.run(save_dir='models/reid/osnet_carla', max_epoch=30, eval_freq=5, print_
 
 ---
 
-### 3.4 Trajectory Prediction — Linear Motion (mặc định)
+### 3.4 Trajectory Prediction — Kalman Filter Constant-Acceleration (mặc định)
 
-Module `TrajectoryPredictor` dùng linear motion model — **không cần train**, hoạt động ngay.
+Module `TrajectoryPredictor` dùng Kalman Filter constant-acceleration (`KalmanFilter2D`,
+state `[x, y, vx, vy, ax, ay]`, dt-aware) — **không cần train**, hoạt động ngay,
+không phụ thuộc thư viện ngoài (`filterpy` không cần thiết).
 
-#### Nâng cấp lên LSTM (tùy chọn, nâng cao)
+#### Nâng cấp lên LSTM (tùy chọn, nâng cao — chỉ cần khi Kalman không đủ)
 
 ```bash
 # Bước 1: Thu thập trajectory dataset từ CARLA
@@ -297,54 +436,85 @@ python scripts/train.py \
 
 ```
 Để chạy ngay (không cần train):
-  ✅ YOLOv8s pretrained (COCO)      → detector.py tự download + load lần đầu (~22 MB)
-  ✅ OSNet pretrained (Market-1501)  → reid.py tự load nếu có torchreid
-  ✅ Linear trajectory model         → không cần model file
+  ✅ YOLOv8s pretrained (COCO)        → detector.py tự download + load lần đầu (~22 MB)
+  ✅ OSNet pretrained (Market-1501)    → DualReIDExtractor tự load qua torchreid (person)
+  ✅ OSNet VeRi-776 fine-tuned         → weights đã có tại models/reid/osnet_veri776.pth (vehicle)
+  ✅ Exp-weighted velocity predictor   → không cần model file
+  ✅ ByteTrackWrapper                  → không cần train, cài qua boxmot
 
 Để tăng độ chính xác (train thêm):
-  🔧 YOLOv8s fine-tune trên BDD100K + Vietnam Traffic → motorcycle VN chính xác hơn
-  🔧 OSNet fine-tune trên VeRi-776   → Vehicle ReID thay vì Person ReID
-  🔧 LSTM train trên ETH/UCY         → tăng độ chính xác trajectory
+  🔧 YOLOv8s fine-tune trên BDD100K + Vietnam Traffic  → motorcycle VN chính xác hơn
+  🔧 Re-train VeRi-776 với validation split đúng        → val_acc có nghĩa (đã sửa bug)
+  🔧 LSTM train trên ETH/UCY                            → tăng độ chính xác trajectory
 ```
 
 ---
 
 ## 4. Cách chạy project
 
-### Bước 1: Khởi động CARLA Server
+### Cách 1: start.bat (khuyến nghị — khởi động toàn bộ tự động)
 
-```bash
-# Mở terminal riêng, chạy CARLA
-cd e:\finalproject\WindowsNoEditor
+```cmd
+cd e:\School_project\finalproject
+start.bat
+```
+
+Script này tự động:
+1. Khởi động CARLA server (`WindowsNoEditor\CarlaUE4.exe -quality-level=Low`)
+2. Đợi port 2000 ready (timeout 60 giây)
+3. Khởi động backend server với `--with-ai` flag
+4. Khởi động frontend dev server
+
+Để dừng toàn bộ:
+```cmd
+stop.bat
+```
+
+---
+
+### Cách 2: Chạy thủ công từng thành phần
+
+#### Bước 1: Khởi động CARLA Server
+
+```cmd
+cd e:\School_project\finalproject\WindowsNoEditor
 CarlaUE4.exe -windowed -ResX=800 -ResY=600 -quality-level=Low
 
-# Hoặc chạy headless (không cần màn hình, tiết kiệm VRAM)
+# Hoặc headless (tiết kiệm VRAM, không cần màn hình)
 CarlaUE4.exe -RenderOffScreen
 ```
 
-Chờ khoảng 15-30 giây cho đến khi CARLA server sẵn sàng.
+Chờ 15–30 giây cho đến khi CARLA sẵn sàng (port 2000).
 
-### Bước 2: Chạy hệ thống tracking
+#### Bước 2: Khởi động Backend Server
 
-#### Cách 1: Dùng run.bat (đơn giản nhất)
+```cmd
+cd e:\School_project\finalproject\server
 
-```bash
-cd e:\finalproject\AI_custom\custom_tracking_system
+# Chạy không có AI (API-only, không cần CARLA)
+python app.py
 
-# Chạy với cấu hình mặc định (1000 frames)
-run.bat
-
-# Chạy với số frame tùy chỉnh
-run.bat 500
-
-# Chạy với config file khác
-run.bat 1000 config\camera_config.yaml
+# Chạy với AI pipeline đầy đủ (cần CARLA đang chạy)
+python app.py --with-ai
 ```
 
-#### Cách 2: Dùng python trực tiếp (nhiều tuỳ chọn hơn)
+Server khởi động tại `http://localhost:8000`. API docs tại `http://localhost:8000/docs`.
 
-```bash
-cd e:\finalproject\PythonAPI\custom_tracking_system
+#### Bước 3: Khởi động Frontend
+
+```cmd
+cd e:\School_project\finalproject\frontend
+npm run dev
+```
+
+Frontend tại `http://localhost:5173`. Tự proxy `/api`, `/ws`, `/stream` → `:8000`.
+
+---
+
+### Cách 3: Chạy AI pipeline trực tiếp (không qua server, hiển thị OpenCV)
+
+```cmd
+cd e:\School_project\finalproject\custom_tracking_system
 
 # Chạy cơ bản
 python main.py
@@ -353,30 +523,107 @@ python main.py
 python main.py --config config/camera_config.yaml
 
 # Giới hạn số frame
-python main.py --max-frames 500
-
-# Bật debug log
-python main.py --log-level DEBUG
-
-# Kết hợp
-python main.py \
-  --config config/camera_config.yaml \
-  --max-frames 1000 \
-  --log-level INFO
+python main.py --max-frames 500 --log-level INFO
 ```
-
-### Bước 3: Điều khiển trong lúc chạy
 
 | Phím | Hành động |
 |------|-----------|
 | `Q` | Dừng hệ thống (graceful shutdown) |
 | `Ctrl+C` | Dừng ngay lập tức |
 
-### Bước 4: Xem kết quả
+> Cách 3 chạy CARLA in-process (`--source carla`, mặc định) — yêu cầu môi
+> trường Python tương thích cả CARLA lẫn AI libs (xem "Phương án thay thế:
+> Nâng cấp CARLA 0.9.15" ở mục 2). Nếu dùng kiến trúc carla_bridge (mục 2.0),
+> chạy theo **Cách 4** bên dưới.
 
-- **Cửa sổ OpenCV**: Mỗi camera hiện thị 1 cửa sổ riêng với bounding box + Global ID
-- **Log file**: `tracking_system.log` trong thư mục `custom_tracking_system/`
-- **Metrics**: In ra console mỗi 100 frames
+---
+
+### Cách 4: Chạy với carla_bridge (2 process — không cần nâng cấp CARLA)
+
+Yêu cầu đã tạo 2 venv theo mục 2.0 (`venv_bridge` Python 3.7, `venv_tracking` Python 3.10+).
+
+#### Terminal 1 — CARLA Server
+
+```cmd
+cd e:\School_project\finalproject\WindowsNoEditor
+CarlaUE4.exe -windowed -ResX=800 -ResY=600 -quality-level=Low
+```
+
+#### Terminal 2 — carla_bridge (Python 3.7)
+
+```cmd
+cd e:\School_project\finalproject\custom_tracking_system
+venv_bridge\Scripts\activate
+
+python carla_bridge\server.py --config config/camera_config.yaml --num-vehicles 10 --num-pedestrians 5
+```
+
+Mặc định bridge mở TCP server tại `127.0.0.1:8765` và đợi AI process kết nối.
+Tham số `--host` / `--port` để đổi địa chỉ/cổng.
+
+#### Terminal 3 — AI Pipeline (Python 3.10+)
+
+```cmd
+cd e:\School_project\finalproject\custom_tracking_system
+venv_tracking\Scripts\activate
+
+python main.py --source bridge --bridge-host 127.0.0.1 --bridge-port 8765
+```
+
+Các tham số khác (`--config`, `--max-frames`, `--half`, `--log-level`) hoạt động
+như Cách 3. `Q` để dừng, `Ctrl+C` để dừng ngay.
+
+> **Thứ tự khởi động quan trọng**: CARLA server → carla_bridge/server.py (đợi
+> kết nối CARLA + spawn camera/traffic xong) → main.py --source bridge (kết
+> nối tới bridge). Nếu main.py kết nối trước khi bridge sẵn sàng, nó sẽ chờ
+> tối đa `connect_timeout=60s` rồi báo lỗi.
+
+---
+
+### Cách 5: Chạy AI pipeline trên video/camera thật (RTSP/file/webcam)
+
+Không cần CARLA. Dùng `venv_tracking` (Python 3.10+, mục 2.0). Chạy pipeline
+trên nguồn video thật qua lớp `VideoSource` (`modules/video_source.py`).
+
+#### Webcam (demo nhanh, 1 camera)
+
+```cmd
+cd e:\School_project\finalproject\custom_tracking_system
+venv_tracking\Scripts\activate
+
+python main.py --source webcam --webcam-index 0 --camera-ids CAM_001
+```
+
+#### Video file (replay / benchmark)
+
+```cmd
+python main.py --source file --video-path data/test_video.mp4 --camera-ids CAM_001 --loop-video
+```
+
+#### Camera IP qua RTSP (nhiều camera)
+
+```cmd
+python main.py --source rtsp ^
+  --rtsp-url rtsp://192.168.1.100:554/stream1 ^
+  --rtsp-url rtsp://192.168.1.101:554/stream1 ^
+  --camera-ids CAM_001,CAM_002
+```
+
+| Tham số | Ý nghĩa |
+|---|---|
+| `--rtsp-url` / `--video-path` / `--webcam-index` | Lặp lại (`--rtsp-url ... --rtsp-url ...`) để chạy nhiều camera cùng lúc — mỗi tham số tương ứng 1 nguồn |
+| `--camera-ids` | Danh sách ID phân tách bởi dấu phẩy, theo đúng thứ tự các nguồn ở trên. Nếu bỏ qua, mặc định `CAM_001, CAM_002, ...` |
+| `--loop-video` | Chỉ áp dụng `--source file` — phát lại từ đầu khi hết video |
+
+> **Lưu ý ROI/camera_topology**: `--rois` đọc từ `config/camera_config.yaml` như
+> các chế độ khác. Vì `camera_config.yaml` mặc định định nghĩa ROI cho
+> `CAM_001/CAM_002/CAM_003` (kịch bản CARLA), khi chạy với camera thật bạn cần
+> sửa `config/camera_config.yaml` (hoặc tạo file config riêng và truyền qua
+> `--config`) cho đúng `camera_id` và toạ độ ROI của camera thật.
+>
+> **Trạng thái**: các class `RTSPVideoSource`/`FileVideoSource`/`WebcamVideoSource`
+> và `--source {rtsp,file,webcam}` mới được wire vào `main.py` — **chưa được
+> test với camera/luồng thật**, cần kiểm tra thực tế trước khi dùng cho demo.
 
 ---
 
@@ -714,13 +961,16 @@ Giải pháp:
 ### Lỗi: `CUDA out of memory`
 
 ```
-Nguyên nhân: GPU không đủ VRAM cho YOLOv8s + OSNet
-Giải pháp:
-  1. Bật FP16: ObjectDetector(model_type='yolov8s', half=True)  — tiết kiệm ~800 MB
+Nguyên nhân: GPU không đủ VRAM cho YOLOv8s + OSNet + CARLA
+Ước tính VRAM: YOLOv8s FP16 ~800MB, OSNet ~200MB, CARLA ~1.5-2GB → tổng ~2.5-3GB
+RTX 3060 (6GB) đủ chạy toàn bộ pipeline.
+
+Nếu vẫn bị OOM:
+  1. Đảm bảo FP16 đã bật: ObjectDetector(model_type='yolov8s', half=True)
   2. Dùng model nhỏ hơn: model_type='yolov8n'
-  3. Đổi sang CPU: detector = ObjectDetector(device='cpu')
   3. Giảm resolution camera xuống [640, 480]
-  4. Xử lý tuần tự từng camera thay vì song song
+  4. Chạy CARLA ở quality-level=Low hoặc -RenderOffScreen
+  5. Xử lý tuần tự từng camera thay vì song song
 ```
 
 ### Lỗi: `torchreid not found` — Fallback sang ResNet50
