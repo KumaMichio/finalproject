@@ -95,7 +95,17 @@ FastAPI Backend → WebSocket → React Dashboard (6 camera grid)
 
 ### 3.1 Detection — **YOLOv8s** ✅ Đã triển khai (2026-05-29)
 
-#### Lý do chọn YOLOv8s thay vì các biến thể khác
+> **Cập nhật (2026-06-11):** `main.py`/`ObjectDetector` đã đổi default sang
+> **YOLO11m** (~20M params, VRAM tương đương/lớn hơn YOLOv8m ~3.2GB ở batch=6)
+> để chuẩn bị fine-tune trên dataset VisDrone (xem `prepare_visdrone_dataset.py`,
+> `train_yolo_detector.py`, `upgrade.md` mục 16). **Lưu ý:** bảng dưới đây liệt
+> YOLOv8m là "sát ngưỡng 4GB, không an toàn" — nếu hệ thống cuối cùng chạy trên
+> GPU 4GB (1050Ti), nên giảm batch size / dùng `--half` (FP16), hoặc cân nhắc
+> quay lại YOLO11s (~9.4M params, cỡ tương đương YOLOv8s) thay vì YOLO11m.
+> Việc fine-tune hiện đang lên kế hoạch chạy trên GPU 8GB (RTX 4060 cloud), nơi
+> YOLO11m an toàn.
+
+#### Lý do chọn YOLOv8s thay vì các biến thể khác (giữ nguyên — tham khảo lịch sử)
 
 | Model | mAP COCO | VRAM @ batch=6 | FPS thực tế | Ghi chú |
 |---|---|---|---|---|
@@ -565,7 +575,7 @@ score = clf.predict([[speed, accel, turn, density, hour]])
 
 | Tầng | CARLA *(hiện tại)* | **Production Stack** | VRAM | Trạng thái |
 |---|---|---|---|---|
-| **Detection** | ~~YOLOv5s (COCO)~~ | **YOLOv8s** (COCO, 5 class) | ~1.8 GB | ✅ Hoàn thành — fine-tune VN là bước tiếp theo |
+| **Detection** | ~~YOLOv5s~~ → ~~YOLOv8s~~ | **YOLO11m** (COCO, 5 class; auto dùng `weights/yolo11m_vn.pt` nếu có) | ~3+ GB | ⏳ Đổi model 2026-06-11 — fine-tune VN đang chuẩn bị (mục 6) |
 | **Tracking** | ~~IoU Greedy~~ | **ByteTrack** (boxmot, Kalman + Hungarian) | CPU | ✅ Hoàn thành — 2026-05-29 |
 | **Re-ID** | OSNet (Market-1501) | **OSNet** fine-tune VeRi-776 + Spatio-Temporal | ~0.4 GB | ⏳ Chưa làm |
 | **Trajectory** | Linear Extrap (có lỗi) | **Kalman** từ ByteTrack + time-based | CPU | ⏳ Chưa làm |
@@ -583,7 +593,7 @@ score = clf.predict([[speed, accel, turn, density, hour]])
 | 3 | Sửa **FPS-normalized speed** + proactive incident | 1 ngày | Giảm false positive, thêm predict_collision | CPU only |
 | 4 | Thêm **Spatio-Temporal Filter** (50 dòng code) | 1 ngày | Giảm cross-camera false match | CPU only |
 | 5 | Sửa `TrajectoryPredictor` dùng **timestamp** | 1 ngày | Velocity đúng đơn vị | CPU only |
-| 6 | Fine-tune **YOLOv8s** trên dataset VN | 3–5 ngày | Nhận diện xe máy VN chính xác | ~2 GB |
+| 6 | Fine-tune **YOLO11m** trên dataset VisDrone (VN-like) | 3–5 ngày | Nhận diện xe máy VN chính xác | ~3+ GB (RTX 4060 cloud) |
 | 7 | Fine-tune **OSNet trên VeRi-776** | 3–5 ngày | Re-ID xe chính xác hơn | ~2–3 GB |
 | 8 | **Isolation Forest** anomaly detection | 2 ngày | Adaptive threshold, ít false positive | CPU only |
 
