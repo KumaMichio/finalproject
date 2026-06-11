@@ -6,7 +6,7 @@ SQLite backend, tao bang tu dong khi khoi dong server.
 from datetime import datetime
 
 from sqlalchemy import (
-    Column, Integer, Text, Real, Boolean, DateTime, ForeignKey, Index,
+    Column, Integer, Text, REAL, Boolean, DateTime, ForeignKey, Index,
     create_engine,
 )
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
@@ -22,12 +22,12 @@ class Camera(Base):
 
     id = Column(Text, primary_key=True)                 # "CAM_001"
     name = Column(Text, nullable=False, default="")
-    position_x = Column(Real, default=0)
-    position_y = Column(Real, default=0)
-    position_z = Column(Real, default=0)
-    rotation_pitch = Column(Real, default=0)
-    rotation_yaw = Column(Real, default=0)
-    rotation_roll = Column(Real, default=0)
+    position_x = Column(REAL, default=0)
+    position_y = Column(REAL, default=0)
+    position_z = Column(REAL, default=0)
+    rotation_pitch = Column(REAL, default=0)
+    rotation_yaw = Column(REAL, default=0)
+    rotation_roll = Column(REAL, default=0)
     resolution_w = Column(Integer, default=960)
     resolution_h = Column(Integer, default=540)
     fov = Column(Integer, default=90)
@@ -92,9 +92,9 @@ class TrackingHistory(Base):
     box_y1 = Column(Integer)
     box_x2 = Column(Integer)
     box_y2 = Column(Integer)
-    center_x = Column(Real)
-    center_y = Column(Real)
-    confidence = Column(Real, nullable=True)
+    center_x = Column(REAL)
+    center_y = Column(REAL)
+    confidence = Column(REAL, nullable=True)
     timestamp = Column(DateTime, default=datetime.utcnow)
 
     tracked_object = relationship("TrackedObject", back_populates="history")

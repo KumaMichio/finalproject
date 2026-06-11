@@ -80,7 +80,7 @@ class TrafficGenerator:
 
                 if vehicle is not None:
                     # Enable autopilot
-                    vehicle.set_autopilot(True)
+                    vehicle.set_autopilot(True, 8050)
                     self.vehicle_list.append(vehicle)
                     logger.debug(f"Spawned vehicle at {spawn_point.location}")
                 else:

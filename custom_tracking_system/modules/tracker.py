@@ -35,9 +35,9 @@ class ByteTrackWrapper:
                  minimum_matching_threshold: float = 0.8,
                  frame_rate: int = 30):
         self._init_kwargs = dict(
-            track_activation_threshold=track_activation_threshold,
-            lost_track_buffer=lost_track_buffer,
-            minimum_matching_threshold=minimum_matching_threshold,
+            track_thresh=track_activation_threshold,
+            track_buffer=lost_track_buffer,
+            match_thresh=minimum_matching_threshold,
             frame_rate=frame_rate,
         )
         self._history: dict = {}  # {track_id: {positions, timestamps, speeds, class}}
@@ -46,8 +46,8 @@ class ByteTrackWrapper:
                     frame_rate, lost_track_buffer)
 
     def _init_tracker(self):
-        from boxmot import ByteTrack
-        self.tracker = ByteTrack(**self._init_kwargs)
+        from boxmot import BYTETracker
+        self.tracker = BYTETracker(**self._init_kwargs)
 
     def update(self, detections: list, frame: np.ndarray) -> list:
         """

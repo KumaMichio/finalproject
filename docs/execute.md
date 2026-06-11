@@ -1016,3 +1016,95 @@ Giải pháp:
   3. Restart CARLA server: CarlaUE4.exe
   4. Chạy với -quality-level=Low để giảm tải GPU
 ```
+
+### Lỗi: `CarlaUE4.exe` báo thiếu "DirectX Runtime"
+
+```
+Nguyên nhân: Windows 10 không có sẵn các DLL DirectX legacy (D3DX9, XAudio2.7,
+XInput1.3...) mà UE4/CARLA cần (d3dx9_43.dll, xinput1_3.dll, ...).
+winget package "Microsoft.DirectX" (dxwebsetup) KHÔNG cài các DLL này.
+
+Giải pháp: tải và cài "DirectX End-User Runtime (June 2010)" — bộ cài đầy đủ
+chứa các DLL legacy:
+  1. Tải: https://download.microsoft.com/download/8/4/A/84A35BF1-DAFE-4AE8-82AF-AD2AE20B6B14/directx_Jun2010_redist.exe
+  2. Giải nén:  directx_Jun2010_redist.exe /Q /T:%TEMP%\dxredist
+  3. Cài đặt:   %TEMP%\dxredist\DXSETUP.exe /silent
+  4. Kiểm tra: C:\Windows\System32\d3dx9_43.dll và xinput1_3.dll phải tồn tại
+```
+
+### Lỗi `boxmot` không export `ByteTrack`
+
+```
+Nguyên nhân: boxmot 10.0.16 (cài qua "boxmot>=10.0") chỉ export `BYTETracker`,
+không có class `ByteTrack` như requirements.txt giả định.
+
+Giải pháp: trong modules/tracker.py:
+  - Đổi `from boxmot import ByteTrack` → `from boxmot import BYTETracker`
+  - Đổi tên kwargs khi khởi tạo:
+      track_activation_threshold   → track_thresh
+      lost_track_buffer            → track_buffer
+      minimum_matching_threshold   → match_thresh
+      frame_rate                   → frame_rate (giữ nguyên)
+  - update(dets, frame) và format output (cột 0-3=box, 4=id, 5=conf, 6=cls)
+    không đổi.
+
+Lưu ý: cài boxmot/ultralytics không pin version dễ làm pip nâng cấp ngầm
+numpy lên 2.x và torch/torchvision về bản CPU (mất CUDA). Dùng file
+`custom_tracking_system/constraints.txt` (numpy==1.23.1,
+torch==2.0.1+cu118, torchvision==0.15.2+cu118) với `-c constraints.txt`
+khi cài các package AI để giữ đúng phiên bản GPU.
+```
+
+### Lỗi `ImportError: cannot import name 'Real' from 'sqlalchemy'`
+
+```
+Nguyên nhân: server/models/database.py dùng `Real` (không tồn tại trong
+SQLAlchemy), đúng ra phải là `REAL`.
+
+Giải pháp: thay tất cả `Real` → `REAL` trong server/models/database.py.
+```
+
+### Lỗi `cv2.imshow`: "function not implemented... Rebuild with GTK+/Cocoa"
+
+```
+Nguyên nhân: cả opencv-python và opencv-python-headless cùng được cài trong
+venv_tracking (headless là dependency ngầm của ultralytics) — bản headless
+ghi đè module cv2 và không có GUI (HighGUI).
+
+Giải pháp:
+  pip uninstall -y opencv-python opencv-python-headless
+  pip install opencv-python==4.11.0.86
+```
+
+### Lỗi traffic manager: "trying to create rpc server... bind error"
+
+```
+Nguyên nhân: vehicle.set_autopilot(True, 8000) dùng port 8000 cho CARLA
+Traffic Manager, trùng với port 8000 của FastAPI backend (server/app.py).
+
+Giải pháp: đổi port Traffic Manager trong modules/traffic_generator.py:
+  vehicle.set_autopilot(True, 8050)
+```
+
+### Đã xác nhận chạy thành công trên máy thực tế (RTX 4060 8GB)
+
+```
+Cấu hình đã test: Windows 10, Python 3.7.9 (venv) + Python 3.10 (venv_tracking),
+Node.js 24.x, CARLA 0.9.14, RTX 4060 8GB.
+
+Quy trình chạy (Cách 4 — carla_bridge):
+  1. CarlaUE4.exe -RenderOffScreen -quality-level=Low
+  2. (venv 3.7)        python carla_bridge/server.py
+  3. (venv_tracking)   python main.py --source bridge
+  4. (venv_tracking, thư mục server) python app.py        # FastAPI, port 8000
+  5. (frontend)        npm run dev                          # Vite, port 3000
+
+Kết quả: pipeline AI chạy ~8.4 FPS với YOLOv8s + ByteTrack + OSNet ReID (CUDA),
+phát hiện sự cố (SUDDEN_STOP...) hoạt động đúng. Backend (port 8000) và
+frontend (port 3000) chạy độc lập, ổn định ở chế độ --no-ai.
+
+Lưu ý: server/app.py --with-ai KHÔNG chạy được với kiến trúc 2-venv hiện tại
+vì ai_processor.py import trực tiếp `carla` (cần py3.7) và torch/ultralytics
+(cần py3.10) trong cùng 1 process. Muốn tích hợp AI vào backend cần refactor
+ai_processor.py để dùng carla_bridge qua TCP thay vì import carla trực tiếp.
+```
