@@ -16,7 +16,7 @@ REM ----------------------------------------------------------------
 REM  CAU HINH (chinh sua khi can)
 REM ----------------------------------------------------------------
 set CARLA_EXE=%ROOT%WindowsNoEditor\CarlaUE4.exe
-set CARLA_PYTHON=%ROOT%WindowsNoEditor\PythonAPI\carla\dist\carla_extracted
+set CARLA_PYTHON=%ROOT%WindowsNoEditor\PythonAPI\carla\dist\carla-0.9.14-py3.7-win-amd64.egg
 set CARLA_API=%ROOT%WindowsNoEditor\PythonAPI
 set SERVER_DIR=%ROOT%server
 set FRONTEND_DIR=%ROOT%frontend

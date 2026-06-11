@@ -8,18 +8,18 @@ echo Starting Multi-Camera CCTV Tracking System...
 echo.
 
 REM === CARLA Python API path ===
-set CARLA_EXTRACTED=e:\finalproject\WindowsNoEditor\PythonAPI\carla\dist\carla_extracted
-set CARLA_PYTHONAPI=e:\finalproject\WindowsNoEditor\PythonAPI
+set CARLA_EGG=e:\School_project\finalproject\WindowsNoEditor\PythonAPI\carla\dist\carla-0.9.14-py3.7-win-amd64.egg
+set CARLA_PYTHONAPI=e:\School_project\finalproject\WindowsNoEditor\PythonAPI
 
-if not exist "%CARLA_EXTRACTED%\carla\libcarla.cp37-win_amd64.pyd" (
-    echo ERROR: Extracted CARLA package not found.
-    echo Expected: %CARLA_EXTRACTED%\carla\libcarla.cp37-win_amd64.pyd
+if not exist "%CARLA_EGG%" (
+    echo ERROR: CARLA Python API egg not found.
+    echo Expected: %CARLA_EGG%
     echo See execute.md - Section 2 for setup instructions.
     pause
     exit /b 1
 )
 
-set PYTHONPATH=%CARLA_EXTRACTED%;%CARLA_PYTHONAPI%;%PYTHONPATH%
+set PYTHONPATH=%CARLA_EGG%;%CARLA_PYTHONAPI%;%PYTHONPATH%
 
 REM === Default run arguments ===
 set MAX_FRAMES=%1

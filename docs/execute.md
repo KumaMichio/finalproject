@@ -19,25 +19,29 @@
 | RAM | 16 GB | 32 GB |
 | GPU | NVIDIA GTX 1060 6GB VRAM | NVIDIA RTX 3060+ (6GB+ VRAM, Ampere/Turing) |
 | Disk | 70 GB trống (CARLA ~12 GB) | 100 GB SSD |
-| Python | 3.7 (carla_bridge) + 3.10+ (AI pipeline) | như khuyến nghị |
-| CARLA | 0.9.9.4 (đã có sẵn, không cần nâng cấp) | 0.9.9.4 |
+| Python | 3.7 (`carla-sim`, env CARLA) + 3.10 (`veri-train`, AI pipeline) | như khuyến nghị |
+| CARLA | **0.9.14** (`WindowsNoEditor/`, đã cài đặt) | 0.9.14 |
 | Node.js | 18+ | 20+ (cho frontend) |
 
-> **Xung đột Python/CARLA — đã giải quyết bằng `carla_bridge`**
-> CARLA 0.9.9.4 yêu cầu Python 3.7, nhưng `boxmot>=10.0` (ByteTrack) và
-> `ultralytics>=8.0` (YOLOv8) yêu cầu Python 3.8+. Hai thư viện này không thể
-> cài đặt trong cùng môi trường Python 3.7.
+> **Cập nhật (2026-06-11): CARLA đã nâng cấp lên 0.9.14 — không còn dùng `carla_bridge`**
+> Project hiện dùng trực tiếp 2 conda env có sẵn:
+> - `carla-sim` (Python 3.7.16) — chỉ dùng để chạy `CarlaUE4.exe` và các script
+>   tương tác trực tiếp với CARLA Python API (`collect_trajectory_data.py`,
+>   `train_trajectory_predictor.py` khi cần dữ liệu CARLA).
+> - `veri-train` (Python 3.10) — chạy `main.py`/`server/app.py` (AI pipeline:
+>   boxmot, ultralytics, torchreid).
 >
-> Giải pháp: chạy **2 process Python riêng biệt** giao tiếp qua TCP socket —
-> `carla_bridge/server.py` (venv Python 3.7, dùng CARLA `.egg` 0.9.9.4 hiện có)
-> kết nối CARLA và stream frame; `main.py --source bridge` (venv Python 3.10+,
-> đầy đủ boxmot/ultralytics/torchreid) nhận frame và chạy AI pipeline. Không
-> cần tải CARLA 0.9.15 (~12 GB) hay sửa type annotations. Xem **mục 2 (cài đặt
-> 2 venv)** và **Cách 4 ở mục 4** để chạy.
+> CARLA Python API 0.9.14 nằm ở
+> `WindowsNoEditor/PythonAPI/carla/dist/carla-0.9.14-py3.7-win-amd64.egg`
+> (file `.egg`, không phải thư mục `carla_extracted` như bản 0.9.9.4 cũ).
+> `run.bat` và `start.bat` đã được cập nhật để trỏ `PYTHONPATH` tới file `.egg`
+> này. Cách chạy đơn giản nhất: `start.bat` (full) hoặc `start.bat --no-ai`
+> (không cần CARLA) — xem **mục 4**.
 >
-> Phương án nâng cấp lên CARLA 0.9.15 + Python 3.8 (mô tả ở các bước bên dưới)
-> vẫn được giữ lại làm phương án thay thế nếu sau này cần chạy mọi thứ trong
-> 1 process duy nhất, nhưng **không bắt buộc** với kiến trúc carla_bridge.
+> Toàn bộ phần `carla_bridge` (TCP socket bridge giữa 2 venv) và phương án
+> "nâng cấp CARLA 0.9.15 + Python 3.8" mô tả bên dưới (mục 2.0–2.x) là tài liệu
+> **lịch sử**, không còn cần thiết — giữ lại để tham khảo nếu cần debug môi
+> trường cũ, nhưng setup hiện tại của project KHÔNG dùng `carla_bridge`.
 
 ---
 

@@ -20,6 +20,8 @@ ai_processor.py) do not need to change:
     get_speed(global_id) -> float (px/s) | None
 """
 
+from __future__ import annotations
+
 import time as _time
 import numpy as np
 from collections import deque
@@ -279,3 +281,325 @@ class TrajectoryPredictor:
             'pred_horizons_s':       list(PRED_HORIZONS),
             'model':                 'kalman_constant_acceleration',
         }
+
+
+class LearnedTrajectoryPredictor:
+    """Seq2Seq GRU trajectory predictor (world meters), trained offline on
+    CARLA data — see train_trajectory_predictor.py.
+
+    Operates on world-frame [x, y, vx, vy] (meters / m/s), not pixels.
+    If the checkpoint file does not exist (or torch/model import fails),
+    `self.available` is False and predict() always returns None — callers
+    must fall back to Kalman-only behaviour.
+    """
+
+    def __init__(self, checkpoint_path: str = 'weights/trajectory_gru.pth'):
+        self.available = False
+        self.checkpoint_path = checkpoint_path
+        self.histories: dict = {}  # {global_id: deque(maxlen=T_OBS) of step-dicts}
+
+        try:
+            import os
+            import torch
+            from .trajectory_gru import (
+                TrajectoryGRU, build_feature_vector, INTENT_LABELS, T_OBS,
+            )
+
+            if not os.path.exists(checkpoint_path):
+                logger.info("LearnedTrajectoryPredictor: checkpoint not found at %s "
+                             "-> GRU predictions disabled (Kalman-only)", checkpoint_path)
+                return
+
+            checkpoint = torch.load(checkpoint_path, map_location='cpu')
+
+            self._torch = torch
+            self._build_feature_vector = build_feature_vector
+            self._intent_labels = INTENT_LABELS
+            self.t_obs = checkpoint.get('t_obs', T_OBS)
+
+            self.model = TrajectoryGRU(hidden_size=checkpoint.get('hidden_size', 96),
+                                        num_modes=checkpoint.get('num_modes', 3))
+            self.model.load_state_dict(checkpoint['state_dict'])
+            self.model.eval()
+
+            self.norm_mean = np.asarray(checkpoint['norm_mean'], dtype=np.float32)
+            self.norm_std = np.asarray(checkpoint['norm_std'], dtype=np.float32)
+            self.pred_horizons = checkpoint.get('pred_horizons', PRED_HORIZONS)
+            self.class_list = checkpoint.get('class_list', ('car', 'motorcycle', 'person'))
+
+            self.available = True
+            logger.info("LearnedTrajectoryPredictor: loaded checkpoint %s (t_obs=%d)",
+                         checkpoint_path, self.t_obs)
+        except Exception:
+            logger.exception("LearnedTrajectoryPredictor: failed to load checkpoint %s "
+                              "-> GRU predictions disabled (Kalman-only)", checkpoint_path)
+            self.available = False
+
+    def update(self, global_id: int, world_pos, world_vel, obj_class: str,
+               neighbors: list, timestamp: float = None):
+        """Append a new world-frame observation for `global_id`.
+
+        Args:
+            world_pos: (x, y) meters.
+            world_vel: (vx, vy) m/s.
+            obj_class: 'car' | 'motorcycle' | 'person' (or unknown).
+            neighbors: list of up to NUM_NEIGHBORS (dx, dy, dvx, dvy) tuples.
+        """
+        if not self.available:
+            return
+        if global_id not in self.histories:
+            self.histories[global_id] = deque(maxlen=self.t_obs)
+        self.histories[global_id].append({
+            'pos': world_pos,
+            'vel': world_vel,
+            'cls': obj_class,
+            'neighbors': neighbors,
+        })
+
+    def predict(self, global_id: int) -> dict | None:
+        """
+        Returns:
+            {'modes': [[[x,y] x len(pred_horizons)] x num_modes],  # world meters
+             'probs': [float x num_modes],
+             'intent': str,
+             'last_pos': [x, y]}
+            or None if unavailable / not enough history.
+        """
+        if not self.available:
+            return None
+        hist = self.histories.get(global_id)
+        if hist is None or len(hist) < self.t_obs:
+            return None
+
+        torch = self._torch
+        obs_seq = np.stack([
+            self._build_feature_vector(s['pos'], s['vel'], s['cls'], s['neighbors'],
+                                        self.norm_mean, self.norm_std)
+            for s in hist
+        ])
+
+        with torch.no_grad():
+            obs_tensor = torch.from_numpy(obs_seq).float().unsqueeze(0)  # (1, T_OBS, input_dim)
+            pred_deltas, mode_logits, intent_logits = self.model(obs_tensor)
+            probs = torch.softmax(mode_logits, dim=-1)[0].numpy()
+            intent_idx = int(torch.argmax(intent_logits, dim=-1)[0].item())
+            deltas = pred_deltas[0].numpy()  # (num_modes, num_horizons, 2)
+
+        last_pos = np.array(hist[-1]['pos'], dtype=np.float32)
+        pos_std = self.norm_std[:2]
+        modes = (deltas * pos_std + last_pos).tolist()  # de-normalize -> world meters
+
+        return {
+            'modes': modes,
+            'probs': probs.tolist(),
+            'intent': self._intent_labels[intent_idx],
+            'last_pos': last_pos.tolist(),
+        }
+
+    def clear_trajectory(self, global_id: int):
+        self.histories.pop(global_id, None)
+
+
+class EnsembleTrajectoryPredictor:
+    """Drop-in replacement for TrajectoryPredictor that blends the Kalman
+    constant-acceleration filter (pixel-space, always available) with a
+    learned Seq2Seq GRU model (world-space, optional).
+
+    Public interface (predict/predict_list/get_velocity/...) is unchanged
+    and remains pixel-space, so AlertSystem/IncidentDetector/main.py do not
+    need to change. If no calibration is supplied for a camera, or the GRU
+    checkpoint is unavailable, behaviour is identical to plain
+    TrajectoryPredictor (Kalman-only).
+    """
+
+    def __init__(self, window_size: int = 10, calibration: dict | None = None,
+                 gru_checkpoint: str = 'weights/trajectory_gru.pth'):
+        self.kalman = TrajectoryPredictor(window_size=window_size)
+        self.learned = LearnedTrajectoryPredictor(gru_checkpoint)
+        self.calibration = calibration or {}
+
+        # {global_id: (world_pos, timestamp)} — for finite-difference world velocity
+        self._world_history: dict = {}
+        # {global_id: camera_id} — needed to convert GRU world predictions back to pixels
+        self._camera_of: dict = {}
+
+        if self.calibration and self.learned.available:
+            logger.info("EnsembleTrajectoryPredictor: Kalman + GRU ensemble active "
+                         "(%d camera calibration(s))", len(self.calibration))
+        else:
+            logger.info("EnsembleTrajectoryPredictor: Kalman-only "
+                         "(calibration=%s, gru_available=%s)",
+                         bool(self.calibration), self.learned.available)
+
+    # ------------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------------
+
+    def update_trajectory(self, global_id: int, position: list, timestamp: float = None,
+                          camera_id: str = None, obj_class: str = 'car',
+                          all_tracks: list | None = None):
+        """
+        Args:
+            position:   [x, y] pixel coordinates (bounding-box center).
+            camera_id:  CAM_001/etc — required (with calibration) to feed the GRU.
+            obj_class:  'car' | 'motorcycle' | 'person'.
+            all_tracks: optional list of global_track dicts (this frame, all
+                        cameras) — used to build neighbor features for the GRU.
+        """
+        ts = timestamp if timestamp is not None else _time.time()
+
+        self.kalman.update_trajectory(global_id, position, ts)
+
+        if camera_id is not None and self.learned.available:
+            calib = self.calibration.get(camera_id)
+            if calib is not None:
+                self._camera_of[global_id] = camera_id
+                self._update_learned(global_id, position, ts, camera_id, obj_class,
+                                      all_tracks, calib)
+
+    def _update_learned(self, global_id, position, ts, camera_id, obj_class, all_tracks, calib):
+        world_pos = calib.pixel_to_world(position[0], position[1])
+
+        prev = self._world_history.get(global_id)
+        if prev is not None:
+            prev_pos, prev_ts = prev
+            dt = ts - prev_ts
+            if dt > 1e-6:
+                world_vel = ((world_pos[0] - prev_pos[0]) / dt,
+                              (world_pos[1] - prev_pos[1]) / dt)
+            else:
+                world_vel = (0.0, 0.0)
+        else:
+            world_vel = (0.0, 0.0)
+        self._world_history[global_id] = (world_pos, ts)
+
+        neighbors = self._compute_neighbors(global_id, world_pos, camera_id, all_tracks, calib)
+        self.learned.update(global_id, world_pos, world_vel, obj_class, neighbors, ts)
+
+    def _compute_neighbors(self, global_id, world_pos, camera_id, all_tracks, calib,
+                           num_neighbors: int = 3):
+        if not all_tracks:
+            return []
+
+        candidates = []
+        for track in all_tracks:
+            if track.get('camera_id') != camera_id:
+                continue
+            if track.get('global_id') == global_id:
+                continue
+            box = track.get('box')
+            if box is None:
+                continue
+            cx, cy = (box[0] + box[2]) / 2.0, (box[1] + box[3]) / 2.0
+            other_world = calib.pixel_to_world(cx, cy)
+            dx, dy = other_world[0] - world_pos[0], other_world[1] - world_pos[1]
+            # Neighbor velocity not tracked here -> approximate as 0 (relative
+            # velocity then equals -ego_vel, a reasonable static-neighbor prior).
+            candidates.append((dx * dx + dy * dy, (dx, dy, 0.0, 0.0)))
+
+        candidates.sort(key=lambda c: c[0])
+        return [rel for _, rel in candidates[:num_neighbors]]
+
+    def predict(self, global_id: int) -> dict | None:
+        kalman_pred = self.kalman.predict(global_id)
+        if kalman_pred is None:
+            return None
+
+        if not self.learned.available:
+            return kalman_pred
+
+        learned_pred = self.learned.predict(global_id)
+        if learned_pred is None:
+            return kalman_pred
+
+        camera_id = self._camera_of.get(global_id)
+        calib = self.calibration.get(camera_id) if camera_id else None
+        if calib is None:
+            return kalman_pred
+
+        probs = learned_pred['probs']
+        best_mode = int(np.argmax(probs))
+        prob = probs[best_mode]
+        best_path = learned_pred['modes'][best_mode]
+
+        blended = {}
+        for i, h in enumerate(PRED_HORIZONS):
+            key = f't+{h}s'
+            kalman_xy = np.asarray(kalman_pred[key], dtype=float)
+            if i < len(best_path):
+                gru_pixel = calib.world_to_pixel(best_path[i][0], best_path[i][1])
+            else:
+                gru_pixel = None
+
+            if gru_pixel is None:
+                blended[key] = kalman_xy.tolist()
+            else:
+                gru_xy = np.asarray(gru_pixel, dtype=float)
+                blended[key] = (prob * gru_xy + (1.0 - prob) * kalman_xy).tolist()
+
+        return blended
+
+    def predict_list(self, global_id: int) -> list | None:
+        pred = self.predict(global_id)
+        return list(pred.values()) if pred else None
+
+    def predict_modes(self, global_id: int) -> dict | None:
+        """Multi-modal GRU prediction in pixel-space, or None if unavailable.
+
+        Returns:
+            {'modes': [[[x,y] x len(pred_horizons)] x num_modes],  # pixels
+             'probs': [float x num_modes],
+             'intent': str}
+        """
+        if not self.learned.available:
+            return None
+        learned_pred = self.learned.predict(global_id)
+        if learned_pred is None:
+            return None
+
+        camera_id = self._camera_of.get(global_id)
+        calib = self.calibration.get(camera_id) if camera_id else None
+        if calib is None:
+            return None
+
+        pixel_modes = []
+        for path in learned_pred['modes']:
+            pixel_path = []
+            for x, y in path:
+                px = calib.world_to_pixel(x, y)
+                pixel_path.append(list(px) if px is not None else None)
+            pixel_modes.append(pixel_path)
+
+        return {
+            'modes': pixel_modes,
+            'probs': learned_pred['probs'],
+            'intent': learned_pred['intent'],
+        }
+
+    def get_velocity(self, global_id: int):
+        return self.kalman.get_velocity(global_id)
+
+    def get_acceleration(self, global_id: int):
+        return self.kalman.get_acceleration(global_id)
+
+    def get_speed(self, global_id: int):
+        return self.kalman.get_speed(global_id)
+
+    def get_trajectory_history(self, global_id: int) -> dict:
+        return self.kalman.get_trajectory_history(global_id)
+
+    def clear_trajectory(self, global_id: int):
+        self.kalman.clear_trajectory(global_id)
+        self.learned.clear_trajectory(global_id)
+        self._world_history.pop(global_id, None)
+        self._camera_of.pop(global_id, None)
+
+    def get_all_trajectories(self) -> dict:
+        return self.kalman.get_all_trajectories()
+
+    def get_statistics(self) -> dict:
+        stats = self.kalman.get_statistics()
+        stats['model'] = 'kalman_ca + gru_ensemble' if self.learned.available else 'kalman_ca'
+        stats['gru_available'] = self.learned.available
+        stats['calibrated_cameras'] = list(self.calibration.keys())
+        return stats

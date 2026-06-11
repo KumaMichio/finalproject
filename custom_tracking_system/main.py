@@ -21,7 +21,8 @@ from modules.detector import ObjectDetector
 from modules.tracker import ByteTrackWrapper
 from modules.reid import ReIDExtractor
 from modules.global_tracking import GlobalTracker
-from modules.trajectory_predictor import TrajectoryPredictor
+from modules.trajectory_predictor import EnsembleTrajectoryPredictor
+from modules.calibration import CalibrationStore
 from modules.alert_system import AlertSystem
 from modules.incident_detector import IncidentDetector
 from modules.evidence_package import EvidencePackage
@@ -162,8 +163,12 @@ class TrackingSystem:
                 rois_config = cfg.get('rois', {})
 
             step("ObjectDetector")
+            # Use the VN-traffic fine-tuned checkpoint if available, otherwise
+            # fall back to the stock YOLO11m (COCO) weights.
+            yolo_vn_weights = project_root / 'weights' / 'yolo11m_vn.pt'
+            detector_model = str(yolo_vn_weights) if yolo_vn_weights.exists() else 'yolo11m'
             self.modules['detector'] = ObjectDetector(
-                model_type='yolov8s',
+                model_type=detector_model,
                 conf_threshold=0.35,
                 half=self.half,   # FP16 when running alongside CARLA
             )
@@ -193,7 +198,15 @@ class TrackingSystem:
             )
 
             step("TrajectoryPredictor")
-            self.modules['trajectory_predictor'] = TrajectoryPredictor(window_size=10)
+            try:
+                calibration = CalibrationStore.load_from_config(self.config_path)
+            except Exception as e:
+                logger.warning("CalibrationStore.load_from_config failed (%s) "
+                                "-> trajectory predictor will be Kalman-only", e)
+                calibration = {}
+            self.modules['trajectory_predictor'] = EnsembleTrajectoryPredictor(
+                window_size=10, calibration=calibration,
+                gru_checkpoint='weights/trajectory_gru.pth')
 
             step("AlertSystem")
             self.modules['alert_system'] = AlertSystem(self.modules['trajectory_predictor'])
@@ -287,6 +300,9 @@ class TrackingSystem:
                             g['global_id'],
                             [(box[0] + box[2]) / 2, (box[1] + box[3]) / 2],
                             now_ts,
+                            camera_id=camera_id,
+                            obj_class=g.get('class', 'car'),
+                            all_tracks=all_global_tracks,
                         )
 
                     # Build predictions dict once — reused by both alert checks below

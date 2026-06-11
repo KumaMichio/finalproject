@@ -1,7 +1,18 @@
 # Kế Hoạch Nâng Cấp Hệ Thống — Hướng Thực Tế
 
-> **Trạng thái cập nhật: 2026-06-10**
+> **Trạng thái cập nhật: 2026-06-11**
 > Tất cả các hạng mục trong tài liệu này đã hoàn thành (xem bảng "Những gì còn thiếu" bên dưới — đã cập nhật). Xung đột môi trường Python/CARLA (CARLA 0.9.9.4 yêu cầu Python 3.7, nhưng boxmot/ultralytics yêu cầu Python 3.8+) **đã được giải quyết** bằng kiến trúc `carla_bridge` (2 process Python giao tiếp qua TCP — xem `bao_cao_tien_do.md` mục 7 item 2 và `execute.md` mục 2.0/Cách 4). Không còn hạng mục chặn nào trước khi chạy full pipeline.
+>
+> **Cập nhật môi trường (2026-06-11):** Dự án đã nâng cấp CARLA lên **0.9.14**
+> (`WindowsNoEditor/PythonAPI/carla/dist/carla-0.9.14-py3.7-win-amd64.egg`,
+> không còn `carla_extracted`). `run.bat`/`start.bat` đã được sửa để trỏ
+> `PYTHONPATH` tới file `.egg` này. Đã verify `collect_trajectory_data.py`
+> chạy được với CARLA 0.9.14 (Town10HD_Opt, 10Hz, sinh CSV trajectory hợp lệ).
+>
+> **Mới hoàn thành (2026-06-11):** Giai đoạn "Learned Trajectory Prediction"
+> — calibration pixel↔world, Seq2Seq GRU multi-modal + intent classification,
+> CARLA trajectory dataset collector, training script, và ensemble với Kalman.
+> Xem mục **"Giai Đoạn 6 — Learned Trajectory Prediction"** ở cuối tài liệu.
 
 ## Mục Tiêu Nâng Cấp
 
@@ -46,11 +57,11 @@ Object vào frame
 | ByteTrack / Kalman filter | ✅ Hoàn thành | `ByteTrackWrapper` (boxmot.ByteTrack) — Kalman + Hungarian |
 | Vehicle ReID | ✅ Hoàn thành | `DualReIDExtractor` — OSNet VeRi-776 fine-tuned (575 classes, 20 checkpoints) |
 | Recording & Playback | ⚠️ Một phần | EvidencePackage lưu clip khi sự cố; chưa có continuous recording theo giờ |
-| Môi trường Python/CARLA | ⚠️ Cần xử lý | CARLA 0.9.9.4 (Python 3.7) xung đột với boxmot/ultralytics (Python 3.8+) |
+| Môi trường Python/CARLA | ✅ Đã nâng cấp | CARLA **0.9.14** (env `carla-sim`, Python 3.7.16); pipeline chính (`boxmot`/`ultralytics`) chạy ở env `veri-train` (Python 3.10) |
 
 ---
 
-## CARLA 0.9.9.4 — Khả Năng Tạo Kịch Bản Tai Nạn
+## CARLA 0.9.14 — Khả Năng Tạo Kịch Bản Tai Nạn
 
 ### Kết luận: Hoàn toàn có thể
 
@@ -905,8 +916,9 @@ function useIncidents() {
 | **Giai đoạn 1** | Lõi phát hiện sự cố | ✅ Hoàn thành |
 | **Giai đoạn 2** | Kịch bản test CARLA | ✅ Hoàn thành |
 | **Giai đoạn 3** | Web Dashboard | ✅ Hoàn thành |
-| **Giai đoạn 4** | Nâng cấp độ chính xác AI | ⏳ Đang làm (step 11 + 12 xong, 13–18 còn lại) |
+| **Giai đoạn 4** | Nâng cấp độ chính xác AI | ⏳ Đang làm (11,12,13,14,15,18,19 xong, 16–17 còn lại) |
 | **Giai đoạn 5** | Hoàn thiện (recording, evaluation) | ⏳ Chưa làm |
+| **Giai đoạn 6** | Learned Trajectory Prediction (Calibration + GRU + Ensemble) | ✅ Hoàn thành (2026-06-11) |
 
 ## Thứ Tự Phát Triển
 
@@ -930,21 +942,50 @@ GIAI ĐOẠN 3 — Web Dashboard ✅ XONG (2026-05-24)
 GIAI ĐOẠN 4 — Nâng cấp độ chính xác AI ⏳ ĐANG LÀM
   11. ✅ YOLOv5s → YOLOv8s (hoàn thành 2026-05-29 — mAP +20%, thêm motorcycle)
   12. ✅ IoU Greedy → ByteTrack (hoàn thành 2026-05-29 — Kalman + Hungarian + dual-threshold, boxmot)
-  13. Sửa FPS-normalized speed + proactive incident (dùng predicted positions)
-  14. Thêm Spatio-Temporal Filter cho cross-camera matching
+  13. ✅ FPS-normalized speed + proactive incident dùng predicted positions
+      (`incident_detector._check_predicted_collision` /
+      `_check_predicted_roi_entry`, hoàn thành — xem commit 02af3db)
+  14. ✅ Spatio-Temporal Filter cho cross-camera matching
+      (`global_tracking.GlobalTracker._is_feasible_match` /
+      `is_feasible_transition`, dùng `camera_topology`, hoàn thành — xem commit 02af3db)
   15. ✅ Sửa TrajectoryPredictor dùng timestamp thay frame_idx (hoàn thành 2026-06-01)
-  16. Fine-tune YOLOv8s trên dataset giao thông VN (thêm motorcycle)
-  17. Fine-tune OSNet trên VeRi-776 (xe thay người)
+  16. ⏳ Fine-tune YOLO11m trên dataset giao thông VN (thêm motorcycle) —
+      ĐANG LÀM (2026-06-11): đã đổi `ObjectDetector`/`main.py` sang YOLO11m
+      (`modules/detector.py` — `CLASSES_VN` 5 lớp person/car/motorcycle/bus/truck,
+      tự dùng `weights/yolo11m_vn.pt` nếu tồn tại, fallback `yolo11m` COCO nếu
+      chưa có). Đã thêm `prepare_visdrone_dataset.py` (tải + convert
+      VisDrone2019-DET, merge 10 lớp → 5 lớp VN) và `train_yolo_detector.py`
+      (fine-tune qua `ultralytics`). Chưa chạy training thật — đang chờ máy
+      cloud RTX 4060 8GB (torch CUDA cần cài riêng, không downgrade torch của
+      pipeline chính).
+  17. ⏳ Fine-tune OSNet trên VeRi-776 (xe thay người) — model VeRi-776 đã có
+      trong `weights/` (`DualReIDExtractor`), nhưng chưa fine-tune thêm trên
+      dataset giao thông VN
   18. ✅ Tích hợp VideoSource vào main.py (--source rtsp/file/webcam/bridge, hoàn thành 2026-06-10)
   19. ✅ TrajectoryPredictor: exp-weighted velocity → Kalman Filter constant-acceleration (hoàn thành 2026-06-10)
   → Xem chi tiết: docs/production_model_stack.md
 
 GIAI ĐOẠN 5 — Hoàn thiện ⏳ CHƯA LÀM
-  14. Recording liên tục + quản lý storage
-  15. Playback clip sự cố từ dashboard (API + UI)
-  16. Đánh giá định lượng MOTA / IDF1 / mAP
-  17. Settings page: camera management + ROI editor trên UI
-  18. Spatio-temporal reasoning cho cross-camera matching
+  20. Recording liên tục + quản lý storage
+  21. Playback clip sự cố từ dashboard (API + UI)
+  22. Đánh giá định lượng MOTA / IDF1 / mAP
+  23. Settings page: camera management + ROI editor trên UI
+
+GIAI ĐOẠN 6 — Learned Trajectory Prediction ✅ XONG (2026-06-11)
+  24. ✅ modules/calibration.py — CameraCalibration (CARLA projective +
+      homography cho CCTV thật) + CalibrationStore.load_from_config()
+  25. ✅ collect_trajectory_data.py — thu thập trajectory CARLA (world meters)
+      ra CSV, kèm scenario ngẫu nhiên
+  26. ✅ modules/trajectory_gru.py — Seq2Seq GRU multi-modal (3 hypotheses)
+      + auxiliary intent head (straight/turn_left/turn_right/stop)
+  27. ✅ train_trajectory_predictor.py — TrajectoryDataset (K-nearest-neighbor
+      features, normalization) + training loop → weights/trajectory_gru.pth
+  28. ✅ modules/trajectory_predictor.py — LearnedTrajectoryPredictor +
+      EnsembleTrajectoryPredictor (giữ nguyên interface TrajectoryPredictor,
+      fallback an toàn về Kalman-only nếu thiếu checkpoint/calibration)
+  29. ✅ main.py wiring — CalibrationStore + EnsembleTrajectoryPredictor,
+      truyền camera_id/obj_class/all_global_tracks vào update_trajectory()
+  → Xem chi tiết kiến trúc: phần "Giai Đoạn 6" bên dưới.
 ```
 
 ---
@@ -1206,6 +1247,91 @@ class ContinuousRecorder:
             }
         return self.writers[camera_id]['writer']
 ```
+
+---
+
+## Giai Đoạn 6 — Learned Trajectory Prediction (Calibration → Seq2Seq GRU → CARLA Dataset → Intent Head → Kalman Ensemble)
+
+**Mục tiêu:** `TrajectoryPredictor` (Kalman constant-acceleration, pixel-space)
+chỉ ngoại suy quán tính, không học được hành vi thật (rẽ ở giao lộ, giảm tốc,
+tránh nhau). Giai đoạn này thêm một model học (Seq2Seq GRU đa-mode + intent
+classification) train trên trajectory thế giới-thực (mét) thu từ CARLA, rồi
+ensemble với Kalman hiện có.
+
+### Files mới / sửa
+
+| File | Loại | Việc chính |
+|---|---|---|
+| `custom_tracking_system/modules/calibration.py` | mới | `CameraCalibration` (projective CARLA + homography CCTV thật), `CalibrationStore.load_from_config()` |
+| `custom_tracking_system/collect_trajectory_data.py` | mới | thu thập trajectory CARLA (world meters) → CSV theo episode |
+| `custom_tracking_system/modules/trajectory_gru.py` | mới | `TrajectoryGRU` (Seq2Seq, multi-modal 3 hypotheses, intent head), `trajectory_loss`, feature helpers dùng chung |
+| `custom_tracking_system/train_trajectory_predictor.py` | mới | `TrajectoryDataset` + training loop → `weights/trajectory_gru.pth` |
+| `custom_tracking_system/modules/trajectory_predictor.py` | sửa | thêm `LearnedTrajectoryPredictor`, `EnsembleTrajectoryPredictor` (giữ nguyên `TrajectoryPredictor`/`KalmanFilter2D`); thêm `from __future__ import annotations` (fix `dict \| None` không chạy được trên Python 3.7) |
+| `custom_tracking_system/main.py` | sửa | wire `CalibrationStore` + `EnsembleTrajectoryPredictor`, truyền thêm `camera_id`/`obj_class`/`all_global_tracks` vào `update_trajectory()` |
+| `run.bat`, `start.bat` | sửa | PYTHONPATH trỏ tới `carla-0.9.14-py3.7-win-amd64.egg` thay vì `carla_extracted` (không còn tồn tại) |
+
+### Kiến trúc
+
+- **Calibration**: pixel ↔ world (mét) qua intrinsics (từ `fov`+`resolution`)
+  + extrinsics (`position`/`rotation` trong `camera_config.yaml`), ray-cast
+  xuống mặt phẳng `z=ground_z`. Với CCTV thật, dùng
+  `from_point_correspondences()` (homography qua `cv2.findHomography`) — cùng
+  interface `pixel_to_world`/`world_to_pixel`.
+- **TrajectoryGRU**: encoder GRU trên `T_OBS=8` bước quan sát (input =
+  `[x,y,vx,vy]` chuẩn hóa + one-hot class + K=3 neighbor gần nhất); decoder
+  GRUCell autoregressive cho 3 mode × 5 horizon (0.5/1/1.5/2/3s); thêm head
+  mode-probability + head intent (straight/turn_left/turn_right/stop).
+  Loss: winner-takes-all displacement + CE(mode) + CE(intent).
+- **EnsembleTrajectoryPredictor**: drop-in thay `TrajectoryPredictor` —
+  `update_trajectory(global_id, position, timestamp, camera_id, obj_class,
+  all_tracks)` luôn cập nhật Kalman (pixel-space); nếu có calibration cho
+  `camera_id` và checkpoint GRU tồn tại, convert sang world-space và cập nhật
+  GRU. `predict()` trả về format y hệt cũ (`{'t+0.5s':[x,y],...}`, pixel-space)
+  — blend Kalman + GRU theo mode-probability cao nhất; method mới
+  `predict_modes()` trả 3 mode + intent (pixel-space) cho IncidentDetector
+  trong tương lai.
+- **Fallback an toàn**: nếu `weights/trajectory_gru.pth` chưa tồn tại hoặc
+  không có calibration cho camera → hành vi y hệt `TrajectoryPredictor` cũ
+  (Kalman-only), không lỗi.
+
+### Cách chạy
+
+```bash
+# 1. Thu thập dataset (CARLA đang chạy, port 2000)
+python collect_trajectory_data.py --episodes 10 --steps-per-episode 600 \
+    --num-vehicles 15 --num-pedestrians 8 --scenario-ratio 0.3 \
+    --out data/trajectories
+
+# 2. Train
+python train_trajectory_predictor.py --data data/trajectories --epochs 50 \
+    --out weights/trajectory_gru.pth
+
+# 3. Chạy pipeline — tự động dùng GRU nếu checkpoint tồn tại
+run.bat
+```
+
+### Đã verify (2026-06-11)
+
+- `calibration.py`: roundtrip `world_to_pixel`/`pixel_to_world` đúng cho
+  camera_1 (CARLA convention).
+- `trajectory_gru.py`: forward pass + loss tính đúng shape/giá trị.
+- `collect_trajectory_data.py`: chạy với CARLA 0.9.14 thật (Town10HD_Opt),
+  sinh CSV 1350 dòng / 50 ticks hợp lệ.
+- `train_trajectory_predictor.py`: train trên dataset tổng hợp nhỏ, loss
+  giảm, checkpoint load lại được.
+- `EnsembleTrajectoryPredictor`: test cả 2 nhánh — Kalman-only (chưa có
+  checkpoint) và Kalman+GRU (có checkpoint, `predict()`/`predict_modes()`
+  hoạt động đúng).
+
+### Việc tiếp theo (chưa làm)
+
+- Thu thập dataset CARLA quy mô lớn hơn (nhiều episode, đa dạng kịch bản) và
+  train đủ epoch để GRU thực sự hữu ích (hiện mới train smoke-test).
+- Tích hợp `predict_modes()` (3 hypotheses + intent) vào
+  `incident_detector._check_predicted_collision` để bắt sớm các tình huống
+  rẽ làn / đổi hướng mà Kalman tuyến tính bỏ sót.
+- Dùng `CameraCalibration` để chuẩn hóa ngưỡng tốc độ trong
+  `incident_detector.py` từ px/s sang km/h thực (xem mục A3 bên dưới).
 
 ---
 

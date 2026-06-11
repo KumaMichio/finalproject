@@ -9,6 +9,9 @@ PyYAML==6.0
 # PyTorch ecosystem — install separately BEFORE this file:
 #   CPU:  pip install torch==1.10.0+cpu torchvision==0.11.0+cpu torchaudio==0.10.0+cpu -f https://download.pytorch.org/whl/cpu/torch_stable.html
 #   GPU:  pip install torch==1.10.0+cu113 torchvision==0.11.0+cu113 torchaudio==0.10.0 -f https://download.pytorch.org/whl/cu113/torch_stable.html
+#   NOTE: fine-tuning YOLO11 (train_yolo_detector.py) needs a newer torch
+#   (>=2.0, with CUDA matching the training GPU, e.g. cu121 for RTX 4060) —
+#   use a separate env/venv for that, do not downgrade the main pipeline's torch.
 torch>=1.10.0,<1.11.0
 torchvision>=0.11.0,<0.12.0
 torchaudio>=0.10.0,<0.11.0
@@ -18,7 +21,7 @@ pytorch-lightning==1.5.0
 timm==0.4.12
 
 # Computer Vision
-ultralytics>=8.0          # YOLOv8 — replaces yolov5==6.1.0
+ultralytics>=8.3.0        # YOLOv8 / YOLO11 — replaces yolov5==6.1.0
 boxmot>=10.0              # ByteTrack (Kalman + Hungarian) — replaces IoU Greedy
 pycocotools-windows
 albumentations==1.1.0

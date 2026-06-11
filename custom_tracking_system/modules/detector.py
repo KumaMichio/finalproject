@@ -3,6 +3,8 @@ Object Detection Module
 Uses YOLOv8 for detecting vehicles and pedestrians in camera frames
 """
 
+from __future__ import annotations
+
 import cv2
 import numpy as np
 import logging
@@ -11,15 +13,26 @@ logger = logging.getLogger(__name__)
 
 
 class ObjectDetector:
-    """Object detector using YOLOv8 for real-time detection."""
+    """Object detector using YOLOv8/YOLO11 for real-time detection."""
 
-    # COCO class indices of interest
-    CLASSES = {
+    # COCO class indices of interest (used by stock 'yolov8*'/'yolo11*' checkpoints)
+    CLASSES_COCO = {
         0: 'person',
         2: 'car',
         3: 'motorcycle',
         5: 'bus',
         7: 'truck',
+    }
+
+    # Class indices for the VN-traffic fine-tuned checkpoint (5 merged classes,
+    # see custom_tracking_system/data/visdrone_vn.yaml for the VisDrone -> these
+    # class merge mapping used during fine-tuning)
+    CLASSES_VN = {
+        0: 'person',
+        1: 'car',
+        2: 'motorcycle',
+        3: 'bus',
+        4: 'truck',
     }
 
     CLASS_COLORS = {
@@ -31,13 +44,21 @@ class ObjectDetector:
     }
 
     def __init__(self, model_type: str = 'yolov8s', conf_threshold: float = 0.35,
-                 device: str | None = None, half: bool = False):
+                 device: str | None = None, half: bool = False,
+                 class_map: dict | None = None):
         """
         Args:
-            model_type: YOLOv8 variant — 'yolov8n', 'yolov8s', 'yolov8m'
+            model_type: YOLO variant/checkpoint. Either a stock pretrained alias
+                ('yolov8n', 'yolov8s', 'yolov8m', 'yolo11n', 'yolo11s', 'yolo11m', ...)
+                — resolved to '<model_type>.pt' and downloaded by ultralytics — or a
+                path to a custom fine-tuned checkpoint ending in '.pt'
+                (e.g. 'weights/yolo11m_vn.pt').
             conf_threshold: Minimum confidence to keep a detection
             device: 'cpu', 'cuda', '0', etc. None = auto
             half: FP16 inference — saves ~800 MB VRAM, use when running alongside CARLA
+            class_map: optional override of {class_id: class_name}. If None,
+                auto-selected: CLASSES_VN for a custom '.pt' checkpoint path,
+                CLASSES_COCO for a stock pretrained alias.
         """
         import torch
         self.model_type = model_type
@@ -45,6 +66,12 @@ class ObjectDetector:
         self.device = device or ('0' if torch.cuda.is_available() else 'cpu')
         self.half = half
         self.model = None
+        if class_map is not None:
+            self.CLASSES = class_map
+        elif model_type.endswith('.pt'):
+            self.CLASSES = self.CLASSES_VN
+        else:
+            self.CLASSES = self.CLASSES_COCO
         self._load_model()
         logger.info("ObjectDetector initialised: %s on %s%s",
                     model_type, self.device, " (FP16)" if half else "")
@@ -55,11 +82,12 @@ class ObjectDetector:
 
     def _load_model(self):
         from ultralytics import YOLO
+        weights = self.model_type if self.model_type.endswith('.pt') else f'{self.model_type}.pt'
         try:
-            self.model = YOLO(f'{self.model_type}.pt')
+            self.model = YOLO(weights)
             if self.half:
                 self.model.model.half()
-            logger.info("Model loaded: %s", self.model_type)
+            logger.info("Model loaded: %s", weights)
         except Exception as exc:
             logger.error("Failed to load model: %s", exc)
             raise
