@@ -71,6 +71,13 @@ class ReIDExtractor:
         self.model = None
         self._load_model(pretrained)
 
+        # Calibration mean per embedding-space group (see _compute_calibration).
+        # Subtracting this before comparing features removes the large shared
+        # "DC bias" present in raw OSNet/ResNet embeddings, which otherwise makes
+        # cosine similarity between two UNRELATED crops ~0.95+ (see bug notes in
+        # match_with_gallery).
+        self._calib_mean = {'default': self._compute_calibration(self.model)}
+
         logger.info(
             f"ReIDExtractor ready: model={self.model_name}, "
             f"device={self.device}, feature_dim={self.feature_dim}"
@@ -117,6 +124,44 @@ class ReIDExtractor:
             raise
 
     # ------------------------------------------------------------------
+    # Calibration — removes the shared "DC bias" of raw embeddings
+    # ------------------------------------------------------------------
+
+    def _compute_calibration(self, model, n=60, seed=12345):
+        """
+        Estimate the mean embedding of `model` over random-noise crops.
+
+        Raw OSNet/ResNet embeddings share a large common component, so the
+        cosine similarity between two L2-normalised features of completely
+        unrelated crops is ~0.95-0.97 instead of ~0. Subtracting this mean
+        (then re-normalising) centers unrelated features near 0 similarity
+        while preserving the identity-specific signal for true matches.
+        """
+        rng = np.random.RandomState(seed)
+        feats = []
+        with torch.no_grad():
+            for _ in range(n):
+                crop = rng.randint(0, 256, size=(64, 32, 3), dtype=np.uint8)
+                tensor = self.transform(crop).unsqueeze(0).to(self.device)
+                f = model(tensor)
+                f = F.normalize(f, p=2, dim=1)
+                feats.append(f.cpu().numpy().flatten())
+        return np.mean(feats, axis=0)
+
+    def _calibrate(self, feature, group='default'):
+        """Subtract the group's calibration mean and re-normalise."""
+        mean = self._calib_mean.get(group)
+        if mean is None:
+            return feature
+
+        v = feature.flatten() - mean
+        norm = np.linalg.norm(v)
+        if norm < 1e-12:
+            return feature
+
+        return (v / norm).reshape(1, -1)
+
+    # ------------------------------------------------------------------
     # Feature extraction
     # ------------------------------------------------------------------
 
@@ -129,7 +174,8 @@ class ReIDExtractor:
             box: [x1, y1, x2, y2] bounding box (integers).
 
         Returns:
-            numpy array shape (1, feature_dim), L2-normalised, or None on failure.
+            numpy array shape (1, feature_dim), calibrated + L2-normalised,
+            or None on failure.
         """
         try:
             x1, y1, x2, y2 = int(box[0]), int(box[1]), int(box[2]), int(box[3])
@@ -147,7 +193,9 @@ class ReIDExtractor:
                 feat = self.model(tensor)
                 feat = F.normalize(feat, p=2, dim=1)
 
-            return feat.cpu().numpy()   # shape (1, feature_dim)
+            feat_np = feat.cpu().numpy()   # shape (1, feature_dim)
+            group = self.group_for_class(object_class)
+            return self._calibrate(feat_np, group)
 
         except Exception as e:
             logger.error(f"Feature extraction error: {e}")
@@ -157,15 +205,32 @@ class ReIDExtractor:
     # Gallery matching
     # ------------------------------------------------------------------
 
-    def match_with_gallery(self, feature, threshold=0.5):
+    @staticmethod
+    def group_for_class(object_class: str) -> str:
+        """Embedding-space group for an object class.
+
+        ReIDExtractor uses a single model for every class, so all classes
+        share one group. DualReIDExtractor overrides this to separate
+        'person' and 'vehicle' embedding spaces (different models ->
+        cosine similarity between them is meaningless).
+        """
+        return 'default'
+
+    def match_with_gallery(self, feature, threshold=0.5, group='default'):
         """
         Match a feature vector against the gallery using cosine similarity.
 
         Because features are L2-normalised, dot product == cosine similarity.
+        Only gallery entries from the same embedding-space `group` are
+        considered — comparing features produced by different models
+        (e.g. person OSNet vs. vehicle OSNet) is meaningless and was
+        previously causing unrelated objects (cars, pedestrians) to be
+        merged into the same global ID.
 
         Args:
             feature: numpy array (1, feature_dim).
             threshold: minimum cosine similarity to accept a match [0, 1].
+            group: embedding-space group of `feature` (see group_for_class).
 
         Returns:
             int | None: matched global_id, or None if no match above threshold.
@@ -177,10 +242,12 @@ class ReIDExtractor:
         best_id = None
         best_score = -1.0
 
-        for global_id, feat_list in self.gallery.items():
-            # Compare against all stored features; take the best score
-            for gallery_feat in feat_list:
-                score = float(np.dot(query, gallery_feat.flatten()))
+        for global_id, entries in self.gallery.items():
+            # Compare against all stored features in the same group; take the best score
+            for entry in entries:
+                if entry['group'] != group:
+                    continue
+                score = float(np.dot(query, entry['feature'].flatten()))
                 if score > best_score:
                     best_score = score
                     best_id = global_id
@@ -195,16 +262,18 @@ class ReIDExtractor:
     # Gallery management
     # ------------------------------------------------------------------
 
-    def add_to_gallery(self, global_id, feature, max_per_id=10):
+    def add_to_gallery(self, global_id, feature, max_per_id=10, group='default'):
         """
         Add a feature vector to the gallery for a global ID.
 
         Keeps only the most recent `max_per_id` features per ID to bound memory.
+        `group` records which embedding space `feature` belongs to, so
+        match_with_gallery() never compares features from different models.
         """
         if global_id not in self.gallery:
             self.gallery[global_id] = []
 
-        self.gallery[global_id].append(feature)
+        self.gallery[global_id].append({'feature': feature, 'group': group})
 
         if len(self.gallery[global_id]) > max_per_id:
             self.gallery[global_id].pop(0)
@@ -223,7 +292,13 @@ class ReIDExtractor:
 
     def save_gallery(self, filepath):
         try:
-            np.savez(filepath, **{str(k): np.array(v) for k, v in self.gallery.items()})
+            np.savez(filepath, **{
+                str(global_id): np.array(
+                    [(entry['feature'], entry['group']) for entry in entries],
+                    dtype=object,
+                )
+                for global_id, entries in self.gallery.items()
+            })
             logger.info(f"Gallery saved → {filepath}")
         except Exception as e:
             logger.error(f"Failed to save gallery: {e}")
@@ -231,7 +306,10 @@ class ReIDExtractor:
     def load_gallery(self, filepath):
         try:
             data = np.load(filepath, allow_pickle=True)
-            self.gallery = {int(k): list(v) for k, v in data.items()}
+            self.gallery = {
+                int(k): [{'feature': feat, 'group': group} for feat, group in v]
+                for k, v in data.items()
+            }
             logger.info(f"Gallery loaded ← {filepath} ({self.get_gallery_size()} features)")
         except Exception as e:
             logger.error(f"Failed to load gallery: {e}")
@@ -291,6 +369,9 @@ class DualReIDExtractor(ReIDExtractor):
         self._person_model  = self.model       # alias for clarity
         self._vehicle_model = None
         self._vehicle_weights = vehicle_weights
+        # Base class computed the calibration mean for the person model under
+        # the 'default' group key — re-key it to 'person'.
+        self._calib_mean['person'] = self._calib_mean.pop('default')
         self._load_vehicle_model()
 
     # ------------------------------------------------------------------
@@ -325,12 +406,27 @@ class DualReIDExtractor(ReIDExtractor):
             model.to(self.device)
             model.eval()
             self._vehicle_model = model
+            self._calib_mean['vehicle'] = self._compute_calibration(self._vehicle_model)
             logger.info(
                 "Vehicle ReID model loaded: OSNet x1.0  VeRi-776 (%d classes)  val_acc=%.2f%%",
                 num_classes, ckpt.get('val_acc', 0) * 100,
             )
         except Exception as exc:
             logger.error("Failed to load vehicle model: %s", exc)
+
+    # ------------------------------------------------------------------
+    # Embedding-space grouping
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def group_for_class(object_class: str) -> str:
+        """'vehicle' for car/truck/bus/motorcycle, 'person' otherwise.
+
+        These use different OSNet models (vehicle: VeRi-776 fine-tuned,
+        person: Market-1501 pretrained), so their embeddings live in
+        different spaces and must never be compared against each other.
+        """
+        return 'vehicle' if object_class in _VEHICLE_CLASSES else 'person'
 
     # ------------------------------------------------------------------
     # Feature extraction — branch on object class
@@ -354,9 +450,15 @@ class DualReIDExtractor(ReIDExtractor):
         )
         model_to_use = self._vehicle_model if use_vehicle_model else self._person_model
 
+        # Pass through a class label whose group (group_for_class) matches
+        # model_to_use, so the parent uses the matching calibration mean —
+        # e.g. if the vehicle model isn't loaded yet, fall back to 'person'
+        # so calibration matches the person model actually used here.
+        effective_class = object_class if use_vehicle_model else 'person'
+
         # Temporarily swap self.model so the parent _extract_with_model() works
         self.model = model_to_use
-        result = super().extract_feature(frame, box)
+        result = super().extract_feature(frame, box, effective_class)
         self.model = self._person_model   # restore
         return result
 

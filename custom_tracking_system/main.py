@@ -183,6 +183,7 @@ class TrackingSystem:
                     lost_track_buffer=30,
                     minimum_matching_threshold=0.8,
                     frame_rate=_CARLA_FPS,   # 10 fps, not 30
+                    class_map=self.modules['detector'].CLASSES,
                 )
                 for cam_id in cam_ids
             }

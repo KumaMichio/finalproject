@@ -14,7 +14,9 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-# COCO class indices used by ObjectDetector
+# Default class map (COCO indices) — only used if no class_map is supplied.
+# Pass detector.CLASSES explicitly when the detector uses a different scheme
+# (e.g. the VN-finetuned checkpoint's CLASSES_VN = {0:person,1:car,2:motorcycle,3:bus,4:truck}).
 _CLS_MAP = {0: 'person', 2: 'car', 3: 'motorcycle', 5: 'bus', 7: 'truck'}
 
 
@@ -33,21 +35,27 @@ class ByteTrackWrapper:
     def __init__(self, track_activation_threshold: float = 0.25,
                  lost_track_buffer: int = 30,
                  minimum_matching_threshold: float = 0.8,
-                 frame_rate: int = 30):
+                 frame_rate: int = 30,
+                 class_map: dict | None = None):
         self._init_kwargs = dict(
             track_thresh=track_activation_threshold,
             track_buffer=lost_track_buffer,
             match_thresh=minimum_matching_threshold,
             frame_rate=frame_rate,
         )
+        # Must match the class-index scheme of the ObjectDetector feeding this
+        # tracker (detector.CLASSES) — boxmot only returns the numeric class_id,
+        # so the wrong map silently relabels classes (e.g. VN cls_id=1 'car'
+        # would show up as 'unknown' under the COCO map).
+        self.class_map = class_map if class_map is not None else _CLS_MAP
         self._history: dict = {}  # {track_id: {positions, timestamps, speeds, class}}
         self._init_tracker()
         logger.info("ByteTrackWrapper initialised (frame_rate=%d, buffer=%d)",
                     frame_rate, lost_track_buffer)
 
     def _init_tracker(self):
-        from boxmot import BYTETracker
-        self.tracker = BYTETracker(**self._init_kwargs)
+        from boxmot.trackers.bbox.bytetrack.bytetrack import ByteTrack
+        self.tracker = ByteTrack(**self._init_kwargs)
 
     def update(self, detections: list, frame: np.ndarray) -> list:
         """
@@ -85,7 +93,7 @@ class ByteTrackWrapper:
             cls_id   = int(row[6])
 
             box      = [x1, y1, x2, y2]
-            cls_name = _CLS_MAP.get(cls_id, 'unknown')
+            cls_name = self.class_map.get(cls_id, 'unknown')
             center   = [(x1 + x2) / 2, (y1 + y2) / 2]
 
             if track_id not in self._history:

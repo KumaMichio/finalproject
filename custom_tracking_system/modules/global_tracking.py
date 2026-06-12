@@ -68,6 +68,14 @@ class GlobalTracker:
         """
         global_tracks_output = []
 
+        # Global IDs already assigned to a track from THIS camera in THIS
+        # frame. Two simultaneous detections from the same camera can never
+        # be the same physical object, no matter how similar their ReID
+        # features look (low-resolution crops can score above the match
+        # threshold against each other) — so re-matching to an ID already
+        # used this frame is rejected and a fresh ID is created instead.
+        used_global_ids_this_frame = set()
+
         for local_track in local_tracks:
             box = local_track['box']
 
@@ -78,21 +86,30 @@ class GlobalTracker:
             if feature is None:
                 continue
 
-            # Try to match with existing global tracks
+            # Try to match with existing global tracks. Only compare against
+            # gallery entries from the same embedding-space group (e.g. don't
+            # match a car's vehicle-model feature against a pedestrian's
+            # person-model feature — those cosine similarities are meaningless).
+            group = self.reid_extractor.group_for_class(obj_class)
             matched_global_id = self.reid_extractor.match_with_gallery(
-                feature, threshold=self.match_threshold)
+                feature, threshold=self.match_threshold, group=group)
 
-            # Accept match only when spatio-temporally feasible
+            # Accept match only when spatio-temporally feasible and not
+            # already claimed by another track from this camera this frame.
             if (matched_global_id is not None and
+                    matched_global_id not in used_global_ids_this_frame and
                     self._is_feasible_match(matched_global_id, camera_id)):
                 global_id = matched_global_id
             else:
-                # Create new global ID (also covers infeasible cross-camera match)
+                # Create new global ID (also covers infeasible cross-camera
+                # match and same-frame collisions)
                 global_id = self.next_global_id
                 self.next_global_id += 1
 
+            used_global_ids_this_frame.add(global_id)
+
             # Update gallery and track state
-            self.reid_extractor.add_to_gallery(global_id, feature)
+            self.reid_extractor.add_to_gallery(global_id, feature, group=group)
             self._update_global_track(global_id, camera_id, local_track)
 
             global_tracks_output.append({
