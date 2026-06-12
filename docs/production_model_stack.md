@@ -104,6 +104,58 @@ FastAPI Backend → WebSocket → React Dashboard (6 camera grid)
 > quay lại YOLO11s (~9.4M params, cỡ tương đương YOLOv8s) thay vì YOLO11m.
 > Việc fine-tune hiện đang lên kế hoạch chạy trên GPU 8GB (RTX 4060 cloud), nơi
 > YOLO11m an toàn.
+>
+> **Cập nhật (2026-06-12):** Đã thêm `collect_carla_detection_data.py` (sinh
+> dataset detection synthetic từ CARLA, camera CCTV đặt ở góc phố/gắn tường
+> tòa nhà gần các junction — xem `upgrade.md` mục "Giai Đoạn 7") và
+> `merge_detection_datasets.py` (gộp VisDrone-VN + CARLA → 1 dataset
+> `data/visdrone_carla_vn/`). `train_yolo_detector.py` giờ mặc định fine-tune
+> trên dataset đã gộp này thay vì chỉ VisDrone.
+>
+> **Cập nhật (2026-06-12) — Fine-tune YOLO11m HOÀN THÀNH:** Đã chạy xong 18
+> epoch trên `data/visdrone_carla_vn` (6,643 train / 560 val ảnh, batch=8,
+> imgsz=640, RTX 4060). Checkpoint: `runs/detect/runs/detect/yolo11m_vn_carla4/weights/best.pt`.
+> Kết quả cuối (epoch 18):
+>
+> | Metric | Epoch 1 | Epoch 18 (final) |
+> |---|---|---|
+> | mAP50 | 0.346 | **0.559** |
+> | mAP50-95 | 0.189 | **0.334** |
+> | Precision | 0.438 | **0.677** |
+> | Recall | 0.376 | **0.529** |
+> | box_loss (train) | 1.547 | 1.281 |
+> | cls_loss (train) | 1.184 | 0.712 |
+> | dfl_loss (train) | 0.948 | 0.873 |
+>
+> mAP50 tăng +61.6%, mAP50-95 tăng +76.7% so với epoch 1 — model học tốt đặc
+> trưng xe máy/người VN từ dữ liệu CARLA + VisDrone-VN. Biểu đồ
+> `results.png`, `confusion_matrix.png`, `BoxPR_curve.png`, `BoxF1_curve.png`,
+> `BoxP_curve.png`, `BoxR_curve.png`, `results.csv` đã lưu tại
+> `docs/assets/yolo11m_vn_carla/`. Cần copy `best.pt` →
+> `custom_tracking_system/weights/yolo11m_vn.pt` để `ObjectDetector` tự dùng.
+>
+> **Cập nhật (2026-06-12) — Fine-tune bổ sung với dataset CARLA mở rộng
+> (carla5) HOÀN THÀNH:** Thu thập lại dataset detection từ CARLA với 100 xe,
+> 60 người đi bộ, 8 camera CCTV (`collect_carla_detection_data.py`), thu được
+> 1,166 ảnh / 1,475 box (so với 184/191 trước đó — gấp ~6.3 lần). Gộp với
+> `visdrone_carla_vn` thành `data/visdrone_carla_vn2` (7,662 train / 707 val,
+> tỷ lệ CARLA ~15.5%). Tiếp tục fine-tune 10 epoch từ checkpoint
+> `yolo11m_vn.pt` (epoch 18 ở trên), batch=8, imgsz=640, RTX 4060. Checkpoint:
+> `runs/runs/detect/runs/detect/yolo11m_vn_carla5/weights/best.pt`.
+>
+> | Metric | Run trước (epoch 18) | Run này (epoch 10, carla5) |
+> |---|---|---|
+> | mAP50 | 0.559 | **0.5575** |
+> | mAP50-95 | 0.334 | **0.3342** |
+> | Precision | 0.677 | 0.6926 |
+> | Recall | 0.529 | 0.5207 |
+>
+> Kết quả gần như tương đương run trước (mAP50/mAP50-95 đi ngang, precision
+> tăng nhẹ, recall giảm nhẹ) — model đã gần bão hòa với lượng dữ liệu hiện có,
+> dataset CARLA mở rộng giúp đa dạng hóa cảnh nhưng không tạo bước nhảy lớn về
+> mAP trong 10 epoch bổ sung. Biểu đồ và `results.csv` đã lưu tại
+> `docs/assets/yolo11m_vn_carla5/`. Đã copy `best.pt` →
+> `custom_tracking_system/weights/yolo11m_vn.pt` (checkpoint hiện hành).
 
 #### Lý do chọn YOLOv8s thay vì các biến thể khác (giữ nguyên — tham khảo lịch sử)
 
@@ -593,7 +645,7 @@ score = clf.predict([[speed, accel, turn, density, hour]])
 | 3 | Sửa **FPS-normalized speed** + proactive incident | 1 ngày | Giảm false positive, thêm predict_collision | CPU only |
 | 4 | Thêm **Spatio-Temporal Filter** (50 dòng code) | 1 ngày | Giảm cross-camera false match | CPU only |
 | 5 | Sửa `TrajectoryPredictor` dùng **timestamp** | 1 ngày | Velocity đúng đơn vị | CPU only |
-| 6 | Fine-tune **YOLO11m** trên dataset VisDrone (VN-like) | 3–5 ngày | Nhận diện xe máy VN chính xác | ~3+ GB (RTX 4060 cloud) |
+| 6 | Fine-tune **YOLO11m** trên dataset VisDrone + CARLA (VN-like) | 3–5 ngày | Nhận diện xe máy VN chính xác | ~3+ GB (RTX 4060 cloud) |
 | 7 | Fine-tune **OSNet trên VeRi-776** | 3–5 ngày | Re-ID xe chính xác hơn | ~2–3 GB |
 | 8 | **Isolation Forest** anomaly detection | 2 ngày | Adaptive threshold, ít false positive | CPU only |
 

@@ -950,14 +950,21 @@ GIAI ĐOẠN 4 — Nâng cấp độ chính xác AI ⏳ ĐANG LÀM
       `is_feasible_transition`, dùng `camera_topology`, hoàn thành — xem commit 02af3db)
   15. ✅ Sửa TrajectoryPredictor dùng timestamp thay frame_idx (hoàn thành 2026-06-01)
   16. ⏳ Fine-tune YOLO11m trên dataset giao thông VN (thêm motorcycle) —
-      ĐANG LÀM (2026-06-11): đã đổi `ObjectDetector`/`main.py` sang YOLO11m
+      ĐANG LÀM (2026-06-12): đã đổi `ObjectDetector`/`main.py` sang YOLO11m
       (`modules/detector.py` — `CLASSES_VN` 5 lớp person/car/motorcycle/bus/truck,
       tự dùng `weights/yolo11m_vn.pt` nếu tồn tại, fallback `yolo11m` COCO nếu
       chưa có). Đã thêm `prepare_visdrone_dataset.py` (tải + convert
-      VisDrone2019-DET, merge 10 lớp → 5 lớp VN) và `train_yolo_detector.py`
-      (fine-tune qua `ultralytics`). Chưa chạy training thật — đang chờ máy
-      cloud RTX 4060 8GB (torch CUDA cần cài riêng, không downgrade torch của
-      pipeline chính).
+      VisDrone2019-DET, merge 10 lớp → 5 lớp VN), `collect_carla_detection_data.py`
+      (mới — sinh dataset detection synthetic từ CARLA: camera CCTV đặt ở góc
+      phố/gắn tường tòa nhà gần các junction, tự động gán nhãn bbox 2D từ
+      bounding box 3D của actor + depth camera để loại occlusion),
+      `merge_detection_datasets.py` (mới — gộp VisDrone-VN + CARLA thành 1
+      dataset YOLO duy nhất `data/visdrone_carla_vn/`), và
+      `train_yolo_detector.py` (fine-tune qua `ultralytics`, default trỏ tới
+      dataset đã gộp). Chưa chạy training thật — đang chờ máy cloud RTX 4060
+      8GB (torch CUDA cần cài riêng, không downgrade torch của pipeline
+      chính). `collect_carla_detection_data.py` cũng chưa chạy thử với CARLA
+      thật — cần verify nhỏ (`--frames 50`) trước khi thu thập full.
   17. ⏳ Fine-tune OSNet trên VeRi-776 (xe thay người) — model VeRi-776 đã có
       trong `weights/` (`DualReIDExtractor`), nhưng chưa fine-tune thêm trên
       dataset giao thông VN
@@ -1332,6 +1339,65 @@ run.bat
   rẽ làn / đổi hướng mà Kalman tuyến tính bỏ sót.
 - Dùng `CameraCalibration` để chuẩn hóa ngưỡng tốc độ trong
   `incident_detector.py` từ px/s sang km/h thực (xem mục A3 bên dưới).
+
+---
+
+## Giai Đoạn 7 — YOLO11m Fine-tune: Dataset VisDrone + CARLA (mới, 2026-06-12)
+
+**Mục tiêu:** Fine-tune `yolo11m` (đang dùng COCO weights mặc định) trên một
+dataset detection 5 lớp VN (`person, car, motorcycle, bus, truck`) kết hợp
+ảnh thực (VisDrone, góc camera trên cao giống CCTV) và ảnh synthetic từ
+CARLA (đa dạng thời tiết/ánh sáng, có nhãn chính xác tuyệt đối vì lấy từ
+ground-truth 3D).
+
+### Files mới
+
+| File | Việc chính |
+|---|---|
+| `custom_tracking_system/collect_carla_detection_data.py` | Sinh dataset detection từ CARLA: spawn traffic + camera RGB/depth đặt theo kiểu CCTV thật (góc phố, gắn tường tòa nhà, cao 5–8m, nhìn xuống ~10–35°, đặt gần các junction trong bản đồ). Mỗi frame, chiếu 3D bounding box của mọi vehicle/walker lên ảnh qua `CameraCalibration.project_point` (tái dùng `modules/calibration.py`), lọc occlusion bằng depth camera, ghi ra YOLO format `data/carla_det/`. |
+| `custom_tracking_system/merge_detection_datasets.py` | Gộp nhiều dataset YOLO cùng 5 lớp VN (VisDrone-VN + CARLA, hoặc thêm nguồn khác sau này) thành 1 dataset duy nhất `data/visdrone_carla_vn/` + yaml. |
+
+### Cách chạy
+
+```bash
+# 1. Dataset thực (VisDrone) — không cần CARLA
+python prepare_visdrone_dataset.py --out data/visdrone_vn
+
+# 2. Dataset synthetic (CARLA) — cần CarlaUE4.exe đang chạy, env carla-sim (Python 3.7)
+python collect_carla_detection_data.py --frames 50           # smoke test trước
+python collect_carla_detection_data.py --frames 5000 --num-cameras 6 --out data/carla_det
+
+# 3. Gộp 2 dataset
+python merge_detection_datasets.py \
+    --datasets visdrone=data/visdrone_vn carla=data/carla_det \
+    --out data/visdrone_carla_vn
+
+# 4. Fine-tune (env veri-train / cloud RTX 4060, torch CUDA riêng)
+python train_yolo_detector.py --data data/visdrone_carla_vn.yaml --epochs 50 \
+    --batch 16 --out weights/yolo11m_vn.pt
+```
+
+### Camera placement — "góc phố, gắn tường tòa nhà"
+
+Theo yêu cầu thực tế (camera CCTV thường đặt ở góc phố / gắn trên tường nhà,
+nhìn xuống giao lộ): `find_junction_centers()` lấy các junction từ
+`world.get_map().get_topology()`, sau đó `camera_transform_for_junction()`
+đặt camera cách tâm junction 8–15m (≈ vị trí góc tòa nhà), cao 5–8m, pitch
+nghiêng xuống 10–35° hướng về tâm giao lộ — mô phỏng đúng góc nhìn camera an
+ninh thật, khác hẳn 3 camera ngang tầm mắt trong `camera_config.yaml` (dùng
+cho live tracking demo, không phải data collection).
+
+### Trạng thái
+
+- Code đã viết xong, dùng lại `modules/calibration.py` (đã verify ở Giai
+  đoạn 6) và `modules/traffic_generator.py` (đã dùng trong
+  `collect_trajectory_data.py`).
+- **Chưa chạy thử với CARLA thật** — cần `--frames 50` để verify: vị trí
+  camera hợp lý, bbox chiếu đúng, occlusion filter không loại bỏ quá nhiều.
+- Sau khi verify, chạy thu thập quy mô lớn hơn (nhiều junction/map khác
+  nhau, đa dạng `--num-vehicles`/thời tiết qua `world.set_weather()` nếu
+  muốn — hiện chưa tham số hóa weather).
+- Training thật (`train_yolo_detector.py`) vẫn đang chờ máy GPU 8GB.
 
 ---
 

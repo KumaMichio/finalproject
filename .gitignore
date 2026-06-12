@@ -49,6 +49,13 @@ tracking_system.db
 *.db
 
 # ============================================================
+#  Training datasets & run artifacts (qua lon, tu generate lai duoc)
+# ============================================================
+custom_tracking_system/data/
+runs/
+custom_tracking_system/yolo26n.pt
+
+# ============================================================
 #  Virtual environments
 # ============================================================
 venv/

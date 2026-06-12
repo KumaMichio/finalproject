@@ -226,78 +226,97 @@ python -c "from boxmot import ByteTrack; print('ByteTrack OK')"
 
 ---
 
-### 3.1 Object Detection — YOLOv8s
+### 3.1 Object Detection — YOLO11m (5 lớp VN)
 
-#### Dataset
+`detector.py` (`ObjectDetector`) mặc định dùng `yolo11m` (COCO weights, qua
+`CLASSES_COCO`) và **tự động** chuyển sang checkpoint fine-tune
+`weights/yolo11m_vn.pt` (5 lớp `CLASSES_VN`: person/car/motorcycle/bus/truck)
+nếu file đó tồn tại. Mục này mô tả cách tạo `weights/yolo11m_vn.pt`.
 
-| Dataset | Mục đích | Link tải |
-|---------|----------|----------|
-| **COCO 2017** | Pretrain chính — đã tích hợp trong `yolov8s.pt` | https://cocodataset.org/#download |
-| **BDD100K** | Fine-tune cho đường phố thực tế (ngày/đêm/mưa) | https://bdd-data.berkeley.edu/ |
-| **Vietnam Traffic (Roboflow)** | Fine-tune motorcycle VN (~3k ảnh) | https://roboflow.com |
-| **CARLA Synthetic** | Fine-tune cho domain CARLA (tự tạo) | Xem mục 3.1.3 |
+#### Dataset — 2 nguồn, gộp lại bằng script có sẵn
 
-#### 3.1.1 Sử dụng YOLOv8s pretrained (không cần train)
+| Dataset | Mục đích | Script |
+|---------|----------|--------|
+| **VisDrone2019-DET** | Ảnh thực, góc camera trên cao giống CCTV — merge 10 lớp gốc → 5 lớp VN | `prepare_visdrone_dataset.py` |
+| **CARLA Synthetic** | Camera CCTV ảo đặt ở góc phố/gắn tường tòa nhà gần giao lộ, nhãn bbox tự động từ ground-truth 3D | `collect_carla_detection_data.py` |
+
+#### 3.1.1 Sử dụng YOLO11m pretrained (không cần train)
 
 ```python
-# Trong detector.py — đã được config sẵn
-# model_type: 'yolov8n' (nhanh nhất), 'yolov8s' (khuyến nghị), 'yolov8m' (chính xác hơn nhưng sát 4GB VRAM)
-detector = ObjectDetector(model_type='yolov8s', conf_threshold=0.35)
+# Trong detector.py — đã config sẵn, chạy ngay không cần fine-tune
+detector = ObjectDetector(model_type='yolo11m', conf_threshold=0.35)
 
 # Khi chạy cùng CARLA (VRAM hạn chế), bật FP16:
-detector = ObjectDetector(model_type='yolov8s', conf_threshold=0.35, half=True)
+detector = ObjectDetector(model_type='yolo11m', conf_threshold=0.35, half=True)
 
 # Batched inference cho 6 camera (1 forward pass thay 6):
 detections_per_cam = detector.detect_batch([frame_cam1, frame_cam2, ..., frame_cam6])
 ```
 
-Pretrained YOLOv8s trên COCO detect được: `car`, `truck`, `bus`, `person`, `motorcycle` — đủ dùng ngay.
+Pretrained YOLO11m trên COCO detect được: `car`, `truck`, `bus`, `person`,
+`motorcycle` — đủ dùng ngay nếu chưa fine-tune.
 
-#### 3.1.2 Fine-tune YOLOv8s trên BDD100K + Vietnam Traffic (tùy chọn)
+#### 3.1.2 Chuẩn bị dataset VisDrone-VN
 
-```bash
-pip install ultralytics
+Tải + convert VisDrone2019-DET (train ~1.4GB, val ~70MB) sang YOLO format,
+merge 10 lớp gốc → 5 lớp VN (`person, car, motorcycle, bus, truck`):
+
+```cmd
+cd custom_tracking_system
+python prepare_visdrone_dataset.py --out data/visdrone_vn
 ```
 
-```python
-from ultralytics import YOLO
-
-model = YOLO('yolov8s.pt')
-model.train(
-    data='traffic_vn.yaml',
-    epochs=50,
-    imgsz=640,
-    batch=8,           # vừa 4 GB VRAM
-    device=0,
-    optimizer='AdamW',
-    lr0=0.001,
-    augment=True,
-    val=True
-)
-```
-
-File `traffic_vn.yaml`:
-```yaml
-path: datasets/traffic_vn
-train: images/train
-val: images/val
-
-nc: 5
-names: ['person', 'car', 'motorcycle', 'bus', 'truck']
-```
+Output: `data/visdrone_vn/images/{train,val}`, `data/visdrone_vn/labels/{train,val}`,
+`data/visdrone_vn.yaml`.
 
 #### 3.1.3 Tạo synthetic dataset từ CARLA
 
-```python
-# Script thu thập dữ liệu detection từ CARLA
-# Chạy CARLA server trước, sau đó:
-python e:\finalproject\PythonAPI\custom_tracking_system\utils\data_writer.py \
-  --mode collect_detection \
-  --output datasets/synthetic_data/detection \
-  --frames 5000
+`collect_carla_detection_data.py` (env `carla-sim`, CarlaUE4.exe đang chạy)
+spawn traffic + nhiều camera RGB/depth đặt theo kiểu CCTV thật — gần các
+junction trong bản đồ, cách tâm 8–15m (≈ góc tòa nhà), cao 5–8m, nghiêng
+xuống 10–35°. Mỗi frame, bounding box 3D của mọi vehicle/walker được chiếu
+lên ảnh (`modules/calibration.py`), lọc occlusion bằng depth camera, ghi
+label YOLO 5 lớp VN.
+
+```cmd
+cd custom_tracking_system
+:: smoke test trước (verify camera placement + bbox projection)
+python collect_carla_detection_data.py --frames 50 --out data/carla_det_test
+
+:: thu thập thật
+python collect_carla_detection_data.py --frames 5000 --num-cameras 6 --out data/carla_det
 ```
 
-Format output: ảnh JPG + label YOLO (`.txt`) với format `class cx cy w h`.
+Output: `data/carla_det/images/{train,val}`, `data/carla_det/labels/{train,val}`,
+`data/carla_det.yaml`.
+
+> **Trạng thái (2026-06-12):** script đã viết xong nhưng **chưa chạy thử với
+> CARLA thật** — luôn chạy `--frames 50` trước để kiểm tra vị trí camera và
+> bbox hợp lý trước khi thu thập số lượng lớn.
+
+#### 3.1.4 Gộp dataset và fine-tune YOLO11m
+
+```cmd
+cd custom_tracking_system
+
+:: gộp VisDrone-VN + CARLA thành 1 dataset
+python merge_detection_datasets.py ^
+    --datasets visdrone=data/visdrone_vn carla=data/carla_det ^
+    --out data/visdrone_carla_vn
+
+:: fine-tune (env veri-train hoặc cloud RTX 4060 8GB — torch CUDA riêng,
+:: không downgrade torch của pipeline chính)
+python train_yolo_detector.py --data data/visdrone_carla_vn.yaml --epochs 50 ^
+    --batch 16 --out weights/yolo11m_vn.pt
+```
+
+Hardware notes (xem docstring `train_yolo_detector.py`):
+- RTX 4060 8GB: `--batch 16-24 --device 0`
+- GTX 1050Ti 4GB: `--batch 4-8 --device 0 --half`
+- CPU only: `--device cpu --batch 4 --epochs 2` (chỉ để smoke test)
+
+Sau khi train xong, `weights/yolo11m_vn.pt` được `ObjectDetector` tự động
+dùng (xem `modules/detector.py`) — không cần sửa code.
 
 ---
 

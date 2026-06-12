@@ -1,12 +1,26 @@
 """
-Fine-tune YOLO11m on the VisDrone-derived VN-traffic dataset (5 classes:
-person, car, motorcycle, bus, truck — see data/visdrone_vn.yaml).
+Fine-tune YOLO11m on a VN-traffic detection dataset (5 classes:
+person, car, motorcycle, bus, truck).
 
-Run prepare_visdrone_dataset.py first to generate data/visdrone_vn/.
+Two data sources, both producing the same images/{train,val} +
+labels/{train,val} YOLO layout with these 5 classes:
+
+    1. prepare_visdrone_dataset.py  -> data/visdrone_vn/   (real-world, VisDrone)
+    2. collect_carla_detection_data.py -> data/carla_det/  (synthetic, CARLA CCTV)
+
+Combine them with merge_detection_datasets.py before training:
+
+    python prepare_visdrone_dataset.py --out data/visdrone_vn
+    python collect_carla_detection_data.py --out data/carla_det   # run inside CARLA
+    python merge_detection_datasets.py \
+        --datasets visdrone=data/visdrone_vn carla=data/carla_det \
+        --out data/visdrone_carla_vn
 
 Usage:
-    python train_yolo_detector.py --data data/visdrone_vn.yaml --epochs 50 \
+    python train_yolo_detector.py --data data/visdrone_carla_vn.yaml --epochs 50 \
         --batch 16 --out weights/yolo11m_vn.pt
+
+(VisDrone-only is also fine: --data data/visdrone_vn.yaml)
 
 Hardware notes:
     - RTX 4060 8GB:  --batch 16-24 --device 0
@@ -27,7 +41,9 @@ from ultralytics import YOLO
 def main():
     parser = argparse.ArgumentParser(description=__doc__,
                                       formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('--data', default='data/visdrone_vn.yaml')
+    parser.add_argument('--data', default='data/visdrone_carla_vn.yaml',
+                         help='ultralytics dataset yaml — see merge_detection_datasets.py '
+                              '(use data/visdrone_vn.yaml for VisDrone-only)')
     parser.add_argument('--model', default='yolo11m.pt',
                          help='base checkpoint to fine-tune from')
     parser.add_argument('--epochs', type=int, default=50)
