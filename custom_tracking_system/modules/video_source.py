@@ -346,6 +346,7 @@ class CARLABridgeClient:
         return bytes(buf)
 
     def get_synchronized_frames(self) -> dict:
+        frame_number = struct.unpack('<I', self._recv_exact(4))[0]
         n_cameras = struct.unpack('<I', self._recv_exact(4))[0]
         frames = {}
         for _ in range(n_cameras):
@@ -359,6 +360,7 @@ class CARLABridgeClient:
                 'camera_id': camera_id,
                 'frame': frame,
                 'timestamp': timestamp,
+                'frame_number': frame_number,
             }
         return frames
 

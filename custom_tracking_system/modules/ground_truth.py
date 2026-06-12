@@ -7,8 +7,13 @@ trong qua trinh nhan dien/tracking.
 Trong CARLA: doc actor_id, location, velocity tu CARLA World.
 Trong thuc te: doc tu file annotation (MOT format, COCO format).
 
-AI pipeline KHONG DUOC import module nay.
-Chi utils/metrics.py va evaluation scripts moi dung.
+AI pipeline (detection/tracking/ReID/trajectory/alert logic) KHONG DUOC dung
+du lieu tu module nay de ra quyet dinh.
+
+Ngoai le: main.py (--source carla) duoc phep IMPORT va GOI
+`project_actors_to_cameras()` CHI de ghi file gt_<CAM_ID>.txt khi chay voi
+--eval-output (evaluation logging). Day la nhanh code rieng, khong anh huong
+toi detection/tracking/global_id/alert/incident.
 """
 
 import logging
@@ -16,6 +21,67 @@ from datetime import datetime
 from typing import Optional
 
 logger = logging.getLogger(__name__)
+
+
+def project_actors_to_cameras(world, calibrations):
+    """Project every vehicle/pedestrian 3D bounding box onto each camera's
+    pixel space, for the CURRENT carla world tick.
+
+    Used by carla_bridge/server.py (Python 3.7, has CARLA world access) to
+    export ground-truth detections for MOT evaluation. NOT imported by the
+    AI pipeline (main.py).
+
+    Args:
+        world: carla.World
+        calibrations: {camera_id: CameraCalibration} (from CalibrationStore)
+
+    Returns:
+        {camera_id: [{'id': actor_id, 'box': [x1,y1,x2,y2], 'class': 'vehicle'|'pedestrian'}]}
+    """
+    actors = world.get_actors()
+    targets = []
+    for v in actors.filter('vehicle.*'):
+        targets.append((v, 'vehicle'))
+    for w in actors.filter('walker.pedestrian.*'):
+        targets.append((w, 'pedestrian'))
+
+    result = {cam_id: [] for cam_id in calibrations}
+
+    for actor, cls in targets:
+        try:
+            verts = actor.bounding_box.get_world_vertices(actor.get_transform())
+        except Exception:
+            continue
+
+        for cam_id, calib in calibrations.items():
+            pts = []
+            for v in verts:
+                p = calib.project_point([v.x, v.y, v.z])
+                if p is not None:
+                    pts.append(p)
+            if len(pts) < 2:
+                continue
+
+            xs = [p[0] for p in pts]
+            ys = [p[1] for p in pts]
+            x1, y1, x2, y2 = min(xs), min(ys), max(xs), max(ys)
+
+            # CARLA cameras: principal point == image center -> K[0,2], K[1,2]
+            # give half-width/half-height, i.e. the image resolution.
+            width, height = calib.K[0, 2] * 2, calib.K[1, 2] * 2
+
+            x1c, y1c = max(0.0, x1), max(0.0, y1)
+            x2c, y2c = min(width, x2), min(height, y2)
+            if x2c - x1c < 2 or y2c - y1c < 2:
+                continue
+
+            result[cam_id].append({
+                'id': actor.id,
+                'box': [x1c, y1c, x2c, y2c],
+                'class': cls,
+            })
+
+    return result
 
 
 class GroundTruthCollector:

@@ -23,6 +23,7 @@ from modules.reid import ReIDExtractor
 from modules.global_tracking import GlobalTracker
 from modules.trajectory_predictor import EnsembleTrajectoryPredictor
 from modules.calibration import CalibrationStore
+from modules.ground_truth import project_actors_to_cameras
 from modules.alert_system import AlertSystem
 from modules.incident_detector import IncidentDetector
 from modules.evidence_package import EvidencePackage
@@ -52,7 +53,7 @@ class TrackingSystem:
                  bridge_host: str = '127.0.0.1', bridge_port: int = 8765,
                  video_paths: list = None, rtsp_urls: list = None,
                  webcam_indices: list = None, camera_ids: list = None,
-                 loop_video: bool = False):
+                 loop_video: bool = False, eval_output: str = None):
         self.config_path = config_path
         self.half = half        # FP16 inference — saves ~800 MB VRAM alongside CARLA
         self.source = source    # 'carla'/'bridge' (CARLA) or 'rtsp'/'file'/'webcam' (real cameras)
@@ -63,11 +64,13 @@ class TrackingSystem:
         self.webcam_indices = webcam_indices or []
         self.camera_ids = camera_ids
         self.loop_video = loop_video
+        self.eval_output = eval_output   # directory to write pred_<CAM_ID>.txt for evaluate_tracking.py
         self.carla_client = None
         self.world = None
         # camera_controller (carla) / CARLABridgeClient (bridge) / MultiVideoSource (rtsp/file/webcam)
         self.frame_source = None
         self.modules = {}
+        self._eval_calibrations = None  # {camera_id: CameraCalibration}, set if --eval-output + --source carla
 
     # ------------------------------------------------------------------
     # CARLA setup
@@ -225,6 +228,27 @@ class TrackingSystem:
             step("MetricsCollector")
             self.modules['metrics'] = MetricsCollector()
 
+            if self.eval_output:
+                step("Eval output (pred_<CAM_ID>.txt)")
+                os.makedirs(self.eval_output, exist_ok=True)
+                self.modules['eval_pred_files'] = {
+                    cam_id: open(os.path.join(self.eval_output, f'pred_{cam_id}.txt'), 'w')
+                    for cam_id in cam_ids
+                }
+
+                # --source carla: this process has direct CARLA world access,
+                # so it can also export ground truth (gt_<CAM_ID>.txt) for
+                # evaluate_tracking.py. Used for evaluation logging only —
+                # never fed back into detection/tracking decisions.
+                if self.source == 'carla' and calibration:
+                    self._eval_calibrations = calibration
+                    self.modules['eval_gt_files'] = {
+                        cam_id: open(os.path.join(self.eval_output, f'gt_{cam_id}.txt'), 'w')
+                        for cam_id in cam_ids
+                    }
+                else:
+                    self._eval_calibrations = None
+
             print(f"[INIT] All modules OK — {len(cam_ids)} cameras: {cam_ids}", flush=True)
             logger.info("All modules initialised successfully")
             return True
@@ -267,6 +291,18 @@ class TrackingSystem:
                 cam_ids = list(sync_frames.keys())
                 frames  = [sync_frames[c]['frame'] for c in cam_ids]
 
+                # Ground-truth export (--source carla + --eval-output only)
+                if self._eval_calibrations is not None:
+                    gt_data = project_actors_to_cameras(self.world, self._eval_calibrations)
+                    for cam_id, items in gt_data.items():
+                        f = self.modules['eval_gt_files'].get(cam_id)
+                        if f is None:
+                            continue
+                        for item in items:
+                            x1, y1, x2, y2 = item['box']
+                            f.write(f"{frame_count},{item['id']},"
+                                    f"{x1:.2f},{y1:.2f},{x2:.2f},{y2:.2f},{item['class']}\n")
+
                 # ----------------------------------------------------------
                 # Phase 1 — Batch detection (1 GPU forward pass for all cameras)
                 # Replaces N separate detect() calls → N× faster on GPU
@@ -292,6 +328,15 @@ class TrackingSystem:
                         camera_id, frame, local_tracks)
 
                     all_global_tracks.extend(global_tracks)
+
+                    # Ground-truth evaluation: dump predicted boxes for this frame
+                    if self.eval_output:
+                        eval_frame = sync_frames[camera_id].get('frame_number', frame_count)
+                        f = self.modules['eval_pred_files'][camera_id]
+                        for g in global_tracks:
+                            x1, y1, x2, y2 = g['box']
+                            f.write(f"{eval_frame},{g['global_id']},"
+                                    f"{x1:.2f},{y1:.2f},{x2:.2f},{y2:.2f},{g.get('class', '')}\n")
 
                     # Trajectory update (real unix time, not frame index)
                     for g in global_tracks:
@@ -390,6 +435,13 @@ class TrackingSystem:
         if 'evidence' in self.modules:
             self.modules['evidence'].flush()
 
+        if 'eval_pred_files' in self.modules:
+            for f in self.modules['eval_pred_files'].values():
+                f.close()
+        if 'eval_gt_files' in self.modules:
+            for f in self.modules['eval_gt_files'].values():
+                f.close()
+
         if self.source == 'carla':
             if 'traffic_generator' in self.modules:
                 self.modules['traffic_generator'].cleanup()
@@ -436,6 +488,10 @@ def main():
                              '--webcam-index order (default: CAM_001, CAM_002, ...)')
     parser.add_argument('--loop-video', action='store_true',
                         help='Loop video file(s) when reaching the end (--source file)')
+    parser.add_argument('--eval-output', default=None,
+                        help='Directory to write predicted-track MOT files (pred_<CAM_ID>.txt) '
+                             'for evaluate_tracking.py. Pair with carla_bridge/server.py '
+                             '--eval-output (--source bridge) to get gt_<CAM_ID>.txt')
     args = parser.parse_args()
 
     logging.getLogger().setLevel(getattr(logging, args.log_level))
@@ -446,7 +502,7 @@ def main():
                              bridge_host=args.bridge_host, bridge_port=args.bridge_port,
                              video_paths=args.video_path, rtsp_urls=args.rtsp_url,
                              webcam_indices=args.webcam_index, camera_ids=camera_ids,
-                             loop_video=args.loop_video)
+                             loop_video=args.loop_video, eval_output=args.eval_output)
 
     if system.source == 'carla':
         if not system.initialize_carla():

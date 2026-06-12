@@ -28,6 +28,8 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 import carla  # noqa: E402  (only available in the py3.7 venv)
 from modules.camera_controller import CameraController  # noqa: E402
 from modules.traffic_generator import TrafficGenerator  # noqa: E402
+from modules.calibration import CalibrationStore  # noqa: E402
+from modules.ground_truth import project_actors_to_cameras  # noqa: E402
 
 logging.basicConfig(
     level=logging.INFO,
@@ -39,10 +41,11 @@ logger = logging.getLogger(__name__)
 _CARLA_FPS = 10
 
 
-def send_frames(conn, sync_frames):
+def send_frames(conn, sync_frames, frame_number):
     """Send one batch of synchronized camera frames over the socket.
 
     Wire format (little-endian):
+      uint32  frame_number
       uint32  num_cameras
       repeat num_cameras times:
         uint32  camera_id_len
@@ -51,7 +54,7 @@ def send_frames(conn, sync_frames):
         uint32  height, uint32 width, uint32 channels
         bytes   raw frame data (height*width*channels, uint8)
     """
-    parts = [struct.pack('<I', len(sync_frames))]
+    parts = [struct.pack('<I', frame_number), struct.pack('<I', len(sync_frames))]
     for cam_id, data in sync_frames.items():
         frame = data['frame']
         cam_id_bytes = cam_id.encode('utf-8')
@@ -72,6 +75,9 @@ def main():
     parser.add_argument('--port', type=int, default=8765, help='Bridge listen port')
     parser.add_argument('--num-vehicles', type=int, default=10)
     parser.add_argument('--num-pedestrians', type=int, default=5)
+    parser.add_argument('--eval-output', default=None,
+                        help='Directory to write ground-truth MOT files '
+                             '(gt_<CAM_ID>.txt) for evaluate_tracking.py')
     args = parser.parse_args()
 
     client = carla.Client('localhost', 2000)
@@ -93,6 +99,17 @@ def main():
                                 num_pedestrians=args.num_pedestrians)
     traffic.spawn_actors()
 
+    # Ground-truth export (evaluation only, separate from the AI pipeline)
+    calibrations = None
+    gt_files = {}
+    if args.eval_output:
+        os.makedirs(args.eval_output, exist_ok=True)
+        calibrations = CalibrationStore.load_from_config(args.config)
+        for cam_id in camera_controller.cameras:
+            gt_path = os.path.join(args.eval_output, 'gt_{}.txt'.format(cam_id))
+            gt_files[cam_id] = open(gt_path, 'w')
+        logger.info("Ground-truth export enabled -> %s", args.eval_output)
+
     server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server_sock.bind((args.host, args.port))
@@ -111,13 +128,25 @@ def main():
             if not sync_frames:
                 continue
 
+            frame_count += 1
+
+            if calibrations is not None:
+                gt_data = project_actors_to_cameras(world, calibrations)
+                for cam_id, items in gt_data.items():
+                    f = gt_files.get(cam_id)
+                    if f is None:
+                        continue
+                    for item in items:
+                        x1, y1, x2, y2 = item['box']
+                        f.write("{},{},{:.2f},{:.2f},{:.2f},{:.2f},{}\n".format(
+                            frame_count, item['id'], x1, y1, x2, y2, item['class']))
+
             try:
-                send_frames(conn, sync_frames)
+                send_frames(conn, sync_frames, frame_count)
             except (BrokenPipeError, ConnectionResetError, OSError):
                 logger.info("AI client disconnected, stopping.")
                 break
 
-            frame_count += 1
             if frame_count % 100 == 0:
                 logger.info("Sent %d frame batches", frame_count)
     except KeyboardInterrupt:
@@ -128,6 +157,9 @@ def main():
         except Exception:
             pass
         server_sock.close()
+
+        for f in gt_files.values():
+            f.close()
 
         camera_controller.cleanup()
         traffic.cleanup()
