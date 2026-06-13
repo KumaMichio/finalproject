@@ -1,5 +1,11 @@
 # Implementation Plan: Multi-Camera CCTV Tracking System in CARLA
 
+> **Tai lieu lich su (2026-06-12)**: Day la ke hoach phat trien BAN DAU (Phase 1-10).
+> Toan bo da duoc trien khai va vuot xa pham vi mo ta o day (YOLO11m fine-tune,
+> ByteTrack, DualReID + calibration, Kalman+GRU Ensemble, 14 loai incident,
+> scenario controller, web dashboard, GT evaluation...). Xem
+> `development_roadmap.md` cho trang thai hien tai.
+
 ## Overview
 Xây dựng hệ thống tracking đa camera với AI detection, re-identification, và trajectory prediction trên CARLA UE4.
 

@@ -13,17 +13,19 @@ logger = logging.getLogger(__name__)
 
 class IncidentDetector:
     """
-    Phân tích dữ liệu tracking để phát hiện 10 loại sự cố:
-      1.  SUDDEN_STOP        — xe dừng đột ngột
-      2.  SUDDEN_ACCEL       — xe tăng tốc đột ngột sau khi dừng (dấu hiệu bỏ trốn)
-      3.  OVERSPEED          — xe vượt tốc độ cho phép
-      4.  VEHICLE_PROXIMITY  — hai xe tiến lại gần nhau nguy hiểm
-      5.  PEDESTRIAN_DANGER  — xe áp sát người đi bộ với tốc độ cao
-      6.  STOPPED_ON_ROAD    — xe dừng giữa đường quá lâu
-      7.  LOITERING          — người đứng ở một khu vực quá lâu
-      8.  CROWD_DENSITY      — mật độ người trong vùng quá cao
-      9.  WRONG_WAY          — đối tượng di chuyển ngược chiều (cần cấu hình)
-      10. CAMERA_TRANSITION  — đối tượng chuyển từ camera này sang camera khác
+    Phân tích dữ liệu tracking để phát hiện các loại sự cố:
+      1.  SUDDEN_STOP         — xe dừng đột ngột
+      2.  SUDDEN_ACCEL        — xe tăng tốc đột ngột sau khi dừng (dấu hiệu bỏ trốn)
+      3.  OVERSPEED           — xe vượt tốc độ cho phép
+      4.  VEHICLE_PROXIMITY   — hai xe tiến lại gần nhau nguy hiểm
+      5.  PEDESTRIAN_DANGER   — xe áp sát người đi bộ với tốc độ cao
+      6.  STOPPED_ON_ROAD     — xe dừng giữa đường quá lâu
+      7.  LOITERING           — người đứng ở một khu vực quá lâu
+      8.  CROWD_DENSITY       — mật độ người trong vùng quá cao
+      9.  WRONG_WAY           — đối tượng di chuyển ngược chiều cấu hình (cấu hình incident_detection.wrong_way)
+      10. CAMERA_TRANSITION   — đối tượng chuyển từ camera này sang camera khác
+      11. RED_LIGHT_VIOLATION — xe vượt đèn đỏ tại vùng giao lộ (cấu hình incident_detection.red_light)
+      12. PREDICTED_COLLISION / PREDICTED_ROI_ENTRY — cảnh báo chủ động (xem dưới)
     """
 
     def __init__(self, config: dict = None):
@@ -43,12 +45,30 @@ class IncidentDetector:
         self.crowd_area_px      = cfg.get('crowd_area_px', 200)     # px radius
         self.cooldown_s         = cfg.get('cooldown_s', 4)          # giây chống duplicate
 
+        # --- Wrong-way driving ---
+        wrong_way_cfg = cfg.get('wrong_way', {}) or {}
+        self.wrong_way_lanes        = wrong_way_cfg.get('lanes', {}) or {}
+        self.wrong_way_min_speed    = wrong_way_cfg.get('min_speed', 15)      # px/s
+        self.wrong_way_min_disp     = wrong_way_cfg.get('min_displacement_px', 15)
+        angle_threshold_deg         = wrong_way_cfg.get('angle_threshold_deg', 100)
+        self.wrong_way_cos_threshold = float(np.cos(np.radians(angle_threshold_deg)))
+        self.wrong_way_window       = wrong_way_cfg.get('window', 8)
+        self.wrong_way_frames       = wrong_way_cfg.get('min_frames', 10)
+
+        # --- Red-light violation ---
+        red_light_cfg = cfg.get('red_light', {}) or {}
+        self.red_light_min_speed = red_light_cfg.get('min_speed', 10)  # px/s
+
+        # --- Loai incident bi tat (qua nhieu, khong can cho demo) ---
+        self.disabled_types = set(cfg.get('disabled_types', []) or [])
+
         # --- State per object ---
         # Lịch sử tốc độ: {global_id: deque[(timestamp, speed)]}
         self.speed_history   = defaultdict(lambda: deque(maxlen=20))
         self.stop_counter    = defaultdict(int)
         self.loiter_anchor   = {}
         self.loiter_counter  = defaultdict(int)
+        self.wrong_way_counter = defaultdict(int)
 
         # Cross-camera: {global_id: camera_id} — lần xuất hiện trước
         self.last_camera     = {}
@@ -63,18 +83,22 @@ class IncidentDetector:
     # ------------------------------------------------------------------
 
     def update(self, global_tracks: list, camera_id: str,
-               predictions: dict = None, rois: dict = None) -> list:
+               predictions: dict = None, rois: dict = None,
+               traffic_light_state: str = None) -> list:
         """
         Gọi mỗi frame sau khi có global_tracks từ GlobalTracker.
 
         Args:
             global_tracks: list dicts — output của GlobalTracker.process_camera_tracks()
-                           Mỗi dict cần: global_id, box, class, speeds (list px/s)
+                           Mỗi dict cần: global_id, box, class, speeds (list px/s),
+                           positions (list [x,y] — lịch sử vị trí, dùng cho WRONG_WAY)
             camera_id:    camera đang xử lý
             predictions:  dict {global_id: {'t+0.5s': [x,y], ...}} từ TrajectoryPredictor
                           — dùng để kích hoạt proactive checks
-            rois:         dict {camera_id: [{'name': str, 'polygon': [...]}]}
-                          — dùng cho predicted ROI entry check
+            rois:         dict {camera_id: [{'name': str, 'polygon': [...], 'alert_types': [...]}]}
+                          — dùng cho predicted ROI entry check + RED_LIGHT_VIOLATION
+            traffic_light_state: trạng thái đèn giao thông gần camera ("Red"/"Yellow"/
+                          "Green"/None) — dùng cho RED_LIGHT_VIOLATION
 
         Returns:
             list of incident dicts — có thể rỗng
@@ -99,6 +123,9 @@ class IncidentDetector:
         incidents += self._check_loitering(global_tracks, camera_id, now)
         incidents += self._check_crowd(global_tracks, camera_id, now)
         incidents += self._check_camera_transition(global_tracks, camera_id, now)
+        incidents += self._check_wrong_way(global_tracks, camera_id, now)
+        incidents += self._check_red_light_violation(
+            global_tracks, camera_id, now, traffic_light_state, rois)
 
         # Proactive checks dùng predicted positions (chỉ khi có predictions)
         if predictions:
@@ -107,6 +134,10 @@ class IncidentDetector:
             if rois:
                 incidents += self._check_predicted_roi_entry(
                     global_tracks, predictions, rois, camera_id, now)
+
+        # Lọc các loại incident bị tắt (cấu hình incident_detection.disabled_types)
+        if self.disabled_types:
+            incidents = [inc for inc in incidents if inc['type'] not in self.disabled_types]
 
         # Lọc duplicate dựa trên cooldown
         incidents = self._deduplicate(incidents, now)
@@ -332,6 +363,97 @@ class IncidentDetector:
             self.last_camera[gid] = camera_id
         return incidents
 
+    def _check_wrong_way(self, tracks, camera_id, now):
+        """Đối tượng di chuyển ngược hướng cho phép của camera (cấu hình
+        incident_detection.wrong_way.lanes). Yêu cầu di chuyển đủ xa
+        (min_displacement_px) + đủ nhanh (min_speed) ngược hướng cho phép
+        trong >= min_frames frame liên tiếp để chống nhiễu."""
+        incidents = []
+        lane = self.wrong_way_lanes.get(camera_id)
+        if not lane:
+            return incidents
+
+        allowed = np.array(lane.get('direction', [0, 0]), dtype=float)
+        norm = np.linalg.norm(allowed)
+        if norm == 0:
+            return incidents
+        allowed = allowed / norm
+
+        for track in tracks:
+            if track['class'] not in ('car', 'truck', 'bus', 'motorcycle'):
+                continue
+            gid = track['global_id']
+            positions = track.get('positions', [])
+
+            if len(positions) < self.wrong_way_window:
+                self.wrong_way_counter[gid] = 0
+                continue
+
+            p0 = np.array(positions[-self.wrong_way_window])
+            p1 = np.array(positions[-1])
+            disp = p1 - p0
+            dist = float(np.linalg.norm(disp))
+            speed = self._current_speed(gid) or 0
+
+            if dist < self.wrong_way_min_disp or speed < self.wrong_way_min_speed:
+                self.wrong_way_counter[gid] = 0
+                continue
+
+            direction = disp / dist
+            cos_angle = float(np.dot(direction, allowed))
+
+            if cos_angle < self.wrong_way_cos_threshold:
+                self.wrong_way_counter[gid] += 1
+            else:
+                self.wrong_way_counter[gid] = 0
+
+            if self.wrong_way_counter[gid] == self.wrong_way_frames:
+                incidents.append(self._make(
+                    type='WRONG_WAY', severity='CRITICAL',
+                    gid=gid, cam=camera_id,
+                    msg=f"Xe #{gid} đi ngược chiều tại {camera_id} (speed={speed:.0f}px/s)",
+                    details={
+                        'direction':         direction.tolist(),
+                        'allowed_direction': allowed.tolist(),
+                        'speed':             round(speed, 1),
+                    }
+                ))
+        return incidents
+
+    def _check_red_light_violation(self, tracks, camera_id, now, light_state, rois):
+        """Xe vượt đèn đỏ: traffic light gần camera đang Red VA xe (đang chạy,
+        speed > red_light.min_speed) nằm trong 1 ROI có alert_types chứa
+        'red_light' (vùng giao lộ/stop-line, cấu hình trong camera_config.yaml)."""
+        incidents = []
+        if light_state != 'Red':
+            return incidents
+
+        cam_rois = (rois or {}).get(camera_id, [])
+        zones = [r['polygon'] for r in cam_rois
+                 if 'red_light' in (r.get('alert_types') or []) and len(r.get('polygon', [])) >= 3]
+        if not zones:
+            return incidents
+
+        for track in tracks:
+            if track['class'] not in ('car', 'truck', 'bus', 'motorcycle'):
+                continue
+            gid = track['global_id']
+            speed = self._current_speed(gid) or 0
+            if speed < self.red_light_min_speed:
+                continue
+
+            center = self._box_center(track['box'])
+            for polygon in zones:
+                if self._point_in_polygon(center, polygon):
+                    incidents.append(self._make(
+                        type='RED_LIGHT_VIOLATION', severity='CRITICAL',
+                        gid=gid, cam=camera_id,
+                        msg=f"Xe #{gid} vượt đèn đỏ tại {camera_id} (speed={speed:.0f}px/s)",
+                        details={'speed': round(speed, 1), 'light_state': light_state}
+                    ))
+                    break
+        return incidents
+
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
@@ -480,3 +602,4 @@ class IncidentDetector:
         self.loiter_anchor.pop(gid, None)
         self.loiter_counter.pop(gid, None)
         self.last_camera.pop(gid, None)
+        self.wrong_way_counter.pop(gid, None)

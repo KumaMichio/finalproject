@@ -1,5 +1,11 @@
 # Workflow Triển Khai Dự Án Tracking System trên CARLA 0.9.9.4
 
+> **Tài liệu lịch sử (2026-06-12)**: Workflow 6 giai đoạn dưới đây là kế hoạch
+> triển khai BAN ĐẦU. Tất cả 6 giai đoạn đã hoàn thành và vượt phạm vi mô tả
+> (ByteTrack thay SORT, DualReID person+vehicle, Ensemble Kalman+GRU + calibration,
+> 14 loại incident, MOTA/IDF1 evaluation...). Xem `development_roadmap.md` để biết
+> trạng thái hiện tại.
+
 ## Giới Thiệu
 Dự án này xây dựng một hệ thống theo dõi đối tượng (vehicle, pedestrian) đa camera trong môi trường mô phỏng CARLA 0.9.9.4. Hệ thống bao gồm phát hiện, theo dõi, nhận diện lại, dự đoán quỹ đạo và cảnh báo. Workflow dưới đây cung cấp hướng dẫn triển khai từng giai đoạn, từ thiết lập cơ bản đến tối ưu hóa.
 

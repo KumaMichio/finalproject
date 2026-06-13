@@ -46,6 +46,11 @@ class AIProcessor:
         self.status = "stopped"  # stopped / starting / running / error
         self._active_track_count = 0
 
+        # ReID throttle: chi chay extract_feature() cho track da biet moi
+        # REID_INTERVAL frame (track moi luon duoc chay ReID ngay)
+        self.REID_INTERVAL = 3
+        self._seen_track_ids: dict = {}  # {camera_id: set(local_track_id)}
+
     def start(self):
         """Khoi dong AI pipeline trong background thread."""
         if self._running:
@@ -100,10 +105,12 @@ class AIProcessor:
         from modules.tracker import ByteTrackWrapper
         from modules.reid import DualReIDExtractor
         from modules.global_tracking import GlobalTracker
-        from modules.trajectory_predictor import TrajectoryPredictor
+        from modules.trajectory_predictor import EnsembleTrajectoryPredictor
+        from modules.calibration import CalibrationStore
         from modules.alert_system import AlertSystem
         from modules.incident_detector import IncidentDetector
         from modules.evidence_package import EvidencePackage
+        from modules.scenario_controller import ScenarioController
         from utils.visualization import Visualizer
 
         # Khoi tao modules
@@ -136,7 +143,16 @@ class AIProcessor:
             for k, v in raw_topology.items()
         }
         self.global_tracker = GlobalTracker(self.reid_extractor, camera_topology=camera_topology)
-        self.trajectory_predictor = TrajectoryPredictor(window_size=10, pred_steps=5)
+
+        try:
+            calibration = CalibrationStore.load_from_config(self.config_path)
+        except Exception as e:
+            logger.warning("CalibrationStore.load_from_config failed (%s) "
+                            "-> trajectory predictor will be Kalman-only", e)
+            calibration = {}
+        self.trajectory_predictor = EnsembleTrajectoryPredictor(
+            window_size=10, calibration=calibration,
+            gru_checkpoint=str(_tracking_dir / "weights" / "trajectory_gru.pth"))
 
         self.alert_system = AlertSystem(self.trajectory_predictor)
         if "rois" in self.camera_controller.config:
@@ -145,7 +161,12 @@ class AIProcessor:
         self.incident_detector = IncidentDetector(
             config=self.camera_controller.config.get("incident_detection", {})
         )
+        self.camera_traffic_lights = self._find_nearby_traffic_lights()
         self.evidence = EvidencePackage(output_dir="evidence", buffer_seconds=30, fps=10)
+
+        self.scenario_controller = ScenarioController(
+            self.world, self.client,
+            cameras_config=self.camera_controller.config.get("cameras", {}))
 
         self.visualizer = Visualizer()
 
@@ -183,6 +204,50 @@ class AIProcessor:
         finally:
             db.close()
 
+    def _find_nearby_traffic_lights(self) -> dict:
+        """Map camera_id -> list traffic light actors gan camera (CARLA world),
+        dung de check RED_LIGHT_VIOLATION (incident_detection.red_light)."""
+        red_light_cfg = self.camera_controller.config.get("incident_detection", {}).get("red_light", {})
+        radius = red_light_cfg.get("search_radius_m", 40)
+
+        try:
+            lights = list(self.world.get_actors().filter("traffic.traffic_light*"))
+        except Exception as e:
+            logger.warning("Khong lay duoc traffic lights tu CARLA: %s", e)
+            return {}
+
+        mapping = {}
+        for cam_cfg in self.camera_controller.config["cameras"].values():
+            cam_id = cam_cfg["camera_id"]
+            cx, cy, _cz = cam_cfg["position"]
+            nearby = []
+            for tl in lights:
+                loc = tl.get_location()
+                dist = ((loc.x - cx) ** 2 + (loc.y - cy) ** 2) ** 0.5
+                if dist <= radius:
+                    nearby.append(tl)
+            mapping[cam_id] = nearby
+            logger.info("Camera %s: %d traffic light(s) trong radius %dm",
+                         cam_id, len(nearby), radius)
+        return mapping
+
+    def _get_traffic_light_state(self, camera_id: str):
+        """Tra ve 'Red'/'Yellow'/'Green'/None cho camera (uu tien Red neu co
+        >=1 traffic light gan camera dang Red)."""
+        lights = self.camera_traffic_lights.get(camera_id, [])
+        if not lights:
+            return None
+        states = set()
+        for tl in lights:
+            try:
+                states.add(tl.get_state().name)
+            except Exception:
+                continue
+        for preferred in ("Red", "Yellow", "Green"):
+            if preferred in states:
+                return preferred
+        return None
+
     def _main_loop(self):
         """Vong lap xu ly chinh."""
         from services.stream_service import frame_buffer
@@ -216,18 +281,28 @@ class AIProcessor:
             try:
                 all_global_tracks = []
 
-                for camera_id, frame_data in sync_frames.items():
-                    frame = frame_data["frame"]
+                # 1. Batch detection — 1 GPU forward pass cho tat ca camera
+                cam_ids = list(sync_frames.keys())
+                frames = [sync_frames[c]["frame"] for c in cam_ids]
+                batch_detections = self.detector.detect_batch(frames)
 
-                    # 1. Detection
-                    detections = self.detector.detect(frame)
+                for camera_id, frame, detections in zip(cam_ids, frames, batch_detections):
 
                     # 2. Single-camera tracking (ByteTrackWrapper cần thêm frame)
                     local_tracks = self.trackers[camera_id].update(detections, frame)
 
-                    # 3. Cross-camera global tracking
+                    # 3. Cross-camera global tracking — throttle ReID: chi chay
+                    # extract_feature() cho track moi hoac moi REID_INTERVAL frame
+                    seen = self._seen_track_ids.setdefault(camera_id, set())
+                    reid_track_ids = set()
+                    for lt in local_tracks:
+                        tid = lt["track_id"]
+                        if tid not in seen or self.frame_count % self.REID_INTERVAL == 0:
+                            reid_track_ids.add(tid)
+                        seen.add(tid)
+
                     global_tracks = self.global_tracker.process_camera_tracks(
-                        camera_id, frame, local_tracks
+                        camera_id, frame, local_tracks, reid_track_ids=reid_track_ids
                     )
                     all_global_tracks.extend(global_tracks)
 
@@ -239,14 +314,20 @@ class AIProcessor:
                         box = g_track["box"]
                         center = [(box[0] + box[2]) / 2, (box[1] + box[3]) / 2]
 
-                        self.trajectory_predictor.update_trajectory(gid, center, now_ts)
+                        self.trajectory_predictor.update_trajectory(
+                            gid, center, now_ts,
+                            camera_id=camera_id,
+                            obj_class=g_track.get("class", "car"),
+                            all_tracks=all_global_tracks,
+                        )
 
                         predicted = self.trajectory_predictor.predict(gid)
                         if predicted:
                             predictions_map[gid] = predicted
-                            # check_alerts() cần list[[x,y]], predict() trả dict
+                            # check_alerts() cần list[[x,y]]
                             alerts = self.alert_system.check_alerts(
-                                gid, camera_id, list(predicted.values()), box
+                                gid, camera_id,
+                                self.trajectory_predictor.predict_list(gid), box
                             )
                             for alert in alerts:
                                 self.alert_system.log_alert(alert)
@@ -266,6 +347,7 @@ class AIProcessor:
                         global_tracks, camera_id,
                         predictions=predictions_map or None,
                         rois=self.alert_system.rois or None,
+                        traffic_light_state=self._get_traffic_light_state(camera_id),
                     )
                     for incident in incidents:
                         self._save_incident(db, incident)
@@ -412,11 +494,53 @@ class AIProcessor:
         """Goi tu FastAPI lifespan de AI processor co the push WS."""
         self._event_loop = loop
 
+    # ------------------------------------------------------------------
+    # Scenario triggers (demo kich ban tai nan)
+    # ------------------------------------------------------------------
+
+    SCENARIOS = {
+        "hit_and_run": "hit_and_run",
+        "pedestrian_hit": "pedestrian_hit",
+        "red_light_crash": "red_light_crash",
+        "rear_end": "rear_end",
+        "sudden_stop": "sudden_stop",
+    }
+
+    def trigger_scenario(self, name: str) -> dict:
+        """Kich hoat 1 kich ban tai nan trong CARLA (goi tu API).
+
+        Tra ve dict {ok, message}. An toan goi tu thread khac
+        (chi spawn actor + set autopilot, khong dung chung state voi _main_loop).
+        """
+        if self.status != "running":
+            return {"ok": False, "message": "AI processor chua chay"}
+
+        method_name = self.SCENARIOS.get(name)
+        if method_name is None:
+            return {"ok": False, "message": f"Kich ban khong hop le: {name}"}
+
+        try:
+            with self._lock:
+                result = getattr(self.scenario_controller, method_name)()
+            camera_id = (result or {}).get("camera_id")
+            if camera_id:
+                message = f"Da kich hoat kich ban '{name}' - quan sat tai camera {camera_id}"
+            else:
+                message = (f"Da kich hoat kich ban '{name}' - khong xac dinh duoc "
+                            f"camera quan sat (vi tri nam ngoai tam camera)")
+            logger.info("Scenario triggered: %s (camera_id=%s)", name, camera_id)
+            return {"ok": True, "message": message, "camera_id": camera_id}
+        except Exception as e:
+            logger.error("Scenario trigger error: %s", e, exc_info=True)
+            return {"ok": False, "message": str(e)}
+
     def _cleanup(self):
         """Don dep khi dung."""
         try:
             if hasattr(self, "evidence"):
                 self.evidence.flush()
+            if hasattr(self, "scenario_controller"):
+                self.scenario_controller.cleanup()
             if hasattr(self, "camera_controller"):
                 self.camera_controller.cleanup()
             if hasattr(self, "traffic_generator"):

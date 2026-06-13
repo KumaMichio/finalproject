@@ -16,27 +16,40 @@ cameras:
     fps: 10
 
   camera_2:
-    position: [25, -30, 3]
-    rotation: [0, 45, 0]
+    position: [25, 38, 3]
+    rotation: [0, -90, 0]
     camera_id: "CAM_003"
     view_angle: 100
     resolution: [960, 540]
     fps: 10
 
 # Regions of Interest (ROI) cho mỗi camera
+# QUAN TRONG: key phai la camera_id ("CAM_001"...), khong phai ten config
+# ("camera_0"...) — AlertSystem/IncidentDetector tra cuu theo camera_id.
+# alert_types: "red_light" danh dau vung giao lo de check RED_LIGHT_VIOLATION
+# (xe co toc do > red_light.min_speed va o trong vung nay khi den do CRITICAL).
+# Toa do polygon duoc tinh hinh hoc tu CameraCalibration.world_to_pixel()
+# (modules/calibration.py) — chieu mat dat tu 8m den 25m, +-4m hai ben truc
+# camera, dua tren position/rotation/fov/resolution trong "cameras" o tren.
+# Day la hinh thang vung duong ngay truoc camera nam trong khung hinh
+# (480x540 -> 240..720 px ngang, 328..450 px doc). Van nen kiem tra lai
+# bang anh thuc te tu CARLA neu can do chinh xac cao hon.
 rois:
-  camera_0:
+  CAM_001:
     zones:
       - name: "intersection_main"
-        polygon: [[100, 100], [500, 100], [500, 400], [100, 400]]
-  camera_1:
+        polygon: [[240, 450], [720, 450], [557, 328], [403, 328]]
+        alert_types: ["entry", "red_light"]
+  CAM_002:
     zones:
       - name: "side_road"
-        polygon: [[0, 0], [300, 0], [300, 200], [0, 200]]
-  camera_2:
+        polygon: [[341, 374], [619, 374], [524, 303], [436, 303]]
+        alert_types: ["entry", "red_light"]
+  CAM_003:
     zones:
       - name: "parking_area"
-        polygon: [[200, 200], [400, 200], [400, 300], [200, 300]]
+        polygon: [[279, 421], [681, 421], [544, 318], [416, 318]]
+        alert_types: ["entry"]
 
 # Spatio-Temporal Filter — thời gian đi lại hợp lệ giữa các cặp camera (giây)
 # Tính từ khoảng cách thực tế trong CARLA: CAM_001↔CAM_002 ~50m, CAM_001↔CAM_003 ~39m, CAM_002↔CAM_003 ~39m
@@ -48,6 +61,45 @@ camera_topology:
   CAM_003__CAM_001: [1, 120]
   CAM_002__CAM_003: [1, 120]
   CAM_003__CAM_002: [1, 120]
+
+# Cau hinh IncidentDetector (modules/incident_detector.py)
+incident_detection:
+  # Di nguoc chieu: huong di chuyen cua object (vector dich chuyen px) duoc
+  # so sanh voi "direction" (huong cho phep, vector pixel [dx, dy]) cua camera.
+  # Goc lech > angle_threshold_deg va toc do > min_speed trong >= min_frames
+  # frame lien tiep => WRONG_WAY (CRITICAL).
+  # direction duoc tinh hinh hoc: voi pitch=0 (camera nhin ngang), huong "ra xa
+  # camera" doc theo truc quang hoc luon chieu len tren khung hinh ([0,-1]) bat
+  # ke yaw — xe di xa camera (dung huong) chuyen dong len, xe di ve phia camera
+  # qua angle_threshold_deg duoc xem la WRONG_WAY. Van nen kiem tra lai bang
+  # video thuc te tu CARLA neu lan duong co huong khac.
+  wrong_way:
+    lanes:
+      CAM_001:
+        direction: [0, -1]   # huong cho phep: ra xa camera (len tren khung hinh)
+      CAM_002:
+        direction: [0, -1]   # huong cho phep: ra xa camera (len tren khung hinh)
+      CAM_003:
+        direction: [0, -1]   # huong cho phep: ra xa camera (len tren khung hinh)
+    min_speed: 15            # px/s
+    angle_threshold_deg: 100
+    min_frames: 10
+    window: 8                 # so frame nhin lai de tinh vector dich chuyen
+
+  # Vuot den do: chi kich hoat khi traffic light gan camera dang Red VA
+  # object (toc do > min_speed) nam trong 1 ROI co alert_types chua "red_light".
+  red_light:
+    min_speed: 10            # px/s
+    search_radius_m: 40      # ban kinh tim traffic light gan camera (CARLA world)
+
+  # Cac loai incident bi tat vi xay ra qua thuong xuyen trong giao thong binh
+  # thuong (gay nhieu alert feed), khong phai dau hieu tai nan ro rang.
+  # Van duoc tinh toan ben trong nhung se khong xuat hien trong incidents/alerts.
+  disabled_types:
+    - SUDDEN_ACCEL       # tang toc dot ngot - xay ra lien tuc khi xe chay binh thuong
+    - CAMERA_TRANSITION  # chi mang tinh thong tin (object chuyen camera), khong phai canh bao
+    - STOPPED_VEHICLE    # xe dung den do/giao lo cung trigger, gay nhieu
+    - VEHICLE_PROXIMITY  # xe gan nhau trong giao thong binh thuong cung trigger lien tuc
 
 # System settings
 system:

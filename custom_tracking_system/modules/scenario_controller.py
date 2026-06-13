@@ -24,19 +24,25 @@ class ScenarioController:
       - sudden_stop       : Xe dừng đột ngột giữa đường
     """
 
-    def __init__(self, world, client):
+    def __init__(self, world, client, cameras_config: dict = None):
         import carla
         self._carla = carla
         self.world  = world
         self.client = client
-        self.tm     = client.get_trafficmanager(8000)
+        self.tm     = client.get_trafficmanager(8001)
         self.tm.set_synchronous_mode(True)
 
         self._sensors:  list = []   # collision sensors
         self._actors:   list = []   # actors do scenario tạo ra
         self.collision_log: list = []
 
-        logger.info("ScenarioController initialized")
+        # cameras_config: dict camera_key -> {position, rotation, camera_id,
+        # view_angle, ...} (lấy từ config["cameras"]). Dùng để chọn spawn
+        # point nằm trong tầm quan sát của 1 camera, và báo trước camera_id
+        # sẽ quan sát được kịch bản.
+        self.cameras = list((cameras_config or {}).values())
+
+        logger.info("ScenarioController initialized (%d cameras)", len(self.cameras))
 
     # ------------------------------------------------------------------
     # Public: chạy kịch bản
@@ -51,22 +57,22 @@ class ScenarioController:
         spawn_points = self.world.get_map().get_spawn_points()
         if len(spawn_points) < 2:
             logger.error("Không đủ spawn points cho kịch bản hit_and_run")
-            return None, None
+            return {'ok': False, 'camera_id': None}
 
-        # Chọn 2 điểm gần nhau, cùng hướng
-        pt_b = random.choice(spawn_points)
+        # Chọn 2 điểm gần nhau, cùng hướng — ưu tiên điểm nằm trong tầm camera
+        pt_b, camera_id = self._pick_spawn_in_view(spawn_points)
         pt_a = self._find_nearby_spawn(spawn_points, pt_b, distance=20)
 
         victim   = self._spawn_vehicle(pt_b, autopilot=True)
         attacker = self._spawn_vehicle(pt_a, autopilot=False)
 
         if not victim or not attacker:
-            return None, None
+            return {'ok': False, 'camera_id': None}
 
         self._attach_collision_sensor(attacker, tag='hit_and_run')
 
         logger.info(f"[HIT_AND_RUN] Victim={victim.id}, Attacker={attacker.id} — "
-                    f"va chạm sau {delay_s}s")
+                    f"va chạm sau {delay_s}s, camera quan sát={camera_id}")
 
         def _run():
             time.sleep(delay_s)
@@ -78,7 +84,7 @@ class ScenarioController:
             logger.info("[HIT_AND_RUN] Attacker đang tiến tới nạn nhân...")
 
         threading.Thread(target=_run, daemon=True).start()
-        return attacker, victim
+        return {'ok': True, 'attacker': attacker, 'victim': victim, 'camera_id': camera_id}
 
     def pedestrian_hit(self, delay_s: float = 2.0):
         """Xe tốc độ cao áp sát và đâm người đi bộ."""
@@ -86,16 +92,18 @@ class ScenarioController:
         bp_library   = self.world.get_blueprint_library()
 
         if not spawn_points:
-            return None, None
+            return {'ok': False, 'camera_id': None}
 
-        pt = random.choice(spawn_points)
+        pt, camera_id = self._pick_spawn_in_view(spawn_points)
         vehicle    = self._spawn_vehicle(pt, autopilot=True)
-        pedestrian = self._spawn_pedestrian(bp_library)
+        pedestrian = self._spawn_pedestrian(bp_library, near=pt)
 
         if not vehicle:
-            return None, None
+            return {'ok': False, 'camera_id': None}
 
         self._attach_collision_sensor(vehicle, tag='pedestrian_hit')
+
+        logger.info(f"[PEDESTRIAN_HIT] Vehicle={vehicle.id} — camera quan sát={camera_id}")
 
         def _run():
             time.sleep(delay_s)
@@ -104,25 +112,27 @@ class ScenarioController:
             logger.info("[PEDESTRIAN_HIT] Vehicle đang nhắm vào người đi bộ...")
 
         threading.Thread(target=_run, daemon=True).start()
-        return vehicle, pedestrian
+        return {'ok': True, 'vehicle': vehicle, 'pedestrian': pedestrian, 'camera_id': camera_id}
 
     def red_light_crash(self, delay_s: float = 2.0):
         """Hai xe vượt đèn đỏ từ hai hướng đối diện."""
         spawn_points = self.world.get_map().get_spawn_points()
         if len(spawn_points) < 2:
-            return None, None
+            return {'ok': False, 'camera_id': None}
 
-        pt_a = random.choice(spawn_points)
+        pt_a, camera_id = self._pick_spawn_in_view(spawn_points)
         pt_b = self._find_opposite_spawn(spawn_points, pt_a)
 
         v_a = self._spawn_vehicle(pt_a, autopilot=True)
         v_b = self._spawn_vehicle(pt_b, autopilot=True)
 
         if not v_a or not v_b:
-            return None, None
+            return {'ok': False, 'camera_id': None}
 
         self._attach_collision_sensor(v_a, tag='red_light_crash')
         self._attach_collision_sensor(v_b, tag='red_light_crash')
+
+        logger.info(f"[RED_LIGHT_CRASH] camera quan sát={camera_id}")
 
         def _run():
             time.sleep(delay_s)
@@ -133,24 +143,26 @@ class ScenarioController:
             logger.info("[RED_LIGHT_CRASH] Hai xe đang vượt đèn đỏ...")
 
         threading.Thread(target=_run, daemon=True).start()
-        return v_a, v_b
+        return {'ok': True, 'vehicle_a': v_a, 'vehicle_b': v_b, 'camera_id': camera_id}
 
     def rear_end(self, delay_s: float = 2.0):
         """Xe đâm từ phía sau xe đang chạy chậm."""
         spawn_points = self.world.get_map().get_spawn_points()
         if len(spawn_points) < 2:
-            return None, None
+            return {'ok': False, 'camera_id': None}
 
-        pt_front = random.choice(spawn_points)
+        pt_front, camera_id = self._pick_spawn_in_view(spawn_points)
         pt_rear  = self._find_nearby_spawn(spawn_points, pt_front, distance=15)
 
         front_car = self._spawn_vehicle(pt_front, autopilot=True)
         rear_car  = self._spawn_vehicle(pt_rear,  autopilot=True)
 
         if not front_car or not rear_car:
-            return None, None
+            return {'ok': False, 'camera_id': None}
 
         self._attach_collision_sensor(rear_car, tag='rear_end')
+
+        logger.info(f"[REAR_END] camera quan sát={camera_id}")
 
         def _run():
             time.sleep(delay_s)
@@ -162,18 +174,20 @@ class ScenarioController:
             logger.info("[REAR_END] Xe phía sau đang đâm vào xe phía trước...")
 
         threading.Thread(target=_run, daemon=True).start()
-        return rear_car, front_car
+        return {'ok': True, 'rear_car': rear_car, 'front_car': front_car, 'camera_id': camera_id}
 
     def sudden_stop(self, delay_s: float = 3.0):
         """Xe dừng đột ngột giữa đường."""
         spawn_points = self.world.get_map().get_spawn_points()
         if not spawn_points:
-            return None
+            return {'ok': False, 'camera_id': None}
 
-        pt = random.choice(spawn_points)
+        pt, camera_id = self._pick_spawn_in_view(spawn_points)
         vehicle = self._spawn_vehicle(pt, autopilot=True)
         if not vehicle:
-            return None
+            return {'ok': False, 'camera_id': None}
+
+        logger.info(f"[SUDDEN_STOP] camera quan sát={camera_id}")
 
         def _run():
             time.sleep(delay_s)
@@ -184,7 +198,7 @@ class ScenarioController:
             logger.info(f"[SUDDEN_STOP] Xe #{vehicle.id} dừng đột ngột")
 
         threading.Thread(target=_run, daemon=True).start()
-        return vehicle
+        return {'ok': True, 'vehicle': vehicle, 'camera_id': camera_id}
 
     # ------------------------------------------------------------------
     # Info & Cleanup
@@ -230,24 +244,39 @@ class ScenarioController:
             logger.warning("Failed to spawn vehicle")
         return actor
 
-    def _spawn_pedestrian(self, bp_library):
+    def _spawn_pedestrian(self, bp_library, near=None):
+        """Spawn 1 pedestrian. Nếu `near` (carla.Transform) được cung cấp,
+        ưu tiên spawn gần vị trí đó (trong tầm camera) và cho đi bộ về một
+        điểm gần đó, để pedestrian + vehicle cùng nằm trong khung hình."""
         walker_bps = bp_library.filter('walker.pedestrian.*')
         ctrl_bp    = bp_library.find('controller.ai.walker')
         spawn_pts  = self.world.get_map().get_spawn_points()
         if not walker_bps or not spawn_pts:
             return None
 
-        bp  = random.choice(list(walker_bps))
-        pt  = random.choice(spawn_pts)
+        bp = random.choice(list(walker_bps))
+        if near is not None:
+            pt = self._find_nearby_spawn(spawn_pts, near, distance=15)
+            goal_pt = near
+        else:
+            pt = random.choice(spawn_pts)
+            goal_pt = random.choice(spawn_pts)
+
         ped = self.world.try_spawn_actor(bp, pt)
         if ped:
             self.world.tick()  # cần tick trước khi spawn controller
             ctrl = self.world.spawn_actor(ctrl_bp, self._carla.Transform(), attach_to=ped)
             if ctrl:
-                ctrl.start()
-                ctrl.go_to_location(random.choice(spawn_pts).location)
-                ctrl.set_max_speed(1.2)
                 self._actors.append(ctrl)
+                try:
+                    ctrl.start()
+                    ctrl.go_to_location(goal_pt.location)
+                    ctrl.set_max_speed(1.2)
+                except RuntimeError as e:
+                    # walker AI controller co the loi rpc do version mismatch
+                    # CARLA client/server — pedestrian van duoc spawn, chi
+                    # khong di bo (dung yen), khong lam fail ca kich ban.
+                    logger.warning("Walker AI controller start failed: %s", e)
             self._actors.append(ped)
         return ped
 
@@ -299,3 +328,50 @@ class ScenarioController:
             abs(abs(p.rotation.yaw - ref_yaw) - 180) < 30
         ]
         return random.choice(opposite) if opposite else random.choice(spawn_points)
+
+    # ------------------------------------------------------------------
+    # Camera-aware spawn selection
+    # ------------------------------------------------------------------
+
+    def _camera_for_point(self, x: float, y: float, max_range: float = 40.0):
+        """Trả về camera_id quan sát được điểm (x, y) trong CARLA world,
+        hoặc None nếu không camera nào phủ tới. Dùng vị trí + yaw + FOV
+        (view_angle) của từng camera trong camera_config.yaml — coi camera
+        nhìn ngang (pitch=0), hướng nhìn = (cos(yaw), sin(yaw))."""
+        import numpy as np
+        best_cam, best_dist = None, None
+        for cam in self.cameras:
+            cx, cy, _cz = cam.get('position', [0, 0, 0])
+            yaw = cam.get('rotation', [0, 0, 0])[1]
+            fov = cam.get('view_angle', 90)
+
+            dx, dy = x - cx, y - cy
+            dist = (dx ** 2 + dy ** 2) ** 0.5
+            if dist < 1e-6 or dist > max_range:
+                continue
+
+            yaw_rad = np.radians(yaw)
+            fx, fy = np.cos(yaw_rad), np.sin(yaw_rad)
+            cos_angle = (dx * fx + dy * fy) / dist
+            angle = np.degrees(np.arccos(np.clip(cos_angle, -1.0, 1.0)))
+
+            if angle <= fov / 2 and (best_dist is None or dist < best_dist):
+                best_cam, best_dist = cam.get('camera_id'), dist
+        return best_cam
+
+    def _pick_spawn_in_view(self, spawn_points):
+        """Chọn 1 spawn point nằm trong tầm quan sát của 1 camera nếu có,
+        để kịch bản tai nạn diễn ra trước camera (thấy được trên dashboard).
+        Trả về (spawn_point, camera_id) — camera_id là None nếu không spawn
+        point nào nằm trong tầm camera (fallback random)."""
+        if self.cameras:
+            covered = []
+            for p in spawn_points:
+                cam_id = self._camera_for_point(p.location.x, p.location.y)
+                if cam_id:
+                    covered.append((p, cam_id))
+            if covered:
+                return random.choice(covered)
+            logger.warning("Không tìm thấy spawn point nào trong tầm camera nào — "
+                           "chọn ngẫu nhiên (có thể không quan sát được)")
+        return random.choice(spawn_points), None

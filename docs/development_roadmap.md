@@ -7,37 +7,42 @@ thanh mot he thong giam sat camera hoan chinh voi giao dien server, AI bao dong 
 
 ---
 
-## Trang Thai Hien Tai (cap nhat 2026-06-10)
+## Trang Thai Hien Tai (cap nhat 2026-06-12)
 
 ### Da hoan thanh — Core Pipeline (100%)
 - [x] CARLA simulator setup (WindowsNoEditor)
 - [x] Camera controller — dat nhieu camera trong CARLA, dong bo frame
 - [x] Traffic generator — spawn vehicle + pedestrian voi autopilot
-- [x] Object detection — YOLOv8s, FP16, 5 class (person/car/motorcycle/bus/truck)
+- [x] Object detection — YOLO11m fine-tune VN traffic (carla5/carla6), FP16, 5 class (person/car/motorcycle/bus/truck)
 - [x] Single-camera tracking — ByteTrackWrapper (Kalman + Hungarian + dual-threshold)
 - [x] Cross-camera ReID — DualReIDExtractor: OSNet Market-1501 (person) + OSNet VeRi-776 (vehicle, 575 classes, da train)
 - [x] Global ID assignment — cosine similarity + Spatio-Temporal Filter (camera_topology da cau hinh)
-- [x] Trajectory prediction — Kalman Filter (constant-acceleration, dt-aware), horizons 0.5s-3s
+- [x] Trajectory prediction — EnsembleTrajectoryPredictor (Kalman constant-acceleration + LearnedTrajectoryPredictor GRU seq2seq, world-space qua calibration) trong main.py; horizons 0.5s-3s
+- [x] Calibration pixel<->world — `modules/calibration.py` (CameraCalibration tu CARLA intrinsics/extrinsics hoac homography tu point correspondences) + CalibrationStore, da dung trong main.py
 - [x] Alert system — ROI entry warning, nhan list positions dung
-- [x] Incident Detector — 12 loai (10 reactive + 2 proactive PREDICTED_COLLISION/ROI_ENTRY, da ket noi predictions)
+- [x] Incident Detector — 14 loai (12 reactive + 2 proactive PREDICTED_COLLISION/ROI_ENTRY, da ket noi predictions). Moi them WRONG_WAY (di nguoc chieu) va RED_LIGHT_VIOLATION (vuot den do, doc traffic light tu CARLA world)
 - [x] Evidence Package — ring buffer 30s, luu clip + crop + JSON khi su co
-- [x] Scenario Controller — 5 kich ban tai nan trong CARLA
+- [x] Scenario Controller — 5 kich ban tai nan trong CARLA, da noi day du qua server (`server/routers/scenarios.py`, `AIProcessor.trigger_scenario()`) va frontend (`ScenarioPanel.jsx`)
 - [x] Visualization — bounding box, trajectory, ROI overlay
 - [x] Metrics collector — FPS, detection/tracking counts
 - [x] Data writer — export JSON, CSV, summary report
 - [x] Abstract VideoSource — CARLA/RTSP/File/Webcam/CARLABridgeClient
-- [x] Ground Truth module — thu thap GT tu CARLA (tach biet AI pipeline)
+- [x] Ground Truth module + Evaluation — thu thap GT tu CARLA, `evaluate_tracking.py` tinh MOTA/IDF1 qua py-motmetrics (xem `custom_tracking_system/docs/error.md`)
 - [x] carla_bridge — process Python 3.7 rieng stream frame qua TCP cho main.py --source bridge (Python 3.10+)
 
 ### Da hoan thanh — Backend + Frontend (95%)
-- [x] FastAPI server — 17 REST endpoints, 3 WebSocket channels, MJPEG streaming
+- [x] FastAPI server — 17 REST endpoints + scenarios router, 3 WebSocket channels, MJPEG streaming
 - [x] Database SQLite + SQLAlchemy ORM — 5 bang, indexes day du
-- [x] AI Processor — ket noi dung: YOLOv8s + ByteTrackWrapper + DualReIDExtractor + camera_topology + predictions wired
+- [x] AI Processor — ket noi dung: YOLO (batch detect_batch) + ByteTrackWrapper + DualReIDExtractor (throttle ReID 1/3 frame) + EnsembleTrajectoryPredictor (Kalman+GRU+CalibrationStore) + camera_topology + predictions + traffic light state (cho RED_LIGHT_VIOLATION) wired
 - [x] Thread-safe MJPEG streaming — asyncio.Event qua call_soon_threadsafe
-- [x] Web Dashboard React — camera grid, incident panel, alert management, object history
+- [x] Web Dashboard React — camera grid, incident panel, alert management, object history, scenario panel
 - [x] Real-time notification — WebSocket push, am thanh, flash CRITICAL
-- [x] Camera config YAML — 3 cameras, 3 ROIs, camera_topology 6 cap
-- [ ] /ws/stats channel — ket noi song nhung khong push stats thuc te (chua co background task)
+- [x] Camera config YAML — 3 cameras, 3 ROIs (key da fix ve CAM_001/002/003), camera_topology 6 cap, incident_detection.wrong_way/red_light
+- [x] /ws/stats channel — push dinh ky moi 1s tu FPS block; StatsBar hien thi dung
+
+### Van con khac biet AI Processor vs main.py (2026-06-13: da dong bo)
+- [x] `server/services/ai_processor.py` nay da dung `EnsembleTrajectoryPredictor` (Kalman + GRU + `CalibrationStore.load_from_config()`), dong bo voi `main.py`. `update_trajectory()`/`predict_list()` da truyen `camera_id`, `obj_class`, `all_tracks`.
+- [x] FPS server — da batch YOLO qua `detect_batch()` cho tat ca camera trong 1 forward pass, va throttle ReID (`extract_feature()` chi chay cho track moi hoac moi 3 frame/track, cache global_id qua `GlobalTracker._track_to_global`). Xem `custom_tracking_system/docs/error.md` cho phan tich ban dau.
 
 ### Bug fixes (2026-06-01) — 13 loi da sua
 - [x] ai_processor: frame_count → time.time() cho TrajectoryPredictor
@@ -57,13 +62,17 @@ thanh mot he thong giam sat camera hoan chinh voi giao dien server, AI bao dong 
 ### Chua hoan thanh
 - [x] /ws/stats push dinh ky -- _push_stats_ws() moi 1s tu FPS block; StatsBar hien thi dung
 - [x] Giai quyet xung dot Python/CARLA -- da trien khai kien truc `carla_bridge`: process Python 3.7 (carla_bridge/server.py) chay CARLA, stream frame qua TCP cho process Python 3.10+ (main.py --source bridge) chay AI pipeline. Khong can nang CARLA len 0.9.15. Chi tiet: bao_cao_tien_do.md muc 7 item 2.
-- [ ] Fine-tune YOLOv8s tren dataset giao thong VN (motorcycle VN)
+- [x] Fine-tune YOLO11m tren dataset giao thong VN (carla5/carla6, motorcycle VN) — `custom_tracking_system/train_yolo_detector.py`, `resume_carla6.py`
 - [ ] Re-train VeRi-776 voi validation split da sua (de co val_acc co nghia)
-- [ ] Ground Truth Evaluation — ket noi motmetrics → MOTA, IDF1, mAP
+- [x] Ground Truth Evaluation — ket noi motmetrics → MOTA, IDF1 (`evaluate_tracking.py`); con sai so do domain gap detector, xem error.md
 - [ ] Recording lien tuc — VideoRecorder ghi segment 1h + storage rotation
 - [x] Tich hop VideoSource vao main.py (--source {bridge,rtsp,file,webcam}); server ai_processor.py van dung camera_controller truc tiep
-- [ ] Calibration pixel<->world (homography) cho trajectory prediction "len map" -- chua bat dau
+- [x] Calibration pixel<->world (`modules/calibration.py`, CameraCalibration + CalibrationStore) — da dung trong main.py va server ai_processor.py qua EnsembleTrajectoryPredictor
+- [x] WRONG_WAY + RED_LIGHT_VIOLATION incident types — them vao incident_detector.py + camera_config.yaml (`incident_detection.wrong_way/red_light`), AIProcessor doc traffic light tu CARLA world
+- [x] Toi uu FPS server — batch YOLO `detect_batch` cho 3 camera trong 1 forward pass, throttle ReID (extract_feature 1/3 frame cho track da biet)
+- [x] Wire EnsembleTrajectoryPredictor (Kalman+GRU+calibration) vao server ai_processor.py
 - [ ] Camera Management UI — them/xoa camera + ve ROI tren browser
+- [x] Calibrate ROI polygon + wrong_way.lanes.direction theo hinh hoc camera (CameraCalibration.world_to_pixel, depth 8-25m truoc camera); camera_topology da co tu truoc dua tren khoang cach thuc te giua cac camera
 
 ---
 
@@ -736,8 +745,13 @@ class DeepSORTTracker:
 cu (`update_trajectory`/`predict`/`predict_list`/`get_velocity`/`get_speed`) giu
 nguyen, them `get_acceleration()`. Khong can them dependency `filterpy`.
 
-Con thieu: calibration pixel<->world (homography) de dua du doan ra toa do
-chung tren map — xem muc "Chua hoan thanh" o tren.
+#### Option C: EnsembleTrajectoryPredictor (Kalman + GRU) ✅ DA TRIEN KHAI, dung trong main.py va server
+
+`EnsembleTrajectoryPredictor` = Kalman (tren) + `LearnedTrajectoryPredictor` (GRU
+seq2seq, multi-modal, hoat dong tren toa do world-space met qua `CalibrationStore`,
+checkpoint `weights/trajectory_gru.pth`). Ca `main.py` va
+`server/services/ai_processor.py` (tu 2026-06-13) deu dung Ensemble +
+`CalibrationStore.load_from_config()`.
 
 #### Option B: LSTM (chua trien khai — chi can khi Kalman khong du)
 
@@ -1074,18 +1088,27 @@ finalproject/
 
 ---
 
-## Thu Tu Uu Tien Phat Trien (cap nhat 2026-06-09)
+## Thu Tu Uu Tien Phat Trien (cap nhat 2026-06-13)
 
 ```
 DA XONG:
   ✅ Backend API + Database + Video streaming (thread-safe)
-  ✅ AI Pipeline day du: YOLOv8s + ByteTrack + DualReID VeRi-776 + Trajectory + 12 Incidents
-  ✅ Web Dashboard: camera grid, incident panel, alert management, object history
+  ✅ AI Pipeline day du: YOLO11m fine-tune + ByteTrack + DualReID VeRi-776 + Trajectory + 14 Incidents
+  ✅ Web Dashboard: camera grid, incident panel, alert management, object history, scenario panel
   ✅ Vehicle ReID: DualReIDExtractor + VeRi-776 weights (575 classes, epoch 12)
   ✅ Spatio-Temporal Filter: camera_topology 6 cap da cau hinh
   ✅ Proactive alerts: PREDICTED_COLLISION + PREDICTED_ROI_ENTRY hoat dong dung
   ✅ /ws/stats push FPS/tracks/alerts moi 1s
-  ✅ 13 bugs da sua (2026-06-01)
+  ✅ Ground Truth Evaluation: MOTA/IDF1 qua motmetrics (evaluate_tracking.py)
+  ✅ Calibration pixel<->world (modules/calibration.py) + EnsembleTrajectoryPredictor (Kalman+GRU)
+     trong CA main.py va server/services/ai_processor.py
+  ✅ WRONG_WAY + RED_LIGHT_VIOLATION incident detection (camera_config.yaml + incident_detector.py + ai_processor.py)
+  ✅ ROI key bug fix (camera_0 -> CAM_001/002/003) — ROI_WARNING/PREDICTED_ROI_ENTRY hoat dong dung
+  ✅ Scenario Controller noi day du vao server + frontend (ScenarioPanel.jsx)
+  ✅ Toi uu FPS server: batch YOLO detect_batch() cho 3 camera + throttle ReID
+     (extract_feature 1/3 frame cho track da biet, cache global_id)
+  ✅ Calibrate ROI polygon + wrong_way.lanes.direction theo hinh hoc camera
+     (CameraCalibration.world_to_pixel, depth 8-25m truoc camera)
 
 UU TIEN 0 (moi truong): ✅ HOAN THANH
   Giai quyet xung dot Python/CARLA:
@@ -1093,30 +1116,29 @@ UU TIEN 0 (moi truong): ✅ HOAN THANH
   --> Da trien khai kien truc carla_bridge (2 process qua TCP), khong can nang CARLA
       (xem bao_cao_tien_do.md muc 7 item 2)
 
-UU TIEN 1 (danh gia):
-  Ground Truth Evaluation -- ket noi motmetrics
-  --> Co so lieu MOTA/IDF1/mAP khach quan
-
-UU TIEN 2 (AI nang cao):
+UU TIEN 1 (AI nang cao):
   Chon epoch tot nhat tu 20 checkpoints co san (khong can re-train):
     - Nhanh nhat: copy ckpt_ep20.pth -> osnet_veri776.pth (cosine annealing hoi tu o ep20)
     - Chinh xac hon: chay Re-ID eval (rank-1/mAP tren query/gallery VeRi) cho tung epoch
-  Fine-tune YOLOv8s cho motorcycle VN
-  --> ReID chinh xac hon, detection tot hon voi xe VN
+  Tiep tuc fine-tune YOLO tren anh render CARLA de giam domain gap (xem error.md)
 
-UU TIEN 3 (tinh nang nang cao):
+UU TIEN 2 (tinh nang nang cao):
   Recording lien tuc (segment 1h + storage rotation)
-  ~~VideoSource tich hop vao pipeline~~ -- DA XONG cho main.py (--source rtsp/file/webcam/bridge)
-  Calibration pixel<->world (homography) -- can cho trajectory prediction "len map"
   Camera Management UI tren browser
   --> Production-ready cho camera IP thuc te
 
-UU TIEN 4 (GPU-dependent, neu nang cap len RTX 4060 8GB):
-  YOLOv8s -> YOLOv11s/m (detector, gan nhu mien phi)
+UU TIEN 3 (GPU-dependent, neu nang cap len RTX 4060 8GB):
   ByteTrack -> BoT-SORT/OC-SORT (tracker, cung thu vien boxmot)
-  Trajectory Kalman -> deep learning (Trajectron++/Social-GAN/MTR) -- chi khi Kalman khong du
+  Trajectory: mo rong GRU Ensemble / thu Trajectron++/Social-GAN/MTR
   OSNet -> CLIP-ReID/TransReID (Re-ID, can >=8GB)
   --> Xem chi tiet bao_cao_tien_do.md muc 10
+
+GHI CHU (kiem tra lai sau, khong gap):
+  - wrong_way.lanes.*.direction hien la [0,-1] (huong "ra xa camera" tinh hinh
+    hoc, gia dinh chung cho ca 3 camera vi pitch=0) — nen kiem tra lai bang
+    video CARLA thuc te neu lan duong co huong khac.
+  - ROI polygon (camera_config.yaml) duoc tinh tu world_to_pixel(), nen doi
+    chieu lai voi anh thuc te khi co the.
 ```
 
 ---

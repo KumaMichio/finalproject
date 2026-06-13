@@ -18,7 +18,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from models.database import init_db
-from routers import cameras, tracks, alerts, rois, stats, websocket, stream
+from routers import cameras, tracks, alerts, rois, stats, websocket, stream, scenarios
 from config import CAMERA_CONFIG_PATH, CARLA_HOST, CARLA_PORT
 
 logger = logging.getLogger(__name__)
@@ -97,6 +97,7 @@ app.include_router(rois.router, prefix="/api/rois", tags=["ROIs"])
 app.include_router(stats.router, prefix="/api/stats", tags=["Stats"])
 app.include_router(websocket.router, prefix="/ws", tags=["WebSocket"])
 app.include_router(stream.router, prefix="/stream", tags=["Stream"])
+app.include_router(scenarios.router, prefix="/api/scenarios", tags=["Scenarios"])
 
 
 # ---------------------------------------------------------------------------

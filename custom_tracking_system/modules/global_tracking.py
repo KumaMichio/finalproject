@@ -49,12 +49,17 @@ class GlobalTracker:
         # {global_id: {'camera_id': str, 'timestamp': float}}
         self._last_seen_info: dict = {}
 
+        # ReID-throttle cache: {(camera_id, local_track_id): global_id} — lets
+        # callers skip extract_feature() on most frames for already-identified
+        # tracks (see process_camera_tracks(reid_track_ids=...)).
+        self._track_to_global: dict = {}
+
         logger.info(
             "GlobalTracker initialised: threshold=%.2f, topology_pairs=%d",
             match_threshold, len(self.camera_topology)
         )
 
-    def process_camera_tracks(self, camera_id, frame, local_tracks):
+    def process_camera_tracks(self, camera_id, frame, local_tracks, reid_track_ids=None):
         """
         Process local tracks from a camera and assign global IDs
 
@@ -62,6 +67,14 @@ class GlobalTracker:
             camera_id: Camera identifier
             frame: numpy array - camera frame
             local_tracks: list of local track dicts
+            reid_track_ids: optional set of local_track_id values for which
+                ReID extraction should run THIS frame. Tracks whose
+                local_track_id is NOT in this set reuse the global_id they
+                were assigned last time ReID ran for them (cache keyed by
+                (camera_id, local_track_id)), skipping extract_feature() —
+                used to throttle the per-object OSNet forward pass to every
+                Nth frame. If None (default), ReID always runs for every
+                track (original behaviour, used by main.py).
 
         Returns:
             list: global tracks with assigned IDs
@@ -78,12 +91,33 @@ class GlobalTracker:
 
         for local_track in local_tracks:
             box = local_track['box']
+            track_id = local_track['track_id']
+            obj_class = local_track.get('class', 'unknown')
+            cache_key = (camera_id, track_id)
+            cached_global_id = self._track_to_global.get(cache_key)
+
+            run_reid = reid_track_ids is None or track_id in reid_track_ids
+
+            if not run_reid and cached_global_id is not None:
+                # Reuse the previously-assigned global ID without running
+                # ReID this frame.
+                global_id = cached_global_id
+                used_global_ids_this_frame.add(global_id)
+                self._update_global_track(global_id, camera_id, local_track)
+                global_tracks_output.append(
+                    self._make_output(global_id, camera_id, box, local_track))
+                continue
 
             # Extract ReID feature — pass object class so DualReIDExtractor
             # can choose person vs vehicle model automatically
-            obj_class = local_track.get('class', 'unknown')
             feature = self.reid_extractor.extract_feature(frame, box, obj_class)
             if feature is None:
+                if cached_global_id is not None:
+                    global_id = cached_global_id
+                    used_global_ids_this_frame.add(global_id)
+                    self._update_global_track(global_id, camera_id, local_track)
+                    global_tracks_output.append(
+                        self._make_output(global_id, camera_id, box, local_track))
                 continue
 
             # Try to match with existing global tracks. Only compare against
@@ -111,20 +145,26 @@ class GlobalTracker:
             # Update gallery and track state
             self.reid_extractor.add_to_gallery(global_id, feature, group=group)
             self._update_global_track(global_id, camera_id, local_track)
+            self._track_to_global[cache_key] = global_id
 
-            global_tracks_output.append({
-                'global_id':      global_id,
-                'camera_id':      camera_id,
-                'box':            box,
-                'class':          local_track['class'],
-                'local_track_id': local_track['track_id'],
-                # Propagate motion data so IncidentDetector can use speeds
-                'speeds':         local_track.get('speeds', []),
-                'positions':      local_track.get('positions', []),
-                'timestamps':     local_track.get('timestamps', []),
-            })
+            global_tracks_output.append(
+                self._make_output(global_id, camera_id, box, local_track))
 
         return global_tracks_output
+
+    @staticmethod
+    def _make_output(global_id, camera_id, box, local_track):
+        return {
+            'global_id':      global_id,
+            'camera_id':      camera_id,
+            'box':            box,
+            'class':          local_track['class'],
+            'local_track_id': local_track['track_id'],
+            # Propagate motion data so IncidentDetector can use speeds
+            'speeds':         local_track.get('speeds', []),
+            'positions':      local_track.get('positions', []),
+            'timestamps':     local_track.get('timestamps', []),
+        }
 
     def _update_global_track(self, global_id, camera_id, local_track):
         """
@@ -323,6 +363,7 @@ class GlobalTracker:
         """Reset global tracker state."""
         self.global_tracks.clear()
         self._last_seen_info.clear()
+        self._track_to_global.clear()
         self.next_global_id = 1000
         self.reid_extractor.clear_gallery()
         logger.info("Global tracker reset")

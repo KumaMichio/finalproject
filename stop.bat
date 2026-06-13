@@ -1,8 +1,8 @@
 @echo off
 echo Dung tat ca services...
 
-REM Dung Frontend (Vite, port 5173)
-for /f "tokens=5" %%a in ('netstat -ano 2^>nul ^| findstr /C:":5173 " ^| findstr "LISTENING"') do (
+REM Dung Frontend (Vite, port 3000)
+for /f "tokens=5" %%a in ('netstat -ano 2^>nul ^| findstr /C:":3000 " ^| findstr "LISTENING"') do (
     echo Dung Frontend (PID %%a)...
     taskkill /PID %%a /F >nul 2>&1
 )

@@ -2,12 +2,14 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import CameraGrid from '../components/CameraGrid'
 import IncidentPanel from '../components/IncidentPanel'
+import ScenarioPanel from '../components/ScenarioPanel'
 import StatsBar from '../components/StatsBar'
 import { useIncidents } from '../hooks/useIncidents'
 import { api } from '../services/api'
 
 export default function Dashboard() {
   const [cameras, setCameras] = useState([])
+  const [highlightCamera, setHighlightCamera] = useState(null)
   const { incidents, acknowledge, unreadCount, connected } = useIncidents()
   const navigate = useNavigate()
 
@@ -16,6 +18,12 @@ export default function Dashboard() {
       .then(data => setCameras(Array.isArray(data) ? data : []))
       .catch(() => {})
   }, [])
+
+  useEffect(() => {
+    if (!highlightCamera) return
+    const timer = setTimeout(() => setHighlightCamera(null), 15000)
+    return () => clearTimeout(timer)
+  }, [highlightCamera])
 
   return (
     <div className="flex flex-col h-screen bg-gray-950">
@@ -51,6 +59,7 @@ export default function Dashboard() {
             <CameraGrid
               cameras={cameras}
               incidents={incidents}
+              highlightCamera={highlightCamera}
               onCameraClick={(cam) => navigate(`/alerts?camera=${cam.id}`)}
             />
           ) : (
@@ -64,12 +73,15 @@ export default function Dashboard() {
         </div>
 
         {/* Incident panel — cố định 360px */}
-        <div className="w-[360px] shrink-0">
-          <IncidentPanel
-            incidents={incidents}
-            unreadCount={unreadCount}
-            onAcknowledge={acknowledge}
-          />
+        <div className="w-[360px] shrink-0 flex flex-col gap-3">
+          <div className="flex-1 min-h-0">
+            <IncidentPanel
+              incidents={incidents}
+              unreadCount={unreadCount}
+              onAcknowledge={acknowledge}
+            />
+          </div>
+          <ScenarioPanel onTriggered={setHighlightCamera} />
         </div>
       </div>
 

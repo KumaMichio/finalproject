@@ -166,31 +166,33 @@ finalproject/
 ### 4.1 AI Pipeline — Luong xu ly chinh
 
 ```
-Video Source (CARLA / RTSP / File / Webcam)
+Video Source (CARLA / RTSP / File / Webcam / CARLABridgeClient)
         |  chi tra ve raw frames (numpy array)
         v
-  [1] Object Detection (YOLOv8s)
+  [1] Object Detection (YOLO11m fine-tune VN traffic, batched multi-camera)
         |  Output: bounding boxes + class + confidence
         v
-  [2] Single-Camera Tracking (IoU Greedy Matching)
+  [2] Single-Camera Tracking (ByteTrackWrapper: Kalman + Hungarian + dual-threshold)
         |  Output: local track ID trong 1 camera
         v
-  [3] Feature Extraction (OSNet / ResNet50)
-        |  Output: vector dac trung 512D hoac 2048D
+  [3] Feature Extraction (DualReIDExtractor: OSNet Market-1501 person / VeRi-776 vehicle)
+        |  Output: vector dac trung 512D, da calibrate (tru DC bias)
         v
-  [4] Cross-Camera ReID (Cosine Similarity + Gallery)
+  [4] Cross-Camera ReID (Cosine Similarity + Gallery theo group person/vehicle)
         |  Output: matched global ID hoac tao ID moi
         v
-  [5] Global Tracking (Global ID Assignment)
-        |  Output: global ID + lich su camera
+  [5] Global Tracking (Global ID Assignment + Spatio-Temporal Filter)
+        |  Output: global ID + lich su camera, loc match phi thuc te theo camera_topology
         v
-  [6] Trajectory Prediction (Linear Extrapolation)
-        |  Output: vi tri du doan tuong lai (5 buoc)
+  [6] Trajectory Prediction (Kalman constant-acceleration, hoac Ensemble Kalman+GRU + calibration)
+        |  Output: vi tri du doan tuong lai (5 horizons: 0.5s-3.0s)
         v
-  [7] Alert Check (Point-in-Polygon voi ROI)
-        |  Output: canh bao neu doi tuong sap vao vung ROI
+  [7] Incident Detection (14 loai: ROI/overspeed/wrong-way/red-light/...) + Alert (Point-in-Polygon ROI)
+        |  Output: canh bao + incident, severity INFO/WARNING/CRITICAL
         v
-  [8] Visualization + Streaming
+  [8] Evidence Capture (khi CRITICAL: ring buffer 30s -> clip + crop + JSON)
+        v
+  [9] Visualization + Streaming
         Output: frame da ve overlay -> MJPEG stream / OpenCV window
 ```
 
@@ -456,30 +458,31 @@ Hien tai he thong cau hinh 3 camera (CAM_001, CAM_002, CAM_003) voi 3 vung ROI t
 
 ---
 
-## 6. Trang Thai Hien Tai Va Han Che
+## 6. Trang Thai Hien Tai Va Han Che (cap nhat 2026-06-13)
 
 ### 6.1 Da hoan thanh
 
-- AI pipeline day du 8 buoc: detect -> track -> ReID -> global ID -> predict -> alert -> visualize -> stream.
-- Backend API server voi 17 REST endpoints, 3 WebSocket channels, MJPEG streaming.
+- AI pipeline day du 9 buoc: detect (YOLO11m fine-tune, batch detect_batch) -> track (ByteTrack) -> ReID (DualReID + calibration, throttle 1/3 frame) -> global ID (Spatio-Temporal Filter) -> predict (Ensemble Kalman+GRU + CalibrationStore) -> incident detection (14 loai) + alert -> evidence -> visualize -> stream.
+- Backend API server voi 17 REST endpoints + scenarios router, 3 WebSocket channels (alerts/tracks/stats), MJPEG streaming.
 - Database 5 bang luu tru camera, alerts, tracks, history, ROIs.
 - AI processor tich hop pipeline vao server, chay trong background thread.
 - 3 che do chay: API-only, API + AI (CARLA), Direct (OpenCV window).
-- Abstract VideoSource layer — tach AI pipeline khoi nguon video cu the (CARLA/RTSP/File/Webcam).
-- Ground Truth module — thu thap du lieu CARLA (actor_id, location, velocity) TACH BIET khoi AI pipeline, chi dung cho evaluation. Ho tro doc file MOT Challenge format.
+- Abstract VideoSource layer — dung trong main.py (CARLA/RTSP/File/Webcam/CARLABridgeClient).
+- Ground Truth module + evaluate_tracking.py — MOTA/IDF1 qua py-motmetrics.
+- Calibration pixel<->world (modules/calibration.py) — dung trong CA main.py va server ai_processor.py qua EnsembleTrajectoryPredictor; cung dung de tinh ROI polygon va wrong_way.lanes.direction trong camera_config.yaml.
+- Incident Detection nang cao: WRONG_WAY (di nguoc chieu) va RED_LIGHT_VIOLATION (vuot den do, doc trang thai traffic light CARLA), cong voi 10 loai con lai (overspeed, sudden stop/accel, proximity, loitering, crowd, camera transition, predicted collision/ROI entry, stopped vehicle).
+- Web Dashboard (React) — camera grid, incident panel, alert management, object history, scenario panel.
+- Scenario Controller — 5 kich ban tai nan, kich hoat tu UI qua /api/scenarios.
+- Toi uu FPS server: batch YOLO detect_batch() cho 3 camera trong 1 forward pass; ReID throttle (extract_feature chi chay cho track moi hoac moi 3 frame/track, GlobalTracker cache global_id qua _track_to_global).
 
 ### 6.2 Han che hien tai
 
 | Han che | Chi tiet |
 |--------|---------|
-| Tracker don gian | Su dung IoU greedy matching, chua co Kalman filter hoac appearance matching. Khi 2 doi tuong di sat nhau roi tach ra, tracker co the hoan doi ID |
-| Trajectory prediction co ban | Chi dung linear extrapolation (noi suy tuyen tinh), chua co Kalman filter hoac LSTM |
-| ReID chua toi uu cho vehicle | OSNet/Market-1501 duoc train cho person, chua co model rieng cho xe. Voi 2 xe giong mau va hinh dang, ReID khong phan biet duoc |
-| Chua co spatio-temporal reasoning | Chua dung thoi gian + khoang cach giua camera de loc match sai khi ReID khong du chinh xac |
-| Chua co web dashboard | Frontend chua duoc xay dung, chi co API |
-| Chua co anomaly detection | Chi phat hien doi tuong vao ROI, chua co overspeed, wrong-way, crowd, loitering... |
-| Chua co recording/playback | Chua ghi video, chua cat clip su co |
-| Chua co ground truth evaluation | Module ground_truth.py da co nhung chua tich hop de tinh MOTA, IDF1, mAP thuc su |
-| Datasets trong | Chua co du lieu ground truth hoac synthetic data |
-| VideoSource chua tich hop | video_source.py da viet nhung main.py va ai_processor.py van dung camera_controller truc tiep |
+| ReID chua toi uu cho vehicle | VeRi-776 weights da train (575 classes, epoch 12), nhung chua chon/eval epoch tot nhat. Voi 2 xe giong mau va hinh dang, ReID van co the nham |
+| wrong_way.lanes.direction la don gian hoa | Tinh hinh hoc [0,-1] cho ca 3 camera (huong "ra xa camera" voi pitch=0) — gia dinh xe dung huong la di xa camera, nen kiem tra lai bang video CARLA thuc te neu lan duong co huong khac |
+| Domain gap detector | YOLO fine-tune tren VisDrone/carla5/6 khi ap vao scene CARLA khac van mien o mot so truong hop (Recall thap trong GT eval, xem error.md) |
+| Chua co recording/playback | Chua ghi video lien tuc, chi co ring buffer 30s khi co incident CRITICAL |
+| Chua co Camera Management UI | Them/xoa camera + ve ROI tren browser chua co |
+| VideoSource chua tich hop server | video_source.py dung trong main.py (--source bridge/rtsp/file/webcam); server ai_processor.py van dung camera_controller truc tiep |
 | CARLA khong ho tro bien so xe | Khong the dung LPR (phuong phap chinh xac nhat) de phan biet xe giong nhau |

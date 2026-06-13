@@ -23,19 +23,37 @@
 | CARLA | **0.9.14** (`WindowsNoEditor/`, đã cài đặt) | 0.9.14 |
 | Node.js | 18+ | 20+ (cho frontend) |
 
-> **Cập nhật (2026-06-11): CARLA đã nâng cấp lên 0.9.14 — không còn dùng `carla_bridge`**
-> Project hiện dùng trực tiếp 2 conda env có sẵn:
-> - `carla-sim` (Python 3.7.16) — chỉ dùng để chạy `CarlaUE4.exe` và các script
->   tương tác trực tiếp với CARLA Python API (`collect_trajectory_data.py`,
->   `train_trajectory_predictor.py` khi cần dữ liệu CARLA).
-> - `veri-train` (Python 3.10) — chạy `main.py`/`server/app.py` (AI pipeline:
->   boxmot, ultralytics, torchreid).
+> **Cập nhật (2026-06-12): chỉ dùng 1 venv (`custom_tracking_system/venv_tracking`,
+> Python 3.10) để chạy `server/app.py --with-ai` — không cần `carla_bridge`,
+> không cần conda env riêng cho CARLA.**
 >
-> CARLA Python API 0.9.14 nằm ở
-> `WindowsNoEditor/PythonAPI/carla/dist/carla-0.9.14-py3.7-win-amd64.egg`
-> (file `.egg`, không phải thư mục `carla_extracted` như bản 0.9.9.4 cũ).
-> `run.bat` và `start.bat` đã được cập nhật để trỏ `PYTHONPATH` tới file `.egg`
-> này. Cách chạy đơn giản nhất: `start.bat` (full) hoặc `start.bat --no-ai`
+> CARLA 0.9.14 (`WindowsNoEditor/`) chỉ ship Python API cho cp37 (file `.egg`
+> ở `WindowsNoEditor/PythonAPI/carla/dist/`). Thay vì dùng `.egg` đó, cài
+> thẳng `pip install carla==0.9.15` (wheel cp310 trên PyPI) vào
+> `venv_tracking` — client 0.9.15 kết nối được server 0.9.14, chỉ in ra
+> WARNING version mismatch (vô hại, đã test thực tế).
+>
+> `venv_tracking` vì vậy có đủ: `carla` (pip, cp310), `torch`/`ultralytics`/
+> `boxmot`/`torchreid` (AI pipeline), `fastapi`/`uvicorn`/`sqlalchemy` (server).
+> KHÔNG dùng `python`/`python.exe` mặc định trong PATH — thiếu hết các gói
+> trên. `start.bat` đã được cập nhật để gọi thẳng
+> `custom_tracking_system\venv_tracking\Scripts\python.exe` cho cả backend
+> (`--with-ai` và `--no-ai`).
+>
+> Lưu ý code: `modules/tracker.py` (`ByteTrackWrapper._init_tracker`) dùng API
+> `boxmot.trackers.bytetrack.byte_tracker.BYTETracker` — đây là API của
+> `boxmot==10.0.16` (bản đang cài trong `venv_tracking`). KHÔNG nâng `boxmot`
+> lên >=20 nếu chưa sửa lại import này — boxmot>=20 yêu cầu torch>=2.2 (sẽ kéo
+> theo nâng torch lên bản CPU-only mới nhất, mất CUDA).
+>
+> `scenario_controller.py` dùng `client.get_trafficmanager(8001)` (KHÔNG phải
+> 8000 — port 8000 là của FastAPI server, dùng chung sẽ bị bind error khi
+> `--with-ai` khởi tạo ScenarioController).
+>
+> Frontend chạy ở **port 3000** (xem `frontend/vite.config.js`), không phải
+> 5173 (default Vite). `start.bat`/`stop.bat` đã sửa theo port 3000.
+>
+> Cách chạy đơn giản nhất: `start.bat` (full) hoặc `start.bat --no-ai`
 > (không cần CARLA) — xem **mục 4**.
 >
 > Toàn bộ phần `carla_bridge` (TCP socket bridge giữa 2 venv) và phương án
@@ -511,14 +529,17 @@ Chờ 15–30 giây cho đến khi CARLA sẵn sàng (port 2000).
 
 #### Bước 2: Khởi động Backend Server
 
+Dùng python của `venv_tracking` (không dùng `python` mặc định trong PATH —
+xem ghi chú ở mục 1):
+
 ```cmd
 cd e:\School_project\finalproject\server
 
-# Chạy không có AI (API-only, không cần CARLA)
-python app.py
+REM Chạy không có AI (API-only, không cần CARLA)
+..\custom_tracking_system\venv_tracking\Scripts\python.exe app.py
 
-# Chạy với AI pipeline đầy đủ (cần CARLA đang chạy)
-python app.py --with-ai
+REM Chạy với AI pipeline đầy đủ (cần CARLA đang chạy)
+..\custom_tracking_system\venv_tracking\Scripts\python.exe app.py --with-ai
 ```
 
 Server khởi động tại `http://localhost:8000`. API docs tại `http://localhost:8000/docs`.
@@ -530,7 +551,7 @@ cd e:\School_project\finalproject\frontend
 npm run dev
 ```
 
-Frontend tại `http://localhost:5173`. Tự proxy `/api`, `/ws`, `/stream` → `:8000`.
+Frontend tại `http://localhost:3000` (xem `vite.config.js`). Tự proxy `/api`, `/ws`, `/stream` → `:8000`.
 
 ---
 
@@ -669,6 +690,38 @@ system:
   trajectory_window: 10        # Số frame lịch sử để predict
   prediction_steps: 5          # Số bước predict tương lai
 ```
+
+### 4.2 Kịch bản tai nạn demo (ScenarioPanel) — camera-aware spawn
+
+Dashboard (frontend, panel "Kịch bản demo") có 5 nút kích hoạt kịch bản tai
+nạn trong CARLA (`POST /api/scenarios/{name}`, chỉ hoạt động khi backend chạy
+`--with-ai`): `hit_and_run`, `pedestrian_hit`, `red_light_crash`, `rear_end`,
+`sudden_stop`.
+
+- `ScenarioController` (modules/scenario_controller.py) ưu tiên chọn spawn
+  point nằm trong FOV của 1 trong 3 camera (vị trí + yaw + view_angle,
+  bán kính 40m) cho mỗi kịch bản, để sự kiện xảy ra TRƯỚC camera (thấy được
+  trên dashboard) thay vì ở góc khuất.
+- Response của `POST /api/scenarios/{name}` trả về thêm `camera_id` — camera
+  dự kiến quan sát được sự kiện (`null` nếu không spawn point nào nằm trong
+  tầm camera nào, lúc đó kịch bản fallback về spawn ngẫu nhiên). Dashboard
+  highlight camera feed tương ứng (viền cyan nhấp nháy ~15s).
+- Lưu ý: pedestrian trong `pedestrian_hit` có thể đứng yên (không đi bộ) do
+  lỗi `set_actor_collisions` (CARLA client 0.9.15 / server 0.9.14 mismatch —
+  xem `custom_tracking_system/docs/error.md` mục 4). Kịch bản vẫn chạy được
+  (xe áp sát người đứng yên), không bị lỗi API.
+
+### 4.3 Lọc bớt cảnh báo (incident_detection.disabled_types)
+
+`IncidentDetector` (modules/incident_detector.py) hỗ trợ
+`incident_detection.disabled_types` trong `camera_config.yaml` để tắt các
+loại incident xảy ra thường xuyên trong giao thông bình thường (không phải
+dấu hiệu tai nạn), tránh làm loãng alert feed khi demo. Mặc định đã tắt:
+`SUDDEN_ACCEL`, `CAMERA_TRANSITION`, `STOPPED_VEHICLE`, `VEHICLE_PROXIMITY`.
+Các loại còn lại (`SUDDEN_STOP`, `OVERSPEED`, `PEDESTRIAN_DANGER`,
+`LOITERING`, `CROWD_DENSITY`, `WRONG_WAY`, `RED_LIGHT_VIOLATION`,
+`PREDICTED_COLLISION`, `PREDICTED_ROI_ENTRY`) vẫn hoạt động bình thường. Có
+thể chỉnh lại danh sách này trực tiếp trong `camera_config.yaml`.
 
 ---
 
@@ -1055,21 +1108,28 @@ chứa các DLL legacy:
   4. Kiểm tra: C:\Windows\System32\d3dx9_43.dll và xinput1_3.dll phải tồn tại
 ```
 
-### Lỗi `boxmot` không export `ByteTrack`
+### Lỗi `boxmot` không có `boxmot.trackers.bbox.bytetrack.bytetrack.ByteTrack`
 
 ```
-Nguyên nhân: boxmot 10.0.16 (cài qua "boxmot>=10.0") chỉ export `BYTETracker`,
-không có class `ByteTrack` như requirements.txt giả định.
+Nguyên nhân: boxmot 10.0.16 (bản đang cài trong venv_tracking) chỉ có API cũ
+`boxmot.trackers.bytetrack.byte_tracker.BYTETracker`, không có class
+`ByteTrack` ở path `boxmot.trackers.bbox.bytetrack.bytetrack` (API mới, chỉ
+có từ boxmot>=20 — yêu cầu torch>=2.2, py>=3.10; nâng lên sẽ kéo torch về
+bản CPU-only mới nhất, mất CUDA — KHÔNG làm trừ khi đã chuẩn bị lại toàn bộ
+torch GPU stack).
 
-Giải pháp: trong modules/tracker.py:
-  - Đổi `from boxmot import ByteTrack` → `from boxmot import BYTETracker`
-  - Đổi tên kwargs khi khởi tạo:
-      track_activation_threshold   → track_thresh
-      lost_track_buffer            → track_buffer
-      minimum_matching_threshold   → match_thresh
-      frame_rate                   → frame_rate (giữ nguyên)
-  - update(dets, frame) và format output (cột 0-3=box, 4=id, 5=conf, 6=cls)
-    không đổi.
+Đây là lỗi TÁI DIỄN (đã từng sửa, rồi modules/tracker.py bị sửa lại dùng API
+mới trong một commit sau đó). Nếu gặp lại `ImportError`/`ModuleNotFoundError`
+khi `--with-ai` khởi tạo ByteTrackWrapper, kiểm tra
+`modules/tracker.py::ByteTrackWrapper._init_tracker`:
+
+  from boxmot.trackers.bytetrack.byte_tracker import BYTETracker
+  self.tracker = BYTETracker(**self._init_kwargs)
+
+_init_kwargs (track_thresh, track_buffer, match_thresh, frame_rate) và
+update(dets, frame) / format output (cột 0-3=box, 4=id, 5=conf, 6=cls) đã
+khớp sẵn với BYTETracker.update(dets, _) của boxmot 10.0.16 — không cần đổi
+gì khác ngoài 2 dòng import/instantiate trên.
 
 Lưu ý: cài boxmot/ultralytics không pin version dễ làm pip nâng cấp ngầm
 numpy lên 2.x và torch/torchvision về bản CPU (mất CUDA). Dùng file
@@ -1102,11 +1162,17 @@ Giải pháp:
 ### Lỗi traffic manager: "trying to create rpc server... bind error"
 
 ```
-Nguyên nhân: vehicle.set_autopilot(True, 8000) dùng port 8000 cho CARLA
-Traffic Manager, trùng với port 8000 của FastAPI backend (server/app.py).
+Nguyên nhân: get_trafficmanager(8000) / set_autopilot(True, 8000) dùng port
+8000 cho CARLA Traffic Manager, trùng với port 8000 của FastAPI backend
+(server/app.py).
 
-Giải pháp: đổi port Traffic Manager trong modules/traffic_generator.py:
-  vehicle.set_autopilot(True, 8050)
+Giải pháp (cả 2 nơi tạo Traffic Manager đều phải đổi port):
+  - modules/traffic_generator.py: vehicle.set_autopilot(True, 8050)  (đã sửa)
+  - modules/scenario_controller.py: client.get_trafficmanager(8001) (đã sửa)
+
+(2 TM port khác nhau cho 2 nhóm actor riêng — chưa gây vấn đề trong demo,
+nhưng nên gộp về 1 port nếu cần ScenarioController điều khiển autopilot
+của xe do TrafficGenerator spawn.)
 ```
 
 ### Đã xác nhận chạy thành công trên máy thực tế (RTX 4060 8GB)

@@ -16,10 +16,14 @@ REM ----------------------------------------------------------------
 REM  CAU HINH (chinh sua khi can)
 REM ----------------------------------------------------------------
 set CARLA_EXE=%ROOT%WindowsNoEditor\CarlaUE4.exe
-set CARLA_PYTHON=%ROOT%WindowsNoEditor\PythonAPI\carla\dist\carla-0.9.14-py3.7-win-amd64.egg
-set CARLA_API=%ROOT%WindowsNoEditor\PythonAPI
 set SERVER_DIR=%ROOT%server
 set FRONTEND_DIR=%ROOT%frontend
+
+REM  Python dung de chay server (--with-ai can boxmot/torch/ultralytics/torchreid
+REM  + goi `carla` pip — KHONG dung python mac dinh trong PATH, no thieu cac
+REM  dependency nay). venv_tracking da co carla==0.9.15 (pip) ket noi duoc
+REM  CARLA server 0.9.14 (chi canh bao version mismatch, van hoat dong).
+set SERVER_PYTHON=%ROOT%custom_tracking_system\venv_tracking\Scripts\python.exe
 
 REM  Them --half neu dung CARLA + AI cung luc (4GB VRAM, GTX 1050Ti)
 set SERVER_FLAGS=--with-ai
@@ -97,9 +101,7 @@ if %NO_AI%==1 (
     echo [2/3] Khoi dong Backend Server ^(AI pipeline se ket noi CARLA^)...
 )
 
-REM Truyen PYTHONPATH vao cua so server moi
-set _PYPATH=%CARLA_PYTHON%;%CARLA_API%
-start "Backend Server" cmd /k "set PYTHONPATH=%_PYPATH%;%PYTHONPATH% && cd /d "%SERVER_DIR%" && python app.py %SERVER_FLAGS%"
+start "Backend Server" cmd /k "cd /d "%SERVER_DIR%" && "%SERVER_PYTHON%" app.py %SERVER_FLAGS%"
 
 echo       Cho server san sang tren port 8000...
 set /a attempt=0
@@ -133,7 +135,7 @@ echo   He thong da khoi dong:
 if %NO_AI%==0 echo   - CARLA Simulator  : chay nen ^(cua so rieng^)
 echo   - Backend API      : http://localhost:8000
 echo   - Swagger Docs     : http://localhost:8000/docs
-echo   - Web Dashboard    : http://localhost:5173
+echo   - Web Dashboard    : http://localhost:3000
 echo  ============================================
 echo.
 echo  De dung he thong: dong cac cua so CARLA, Backend, Frontend.

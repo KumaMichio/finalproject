@@ -10,10 +10,12 @@ const SEVERITY_BORDER = {
 /**
  * Hiển thị 1 camera: MJPEG live feed + badge sự cố gần nhất.
  */
-export default function CameraFeed({ camera, latestIncident, onClick }) {
-  const borderClass = latestIncident
-    ? SEVERITY_BORDER[latestIncident.severity] ?? 'border-gray-700'
-    : 'border-gray-700'
+export default function CameraFeed({ camera, latestIncident, highlighted, onClick }) {
+  const borderClass = highlighted
+    ? 'border-cyan-400 shadow-cyan-400/50 ring-4 ring-cyan-400/50 animate-pulse'
+    : latestIncident
+      ? SEVERITY_BORDER[latestIncident.severity] ?? 'border-gray-700'
+      : 'border-gray-700'
 
   return (
     <div
@@ -21,6 +23,13 @@ export default function CameraFeed({ camera, latestIncident, onClick }) {
                   transition-all duration-300 hover:scale-[1.02] ${borderClass}`}
       onClick={() => onClick?.(camera)}
     >
+      {/* Highlight badge — kich ban vua kich hoat se quan sat duoc o day */}
+      {highlighted && (
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-cyan-500/90 text-black text-xs
+                        font-bold px-2 py-0.5 rounded-full z-10 animate-pulse">
+          🎬 Kịch bản vừa kích hoạt
+        </div>
+      )}
       {/* MJPEG stream */}
       <img
         src={api.streamUrl(camera.id)}
