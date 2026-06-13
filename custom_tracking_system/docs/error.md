@@ -96,7 +96,15 @@ camera. Đã kiểm tra trực tiếp:
 
 ---
 
-# FPS thấp — vấn đề chưa fix (ghi nhận 2026-06-12)
+# FPS thấp — ĐÃ FIX (ghi nhận 2026-06-12, fix xác nhận 2026-06-14)
+
+`_main_loop()` ([server/services/ai_processor.py](../../server/services/ai_processor.py))
+hiện đã dùng `detector.detect_batch(frames)` (1 forward pass cho cả 3 camera, line 287)
+và throttle ReID qua `REID_INTERVAL`/`reid_track_ids` (line 294-302, chỉ extract feature
+cho track mới hoặc mỗi N frame). Cả 2 đề xuất tối ưu chính ở mục dưới đã được áp dụng;
+mục này giữ lại để tham khảo lịch sử.
+
+## (lịch sử) Phân tích ban đầu — FPS thấp, vấn đề chưa fix (2026-06-12)
 
 Bối cảnh: chạy server (`server/app.py` + AIProcessor, 3 camera CAM_001..003)
 với CARLA, FPS hiển thị trên dashboard (`/ws/stats`) thấp hơn mong đợi.
@@ -195,7 +203,14 @@ Per-class (epoch 15, validation 853 ảnh / 39152 instance):
 
 Pipeline chạy ổn định (~12 FPS, RTX 4060), nhưng có 2 vấn đề cần fix sau:
 
-## 1. Vehicle ReID không load được — `No module named 'numpy._core'`
+## 1. Vehicle ReID không load được — `No module named 'numpy._core'` — ĐÃ FIX (2026-06-14)
+
+`venv_tracking` hiện có `numpy==2.2.6` (cài qua `requirements_cpu.txt`). Đã verify
+trực tiếp: `DualReIDExtractor(vehicle_weights='weights/osnet_veri776.pth')` init OK,
+model VeRi-776 load thành công, không còn lỗi `numpy._core`. Giữ phần dưới để tham
+khảo lịch sử.
+
+### (lịch sử) Phân tích ban đầu
 
 ```
 2026-06-12 23:25:10,644 - modules.reid - ERROR - Failed to load vehicle model: No module named 'numpy._core'
@@ -214,7 +229,14 @@ Pipeline chạy ổn định (~12 FPS, RTX 4060), nhưng có 2 vấn đề cần
   env có numpy 2.x rồi `torch.save` lại state_dict thuần — không qua pickle
   numpy array) trong `venv_tracking` hiện tại.
 
-## 2. Detector dùng `yolov8s.pt` (auto-download COCO) thay vì `weights/yolo11m_vn.pt`
+## 2. Detector dùng `yolov8s.pt` (auto-download COCO) thay vì `weights/yolo11m_vn.pt` — ĐÃ FIX (2026-06-14)
+
+`ai_processor.py` giờ khởi tạo `ObjectDetector(model_type=str(_tracking_dir / "weights" /
+"yolo11m_vn.pt"), half=True)` (auto-chọn `CLASSES_VN`), và `ByteTrackWrapper` mỗi camera
+nhận `class_map=self.detector.CLASSES` để khớp bảng class VN thay vì `_CLS_MAP` COCO mặc
+định. Giữ phần dưới để tham khảo lịch sử.
+
+### (lịch sử) Phân tích ban đầu
 
 ```
 [Downloading https://github.com/ultralytics/assets/releases/download/v8.4.0/yolov8s.pt ...]
@@ -233,20 +255,18 @@ Pipeline chạy ổn định (~12 FPS, RTX 4060), nhưng có 2 vấn đề cần
   tương ứng, `CLASSES_VN` — xem comment trong `modules/tracker.py`) ở nơi
   `ObjectDetector`/`ai_processor.py` khởi tạo detector cho từng camera.
 
-## 3. ROI/wrong_way của CAM_003 chưa được recalibrate sau khi đổi vị trí camera
+## 3. ROI/wrong_way của CAM_003 — KIỂM TRA LẠI: KHÔNG CẦN FIX (2026-06-14)
 
-- CAM_003 đã đổi từ `[25, -30, 3]` yaw=45 (nhìn vào plaza, không có
-  xe/người) sang `[25, 38, 3]` yaw=-90 (nhìn cùng trục đường với CAM_001/
-  CAM_002, từ phía đối diện) — xem `config/camera_config.yaml`.
-- ROI zone `parking_area` (polygon) và `wrong_way.lanes.CAM_003.direction`
-  vẫn là giá trị tính từ vị trí/góc CŨ → không khớp hình học với view mới.
-  Tracking/incident chung (SUDDEN_STOP, VEHICLE_PROXIMITY...) vẫn hoạt động
-  đúng vì không phụ thuộc ROI, nhưng `ROI_WARNING`/`PREDICTED_ROI_ENTRY`/
-  `red_light`/`WRONG_WAY` cho CAM_003 sẽ sai vùng.
-- **Hướng fix**: dùng `modules/calibration.py` (`CameraCalibration.world_to_pixel`)
-  với position/rotation mới của CAM_003 để tính lại polygon ROI và
-  `wrong_way.lanes.CAM_003.direction`, paste lại vào `camera_config.yaml`
-  (tương tự cách các ROI khác đã được tính, xem comment đầu mục `rois:`).
+- Lo ngại ban đầu: CAM_003 đổi từ `[25,-30,3]` yaw=45 sang `[25,38,3]` yaw=-90,
+  nên polygon `rois.CAM_003.zones[0].polygon` (tính cho vị trí CŨ) có thể sai
+  hình học với view mới.
+- Đã verify bằng `CameraCalibration.world_to_pixel()`: polygon "8-25m phía
+  trước, ±4m hai bên" là toạ độ TƯƠNG ĐỐI so với camera (forward/lateral
+  frame của chính camera đó), nên kết quả pixel **giống nhau bất kể vị trí/yaw
+  tuyệt đối của camera trong world** — tính lại cho cả vị trí CŨ và MỚI đều ra
+  đúng `[[279,421],[681,421],[544,318],[416,318]]`, khớp 100% với config hiện
+  tại. `wrong_way.lanes.CAM_003.direction: [0,-1]` cũng đúng vì pitch=0 (comment
+  đầu mục `wrong_way` đã giải thích điều này). Không cần thay đổi gì.
 
 ## 4. Pedestrian walker AI controller lỗi `set_actor_collisions` (CARLA client/server version mismatch)
 
@@ -261,8 +281,15 @@ Pipeline chạy ổn định (~12 FPS, RTX 4060), nhưng có 2 vấn đề cần
   tương tự (xem session 2026-06-12) nên không làm fail API `/api/scenarios/
   pedestrian_hit` nữa — nhưng pedestrian trong kịch bản vẫn đứng yên thay vì
   đi tới gần xe.
-- **Hướng fix**: cần CARLA server 0.9.15 (khớp version với client pip), hoặc
-  cài lại `carla==0.9.14` (cp310 wheel nếu có) trong `venv_tracking` để khớp
-  server hiện tại. Việc nâng CARLA server lên 0.9.15 ảnh hưởng toàn bộ
-  pipeline (carla_bridge dùng py3.7 egg 0.9.14) nên cần kiểm tra kỹ trước khi
-  đổi.
+- **Hướng fix gốc** (chưa làm): cần CARLA server 0.9.15 (khớp version với
+  client pip), hoặc cài lại `carla==0.9.14` (cp310 wheel nếu có) trong
+  `venv_tracking` để khớp server hiện tại. Việc nâng CARLA server lên 0.9.15
+  ảnh hưởng toàn bộ pipeline (carla_bridge dùng py3.7 egg 0.9.14) nên cần
+  kiểm tra kỹ trước khi đổi.
+- **Giảm thiểu (2026-06-14)**: `collect_carla_cam_data.py`'s main loop từng
+  crash hoàn toàn ở `world.tick()` (tick ~3600/5000) với cùng lỗi
+  `set_actor_collisions`, khiến `write_yaml()` cuối script không chạy. Đã bọc
+  `world.tick()` trong try/except `RuntimeError` — nếu xảy ra, log lỗi và
+  `break` khỏi loop sớm nhưng vẫn vào `finally:` (destroy cameras, cleanup
+  traffic) và chạy `write_yaml()` bình thường, nên dataset thu thập được tới
+  thời điểm đó không bị mất.

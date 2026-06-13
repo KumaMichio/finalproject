@@ -5,7 +5,7 @@
 
 **Môi trường mô phỏng:** CARLA Simulator 0.9.14 (Town10HD_Opt)
 
-**Cập nhật lần cuối:** 2026-06-12
+**Cập nhật lần cuối:** 2026-06-12 (xem Phụ Lục — Cập Nhật 2026-06-13/14 ở cuối tài liệu cho tiến độ mới nhất)
 
 ---
 
@@ -256,3 +256,59 @@ proactive alerts đã được kích hoạt (trước đó bị lỗi do thiếu
 *Báo cáo này được cập nhật tự động khi các quá trình train (YOLO11m, OSNet/VeRi-776,
 TrajectoryGRU) hoàn tất — xem `docs/production_model_stack.md` và `docs/upgrade.md`
 để biết chi tiết kỹ thuật và số liệu cuối cùng.*
+
+---
+
+## Phụ Lục — Cập Nhật 2026-06-13 / 2026-06-14
+
+Các mục dưới đây bổ sung/điều chỉnh các phần "0%"/"chưa làm" ở trên — phần thân
+báo cáo giữ nguyên để lưu lịch sử.
+
+### Ground Truth Evaluation (mục 4.1 — trước đó ghi 0%)
+
+- ✅ **Đã hoàn thành**: `evaluate_tracking.py` nối `motmetrics`, sinh
+  `docs/assets/mot_eval/summary.csv` + `mot_metrics.png` (MOTA/IDF1 mỗi camera).
+- Phát hiện & fix 4 bug ReID/global_id qua quá trình debug bằng GT eval
+  (gallery embedding collision person/vehicle, OSNet "DC bias", duplicate
+  global_id cùng frame, sai `_CLS_MAP` COCO cho checkpoint VN) — MOTA tổng thể
+  cải thiện từ **-11.6% → -2.5%**.
+- Fine-tune bổ sung **carla6** (15 epoch tiếp từ carla5): mAP50 0.5575→0.5735,
+  mAP50-95 0.3342→0.3476 trên validation set riêng — nhưng đánh giá lại MOTA
+  trên live CAM_001/002/003 cho **MOTA=0%, Recall=0%** (FN=2158, FP=0 cả 3
+  camera). Root-cause: domain gap thật giữa ảnh train (VisDrone + CARLA góc
+  phố cũ) và render trực tiếp từ `CameraController` ở 3 viewpoint production
+  — không phải lỗi pipeline/eval. Chi tiết:
+  `custom_tracking_system/docs/error.md`.
+
+### Dataset Detection (mục 4.1 — bổ sung sau `visdrone_carla_vn2`)
+
+- ✅ **Mới**: `data/carla_cam_det/` — 2208 ảnh (1992 train / 216 val), ~23,000
+  box, thu thập **trực tiếp từ viewpoint CAM_001/002/003** (đúng
+  `config/camera_config.yaml`, dùng `collect_carla_cam_data.py`, nhãn tự sinh
+  khớp định nghĩa GT của `ground_truth.project_actors_to_cameras`). Phân bố
+  lớp: person=4057, car=16361, bus=191, truck=2353, motorcycle=0. Mục tiêu:
+  fine-tune tiếp `yolo11m_vn.pt` để giảm domain gap nêu trên.
+- ⏳ **Còn thiếu**: chạy fine-tune trên dataset này — cần GPU NVIDIA (máy hiện
+  tại chỉ có GTX 1050Ti 4GB / CPU, train CPU-only không khả thi về thời gian).
+
+### Các fix nhỏ khác (2026-06-14, không cần GPU)
+
+- ✅ `server/services/ai_processor.py`: detector đổi từ `yolov8s` (COCO) sang
+  `weights/yolo11m_vn.pt` (carla6) + `class_map=detector.CLASSES` cho mỗi
+  `ByteTrackWrapper` (trước đó dùng `_CLS_MAP` COCO sai với checkpoint VN).
+- ✅ Xác nhận lỗi `osnet_veri776.pth` / `numpy._core` (mục 5, khó khăn cũ) đã
+  hết — `venv_tracking` có numpy 2.2.6, `DualReIDExtractor` load cả 2 model
+  OK.
+- ✅ Xác nhận ROI `parking_area` + `wrong_way.lanes.CAM_003` trong
+  `camera_config.yaml` **vẫn đúng** sau khi đổi vị trí camera (polygon tính
+  tương đối theo frame camera, không phụ thuộc vị trí/yaw tuyệt đối) — không
+  cần recalibrate.
+- ✅ FPS thấp (mục 5 cũ): `_main_loop()` đã dùng `detect_batch()` (1 forward
+  pass/3 camera) + throttle ReID theo `REID_INTERVAL` — đã fix từ trước,
+  xác nhận lại.
+- ⚠️ **Chưa fix**: lỗi `set_actor_collisions` (carla==0.9.15 pip client vs
+  CARLA server 0.9.14) khiến pedestrian AI controller không đi được và có
+  thể crash `world.tick()` trong chạy dài — đã thêm try/except quanh
+  `world.tick()` trong `collect_carla_cam_data.py` để không mất dữ liệu đã
+  thu thập, nhưng nguyên nhân gốc (version mismatch) cần đồng bộ CARLA
+  server/client để fix triệt để.

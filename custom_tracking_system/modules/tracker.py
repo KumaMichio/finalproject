@@ -54,8 +54,8 @@ class ByteTrackWrapper:
                     frame_rate, lost_track_buffer)
 
     def _init_tracker(self):
-        from boxmot.trackers.bytetrack.byte_tracker import BYTETracker
-        self.tracker = BYTETracker(**self._init_kwargs)
+        from boxmot.trackers.bbox.bytetrack.bytetrack import ByteTrack
+        self.tracker = ByteTrack(**self._init_kwargs)
 
     def update(self, detections: list, frame: np.ndarray) -> list:
         """

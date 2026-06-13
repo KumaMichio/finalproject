@@ -1088,7 +1088,7 @@ finalproject/
 
 ---
 
-## Thu Tu Uu Tien Phat Trien (cap nhat 2026-06-13)
+## Thu Tu Uu Tien Phat Trien (cap nhat 2026-06-14)
 
 ```
 DA XONG:
@@ -1109,6 +1109,18 @@ DA XONG:
      (extract_feature 1/3 frame cho track da biet, cache global_id)
   ✅ Calibrate ROI polygon + wrong_way.lanes.direction theo hinh hoc camera
      (CameraCalibration.world_to_pixel, depth 8-25m truoc camera)
+  ✅ (2026-06-14) Server detector chuyen tu yolov8s (COCO) sang weights/yolo11m_vn.pt
+     (carla6) + class_map=detector.CLASSES cho ByteTrackWrapper moi camera
+     (ai_processor.py) — truoc do van dung COCO + _CLS_MAP sai cho checkpoint VN
+  ✅ (2026-06-14) Verify osnet_veri776.pth/numpy._core: het loi voi numpy 2.2.6
+     trong venv_tracking, DualReIDExtractor load ca 2 model OK
+  ✅ (2026-06-14) Verify ROI/wrong_way.CAM_003: polygon tinh tuong doi theo frame
+     camera nen van dung sau khi doi vi tri, khong can recalibrate
+  ✅ (2026-06-14) Thu thap dataset moi `data/carla_cam_det/` (2208 anh/~23k box)
+     truc tiep tu viewpoint CAM_001/002/003 — chuan bi cho fine-tune giam domain
+     gap (Recall≈0% cua carla6 tren live CameraController frames, xem error.md)
+  ✅ (2026-06-14) collect_carla_cam_data.py: bat RuntimeError quanh world.tick()
+     de khong mat data khi gap loi set_actor_collisions (carla 0.9.15/0.9.14)
 
 UU TIEN 0 (moi truong): ✅ HOAN THANH
   Giai quyet xung dot Python/CARLA:
@@ -1121,6 +1133,9 @@ UU TIEN 1 (AI nang cao):
     - Nhanh nhat: copy ckpt_ep20.pth -> osnet_veri776.pth (cosine annealing hoi tu o ep20)
     - Chinh xac hon: chay Re-ID eval (rank-1/mAP tren query/gallery VeRi) cho tung epoch
   Tiep tuc fine-tune YOLO tren anh render CARLA de giam domain gap (xem error.md)
+    --> Dataset da san sang (data/carla_cam_det/, 2208 anh/~23k box, dung viewpoint
+        CAM_001/002/003) — con thieu buoc train tu yolo11m_vn.pt (can GPU NVIDIA,
+        may hien tai chi co GTX 1050Ti 4GB/CPU, qua cham de train CPU-only)
 
 UU TIEN 2 (tinh nang nang cao):
   Recording lien tuc (segment 1h + storage rotation)

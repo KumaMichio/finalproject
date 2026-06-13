@@ -29,7 +29,7 @@ E:\School_project\finalproject\
     modules\
       camera_controller.py          # Dat camera trong CARLA, dong bo frame
       traffic_generator.py          # Spawn xe + nguoi voi autopilot
-      detector.py                   # YOLOv8s pretrained COCO (person,car,motorcycle,bus,truck) — detect_batch()
+      detector.py                   # YOLO11m fine-tune VN (weights/yolo11m_vn.pt, CLASSES_VN: person,car,motorcycle,bus,truck) — detect_batch()
       tracker.py                    # ByteTrackWrapper (boxmot.ByteTrack, Kalman + Hungarian) + SimpleTracker legacy
       reid.py                       # ReIDExtractor (OSNet Market-1501) + DualReIDExtractor (person + vehicle)
       global_tracking.py            # Gan Global ID xuyen camera + Spatio-Temporal Filter
@@ -258,16 +258,18 @@ tri cu nhin vao san trong (plaza), khong co xe/nguoi; vi tri moi nhin vao cung
 truc duong voi CAM_001/CAM_002 tu phia doi dien.
 Resolution: 960x540, FPS: 10, synchronous mode.
 3 ROI zones: intersection_main, side_road, parking_area.
-LUU Y: ROI "parking_area" + wrong_way.lanes.CAM_003 trong camera_config.yaml
-duoc tinh tu vi tri CAM_003 CU (25,-30,3 yaw45) — can recalibrate lai cho vi
-tri moi (xem custom_tracking_system/docs/error.md).
+DA KIEM TRA (2026-06-14): ROI "parking_area" + wrong_way.lanes.CAM_003 trong
+camera_config.yaml van DUNG cho vi tri moi — polygon duoc tinh tuong doi theo
+frame cua camera (forward/lateral), nen khong phu thuoc vi tri/yaw tuyet doi;
+da verify bang CameraCalibration.world_to_pixel() cho ca vi tri cu va moi, ra
+cung ket qua. Khong can recalibrate (xem custom_tracking_system/docs/error.md).
 
 ---
 
 ## Tech stack
 
 - **Simulator**: CARLA 0.9.9.4 (Unreal Engine 4)
-- **AI**: Python, PyTorch >= 2.0, YOLOv8s (Ultralytics, COCO pretrained), OSNet (Market-1501 via torchreid), OpenCV 4.5.4, NumPy, SciPy
+- **AI**: Python, PyTorch >= 2.0, YOLO11m fine-tune VN (Ultralytics, weights/yolo11m_vn.pt — carla6 checkpoint), OSNet (Market-1501 + VeRi-776 via torchreid), OpenCV 4.5.4, NumPy, SciPy
 - **Server**: FastAPI >= 0.100, Uvicorn, SQLAlchemy >= 2.0, SQLite, Pydantic >= 2.0, WebSocket
 - **Streaming**: MJPEG over HTTP
 
@@ -297,7 +299,12 @@ tri moi (xem custom_tracking_system/docs/error.md).
 ## Nhung gi CHUA lam (theo development_roadmap.md)
 
 1. **Vehicle ReID hoan thien** — chon/re-train epoch VeRi-776 tot nhat
-2. **Fine-tune tiep YOLO tren anh render CARLA** — giam domain gap (Recall thap trong GT eval, xem error.md)
+2. **Fine-tune tiep YOLO tren anh render CARLA** — giam domain gap (Recall≈0%
+   trong GT eval voi carla6 checkpoint tren CAM_001/002/003, xem error.md).
+   Da thu thap xong dataset moi (`data/carla_cam_det/`, 2208 anh / ~23k box,
+   dung dung viewpoint CAM_001/002/003 tu camera_config.yaml) — CON THIEU:
+   train fine-tune tiep tu yolo11m_vn.pt (can GPU NVIDIA, may hien tai chi co
+   GTX 1050Ti 4GB/CPU).
 3. **Recording lien tuc** — ghi video lien tuc, cat clip su co (hien chi co ring buffer 30s khi su co)
 4. **Camera management UI** — them/xoa camera runtime, health check
 
@@ -305,6 +312,15 @@ tri moi (xem custom_tracking_system/docs/error.md).
 server ai_processor.py; toi uu FPS server qua detect_batch() + throttle ReID;
 calibrate ROI polygon + wrong_way.lanes.direction theo hinh hoc camera — xem
 muc "Da hoan thanh" o tren va development_roadmap.md.)
+
+(Da xong 2026-06-14: ai_processor.py doi detector sang weights/yolo11m_vn.pt
+(carla6) + class_map=detector.CLASSES cho ByteTrackWrapper (truoc do dung
+yolov8s COCO + _CLS_MAP sai); verify DualReIDExtractor/osnet_veri776.pth load
+OK voi numpy 2.2.6 (loi numpy._core cu da het); verify ROI/wrong_way CAM_003
+khong can recalibrate; them try/except quanh world.tick() trong
+collect_carla_cam_data.py de khong mat data khi gap loi RPC
+set_actor_collisions (carla 0.9.15 client / 0.9.14 server mismatch, van CHUA
+fix goc). Chi tiet: custom_tracking_system/docs/error.md.)
 
 ---
 

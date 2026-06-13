@@ -679,3 +679,542 @@ ModuleNotFoundError: No module named 'utils.datasets'
 2026-05-06 10:43:23,662 - modules.traffic_generator - INFO - Cleaning up traffic actors...
 2026-05-06 10:43:23,687 - modules.traffic_generator - INFO - Traffic cleanup completed
 2026-05-06 10:43:23,690 - __main__ - INFO - Cleanup completed
+2026-06-12 23:23:53,674 - __main__ - ERROR - Failed to initialize CARLA: No module named 'carla'
+2026-06-12 23:25:27,376 - __main__ - INFO - Initializing: CARLABridgeClient
+2026-06-12 23:25:27,376 - modules.video_source - INFO - CARLABridgeClient connecting to 127.0.0.1:8765 ...
+2026-06-12 23:25:27,401 - modules.video_source - INFO - CARLABridgeClient connected to 127.0.0.1:8765
+2026-06-12 23:25:27,411 - __main__ - INFO - Initializing: ObjectDetector
+2026-06-12 23:25:28,139 - modules.detector - INFO - Model loaded: E:\School_project\finalproject\custom_tracking_system\weights\yolo11m_vn.pt
+2026-06-12 23:25:28,139 - modules.detector - INFO - ObjectDetector initialised: E:\School_project\finalproject\custom_tracking_system\weights\yolo11m_vn.pt on cpu
+2026-06-12 23:25:28,139 - __main__ - INFO - Initializing: ByteTrackWrapper (per camera)
+2026-06-12 23:25:28,568 - modules.tracker - INFO - ByteTrackWrapper initialised (frame_rate=10, buffer=30)
+2026-06-12 23:25:28,570 - modules.tracker - INFO - ByteTrackWrapper initialised (frame_rate=10, buffer=30)
+2026-06-12 23:25:28,571 - modules.tracker - INFO - ByteTrackWrapper initialised (frame_rate=10, buffer=30)
+2026-06-12 23:25:28,571 - __main__ - INFO - Initializing: ReIDExtractor
+2026-06-12 23:25:28,690 - modules.reid - INFO - Loaded osnet_x1_0 (Market-1501 pretrained) via torchreid
+2026-06-12 23:25:28,690 - modules.reid - INFO - ReIDExtractor ready: model=osnet_x1_0, device=cpu, feature_dim=512
+2026-06-12 23:25:28,690 - __main__ - INFO - Initializing: GlobalTracker
+2026-06-12 23:25:28,690 - modules.global_tracking - INFO - GlobalTracker initialised: threshold=0.50, topology_pairs=0
+2026-06-12 23:25:28,690 - __main__ - INFO - Initializing: TrajectoryPredictor
+2026-06-12 23:25:28,700 - modules.calibration - INFO - CalibrationStore: loaded 3 camera calibration(s) from config/camera_config.yaml
+2026-06-12 23:25:28,700 - modules.trajectory_predictor - INFO - TrajectoryPredictor initialised (Kalman constant-acceleration): window=10, horizons=[0.5, 1.0, 1.5, 2.0, 3.0] s, process_noise_std=50.0, measurement_noise_std=5.0
+2026-06-12 23:25:28,718 - modules.trajectory_predictor - INFO - LearnedTrajectoryPredictor: loaded checkpoint weights/trajectory_gru.pth (t_obs=8)
+2026-06-12 23:25:28,718 - modules.trajectory_predictor - INFO - EnsembleTrajectoryPredictor: Kalman + GRU ensemble active (3 camera calibration(s))
+2026-06-12 23:25:28,718 - __main__ - INFO - Initializing: AlertSystem
+2026-06-12 23:25:28,719 - modules.alert_system - INFO - AlertSystem initialized
+2026-06-12 23:25:28,719 - modules.alert_system - INFO - Set 3 ROIs for 3 cameras
+2026-06-12 23:25:28,719 - __main__ - INFO - Initializing: IncidentDetector
+2026-06-12 23:25:28,719 - modules.incident_detector - INFO - IncidentDetector initialized
+2026-06-12 23:25:28,719 - __main__ - INFO - Initializing: EvidencePackage
+2026-06-12 23:25:28,719 - modules.evidence_package - INFO - EvidencePackage initialized — output: evidence, buffer: 30s @ 10fps
+2026-06-12 23:25:28,720 - __main__ - INFO - Initializing: Visualizer
+2026-06-12 23:25:28,720 - utils.visualization - INFO - Visualizer initialized
+2026-06-12 23:25:28,720 - __main__ - INFO - Initializing: MetricsCollector
+2026-06-12 23:25:28,720 - utils.metrics - INFO - MetricsCollector initialized
+2026-06-12 23:25:28,720 - __main__ - INFO - Initializing: Eval output (pred_<CAM_ID>.txt)
+2026-06-12 23:25:28,721 - __main__ - INFO - All modules initialised successfully
+2026-06-12 23:25:28,721 - __main__ - INFO - Starting tracking system...
+2026-06-12 23:26:20,891 - __main__ - INFO - Pipeline FPS: 1.9  (frame 100)
+2026-06-12 23:26:20,891 - __main__ - INFO - Reached max frames (100), stopping.
+2026-06-12 23:26:20,892 - __main__ - INFO - Cleaning up...
+2026-06-12 23:26:20,903 - __main__ - INFO - Cleanup completed
+2026-06-12 23:32:46,314 - __main__ - INFO - Initializing: CARLABridgeClient
+2026-06-12 23:32:46,314 - modules.video_source - INFO - CARLABridgeClient connecting to 127.0.0.1:8765 ...
+2026-06-12 23:32:46,315 - modules.video_source - INFO - CARLABridgeClient connected to 127.0.0.1:8765
+2026-06-12 23:32:46,324 - __main__ - INFO - Initializing: ObjectDetector
+2026-06-12 23:32:46,875 - modules.detector - INFO - Model loaded: E:\School_project\finalproject\custom_tracking_system\weights\yolo11m_vn.pt
+2026-06-12 23:32:46,875 - modules.detector - INFO - ObjectDetector initialised: E:\School_project\finalproject\custom_tracking_system\weights\yolo11m_vn.pt on cpu
+2026-06-12 23:32:46,875 - __main__ - INFO - Initializing: ByteTrackWrapper (per camera)
+2026-06-12 23:32:47,149 - modules.tracker - INFO - ByteTrackWrapper initialised (frame_rate=10, buffer=30)
+2026-06-12 23:32:47,151 - modules.tracker - INFO - ByteTrackWrapper initialised (frame_rate=10, buffer=30)
+2026-06-12 23:32:47,153 - modules.tracker - INFO - ByteTrackWrapper initialised (frame_rate=10, buffer=30)
+2026-06-12 23:32:47,153 - __main__ - INFO - Initializing: ReIDExtractor
+2026-06-12 23:32:47,234 - modules.reid - INFO - Loaded osnet_x1_0 (Market-1501 pretrained) via torchreid
+2026-06-12 23:32:47,234 - modules.reid - INFO - ReIDExtractor ready: model=osnet_x1_0, device=cpu, feature_dim=512
+2026-06-12 23:32:47,234 - __main__ - INFO - Initializing: GlobalTracker
+2026-06-12 23:32:47,234 - modules.global_tracking - INFO - GlobalTracker initialised: threshold=0.50, topology_pairs=0
+2026-06-12 23:32:47,234 - __main__ - INFO - Initializing: TrajectoryPredictor
+2026-06-12 23:32:47,242 - modules.calibration - INFO - CalibrationStore: loaded 3 camera calibration(s) from config/camera_config.yaml
+2026-06-12 23:32:47,242 - modules.trajectory_predictor - INFO - TrajectoryPredictor initialised (Kalman constant-acceleration): window=10, horizons=[0.5, 1.0, 1.5, 2.0, 3.0] s, process_noise_std=50.0, measurement_noise_std=5.0
+2026-06-12 23:32:47,247 - modules.trajectory_predictor - INFO - LearnedTrajectoryPredictor: loaded checkpoint weights/trajectory_gru.pth (t_obs=8)
+2026-06-12 23:32:47,247 - modules.trajectory_predictor - INFO - EnsembleTrajectoryPredictor: Kalman + GRU ensemble active (3 camera calibration(s))
+2026-06-12 23:32:47,247 - __main__ - INFO - Initializing: AlertSystem
+2026-06-12 23:32:47,247 - modules.alert_system - INFO - AlertSystem initialized
+2026-06-12 23:32:47,247 - modules.alert_system - INFO - Set 3 ROIs for 3 cameras
+2026-06-12 23:32:47,248 - __main__ - INFO - Initializing: IncidentDetector
+2026-06-12 23:32:47,248 - modules.incident_detector - INFO - IncidentDetector initialized
+2026-06-12 23:32:47,248 - __main__ - INFO - Initializing: EvidencePackage
+2026-06-12 23:32:47,249 - modules.evidence_package - INFO - EvidencePackage initialized — output: evidence, buffer: 30s @ 10fps
+2026-06-12 23:32:47,249 - __main__ - INFO - Initializing: Visualizer
+2026-06-12 23:32:47,249 - utils.visualization - INFO - Visualizer initialized
+2026-06-12 23:32:47,249 - __main__ - INFO - Initializing: MetricsCollector
+2026-06-12 23:32:47,249 - utils.metrics - INFO - MetricsCollector initialized
+2026-06-12 23:32:47,249 - __main__ - INFO - Initializing: Eval output (pred_<CAM_ID>.txt)
+2026-06-12 23:32:47,250 - __main__ - INFO - All modules initialised successfully
+2026-06-12 23:32:47,250 - __main__ - INFO - Starting tracking system...
+2026-06-12 23:33:40,010 - __main__ - INFO - Pipeline FPS: 1.9  (frame 100)
+2026-06-12 23:33:40,010 - __main__ - INFO - Reached max frames (100), stopping.
+2026-06-12 23:33:40,011 - __main__ - INFO - Cleaning up...
+2026-06-12 23:33:40,018 - __main__ - INFO - Cleanup completed
+2026-06-12 23:45:38,960 - __main__ - INFO - Initializing: CARLABridgeClient
+2026-06-12 23:45:38,961 - modules.video_source - INFO - CARLABridgeClient connecting to 127.0.0.1:8765 ...
+2026-06-12 23:45:38,961 - modules.video_source - INFO - CARLABridgeClient connected to 127.0.0.1:8765
+2026-06-12 23:45:38,973 - __main__ - INFO - Initializing: ObjectDetector
+2026-06-12 23:45:39,569 - modules.detector - INFO - Model loaded: E:\School_project\finalproject\custom_tracking_system\weights\yolo11m_vn.pt
+2026-06-12 23:45:39,570 - modules.detector - INFO - ObjectDetector initialised: E:\School_project\finalproject\custom_tracking_system\weights\yolo11m_vn.pt on cpu
+2026-06-12 23:45:39,570 - __main__ - INFO - Initializing: ByteTrackWrapper (per camera)
+2026-06-12 23:45:39,861 - modules.tracker - INFO - ByteTrackWrapper initialised (frame_rate=10, buffer=30)
+2026-06-12 23:45:39,863 - modules.tracker - INFO - ByteTrackWrapper initialised (frame_rate=10, buffer=30)
+2026-06-12 23:45:39,865 - modules.tracker - INFO - ByteTrackWrapper initialised (frame_rate=10, buffer=30)
+2026-06-12 23:45:39,865 - __main__ - INFO - Initializing: ReIDExtractor
+2026-06-12 23:45:39,950 - modules.reid - INFO - Loaded osnet_x1_0 (Market-1501 pretrained) via torchreid
+2026-06-12 23:45:42,237 - modules.reid - INFO - ReIDExtractor ready: model=osnet_x1_0, device=cpu, feature_dim=512
+2026-06-12 23:45:42,237 - __main__ - INFO - Initializing: GlobalTracker
+2026-06-12 23:45:42,237 - modules.global_tracking - INFO - GlobalTracker initialised: threshold=0.50, topology_pairs=0
+2026-06-12 23:45:42,237 - __main__ - INFO - Initializing: TrajectoryPredictor
+2026-06-12 23:45:42,247 - modules.calibration - INFO - CalibrationStore: loaded 3 camera calibration(s) from config/camera_config.yaml
+2026-06-12 23:45:42,247 - modules.trajectory_predictor - INFO - TrajectoryPredictor initialised (Kalman constant-acceleration): window=10, horizons=[0.5, 1.0, 1.5, 2.0, 3.0] s, process_noise_std=50.0, measurement_noise_std=5.0
+2026-06-12 23:45:42,251 - modules.trajectory_predictor - INFO - LearnedTrajectoryPredictor: loaded checkpoint weights/trajectory_gru.pth (t_obs=8)
+2026-06-12 23:45:42,251 - modules.trajectory_predictor - INFO - EnsembleTrajectoryPredictor: Kalman + GRU ensemble active (3 camera calibration(s))
+2026-06-12 23:45:42,251 - __main__ - INFO - Initializing: AlertSystem
+2026-06-12 23:45:42,251 - modules.alert_system - INFO - AlertSystem initialized
+2026-06-12 23:45:42,251 - modules.alert_system - INFO - Set 3 ROIs for 3 cameras
+2026-06-12 23:45:42,251 - __main__ - INFO - Initializing: IncidentDetector
+2026-06-12 23:45:42,251 - modules.incident_detector - INFO - IncidentDetector initialized
+2026-06-12 23:45:42,251 - __main__ - INFO - Initializing: EvidencePackage
+2026-06-12 23:45:42,252 - modules.evidence_package - INFO - EvidencePackage initialized — output: evidence, buffer: 30s @ 10fps
+2026-06-12 23:45:42,252 - __main__ - INFO - Initializing: Visualizer
+2026-06-12 23:45:42,252 - utils.visualization - INFO - Visualizer initialized
+2026-06-12 23:45:42,252 - __main__ - INFO - Initializing: MetricsCollector
+2026-06-12 23:45:42,252 - utils.metrics - INFO - MetricsCollector initialized
+2026-06-12 23:45:42,252 - __main__ - INFO - Initializing: Eval output (pred_<CAM_ID>.txt)
+2026-06-12 23:45:42,253 - __main__ - INFO - All modules initialised successfully
+2026-06-12 23:45:42,253 - __main__ - INFO - Starting tracking system...
+2026-06-12 23:46:46,946 - __main__ - INFO - Pipeline FPS: 1.5  (frame 100)
+2026-06-12 23:46:46,946 - __main__ - INFO - Reached max frames (100), stopping.
+2026-06-12 23:46:46,946 - __main__ - INFO - Cleaning up...
+2026-06-12 23:46:46,957 - __main__ - INFO - Cleanup completed
+2026-06-12 23:47:30,786 - __main__ - INFO - Initializing: CARLABridgeClient
+2026-06-12 23:47:30,786 - modules.video_source - INFO - CARLABridgeClient connecting to 127.0.0.1:8765 ...
+2026-06-12 23:47:32,835 - __main__ - ERROR - Failed to initialize modules: [WinError 10061] No connection could be made because the target machine actively refused it
+Traceback (most recent call last):
+  File "E:\School_project\finalproject\custom_tracking_system\main.py", line 126, in initialize_modules
+    self.frame_source = CARLABridgeClient(
+  File "E:\School_project\finalproject\custom_tracking_system\modules\video_source.py", line 335, in __init__
+    self._sock = socket.create_connection((host, port), timeout=connect_timeout)
+  File "C:\Users\PC\anaconda3\envs\veri-train\lib\socket.py", line 857, in create_connection
+    raise err
+  File "C:\Users\PC\anaconda3\envs\veri-train\lib\socket.py", line 845, in create_connection
+    sock.connect(sa)
+ConnectionRefusedError: [WinError 10061] No connection could be made because the target machine actively refused it
+2026-06-12 23:49:11,487 - __main__ - INFO - Initializing: CARLABridgeClient
+2026-06-12 23:49:11,488 - modules.video_source - INFO - CARLABridgeClient connecting to 127.0.0.1:8765 ...
+2026-06-12 23:49:11,488 - modules.video_source - INFO - CARLABridgeClient connected to 127.0.0.1:8765
+2026-06-12 23:49:11,496 - __main__ - INFO - Initializing: ObjectDetector
+2026-06-12 23:49:12,042 - modules.detector - INFO - Model loaded: E:\School_project\finalproject\custom_tracking_system\weights\yolo11m_vn.pt
+2026-06-12 23:49:12,043 - modules.detector - INFO - ObjectDetector initialised: E:\School_project\finalproject\custom_tracking_system\weights\yolo11m_vn.pt on cpu
+2026-06-12 23:49:12,043 - __main__ - INFO - Initializing: ByteTrackWrapper (per camera)
+2026-06-12 23:49:12,307 - modules.tracker - INFO - ByteTrackWrapper initialised (frame_rate=10, buffer=30)
+2026-06-12 23:49:12,308 - modules.tracker - INFO - ByteTrackWrapper initialised (frame_rate=10, buffer=30)
+2026-06-12 23:49:12,310 - modules.tracker - INFO - ByteTrackWrapper initialised (frame_rate=10, buffer=30)
+2026-06-12 23:49:12,310 - __main__ - INFO - Initializing: ReIDExtractor
+2026-06-12 23:49:12,388 - modules.reid - INFO - Loaded osnet_x1_0 (Market-1501 pretrained) via torchreid
+2026-06-12 23:49:14,492 - modules.reid - INFO - ReIDExtractor ready: model=osnet_x1_0, device=cpu, feature_dim=512
+2026-06-12 23:49:14,492 - __main__ - INFO - Initializing: GlobalTracker
+2026-06-12 23:49:14,493 - modules.global_tracking - INFO - GlobalTracker initialised: threshold=0.50, topology_pairs=0
+2026-06-12 23:49:14,493 - __main__ - INFO - Initializing: TrajectoryPredictor
+2026-06-12 23:49:14,500 - modules.calibration - INFO - CalibrationStore: loaded 3 camera calibration(s) from config/camera_config.yaml
+2026-06-12 23:49:14,500 - modules.trajectory_predictor - INFO - TrajectoryPredictor initialised (Kalman constant-acceleration): window=10, horizons=[0.5, 1.0, 1.5, 2.0, 3.0] s, process_noise_std=50.0, measurement_noise_std=5.0
+2026-06-12 23:49:14,505 - modules.trajectory_predictor - INFO - LearnedTrajectoryPredictor: loaded checkpoint weights/trajectory_gru.pth (t_obs=8)
+2026-06-12 23:49:14,505 - modules.trajectory_predictor - INFO - EnsembleTrajectoryPredictor: Kalman + GRU ensemble active (3 camera calibration(s))
+2026-06-12 23:49:14,505 - __main__ - INFO - Initializing: AlertSystem
+2026-06-12 23:49:14,505 - modules.alert_system - INFO - AlertSystem initialized
+2026-06-12 23:49:14,505 - modules.alert_system - INFO - Set 3 ROIs for 3 cameras
+2026-06-12 23:49:14,505 - __main__ - INFO - Initializing: IncidentDetector
+2026-06-12 23:49:14,505 - modules.incident_detector - INFO - IncidentDetector initialized
+2026-06-12 23:49:14,505 - __main__ - INFO - Initializing: EvidencePackage
+2026-06-12 23:49:14,506 - modules.evidence_package - INFO - EvidencePackage initialized — output: evidence, buffer: 30s @ 10fps
+2026-06-12 23:49:14,506 - __main__ - INFO - Initializing: Visualizer
+2026-06-12 23:49:14,506 - utils.visualization - INFO - Visualizer initialized
+2026-06-12 23:49:14,506 - __main__ - INFO - Initializing: MetricsCollector
+2026-06-12 23:49:14,506 - utils.metrics - INFO - MetricsCollector initialized
+2026-06-12 23:49:14,506 - __main__ - INFO - Initializing: Eval output (pred_<CAM_ID>.txt)
+2026-06-12 23:49:14,507 - __main__ - INFO - All modules initialised successfully
+2026-06-12 23:49:14,507 - __main__ - INFO - Starting tracking system...
+2026-06-12 23:50:03,778 - __main__ - INFO - Pipeline FPS: 2.0  (frame 100)
+2026-06-12 23:50:03,779 - __main__ - INFO - Reached max frames (100), stopping.
+2026-06-12 23:50:03,779 - __main__ - INFO - Cleaning up...
+2026-06-12 23:50:03,788 - __main__ - INFO - Cleanup completed
+2026-06-12 23:54:28,369 - __main__ - INFO - Initializing: CARLABridgeClient
+2026-06-12 23:54:28,369 - modules.video_source - INFO - CARLABridgeClient connecting to 127.0.0.1:8765 ...
+2026-06-12 23:54:28,369 - modules.video_source - INFO - CARLABridgeClient connected to 127.0.0.1:8765
+2026-06-12 23:54:28,376 - __main__ - INFO - Initializing: ObjectDetector
+2026-06-12 23:54:28,920 - modules.detector - INFO - Model loaded: E:\School_project\finalproject\custom_tracking_system\weights\yolo11m_vn.pt
+2026-06-12 23:54:28,920 - modules.detector - INFO - ObjectDetector initialised: E:\School_project\finalproject\custom_tracking_system\weights\yolo11m_vn.pt on cpu
+2026-06-12 23:54:28,920 - __main__ - INFO - Initializing: ByteTrackWrapper (per camera)
+2026-06-12 23:54:29,232 - modules.tracker - INFO - ByteTrackWrapper initialised (frame_rate=10, buffer=30)
+2026-06-12 23:54:29,235 - modules.tracker - INFO - ByteTrackWrapper initialised (frame_rate=10, buffer=30)
+2026-06-12 23:54:29,238 - modules.tracker - INFO - ByteTrackWrapper initialised (frame_rate=10, buffer=30)
+2026-06-12 23:54:29,238 - __main__ - INFO - Initializing: ReIDExtractor
+2026-06-12 23:54:29,329 - modules.reid - INFO - Loaded osnet_x1_0 (Market-1501 pretrained) via torchreid
+2026-06-12 23:54:31,521 - modules.reid - INFO - ReIDExtractor ready: model=osnet_x1_0, device=cpu, feature_dim=512
+2026-06-12 23:54:31,522 - __main__ - INFO - Initializing: GlobalTracker
+2026-06-12 23:54:31,522 - modules.global_tracking - INFO - GlobalTracker initialised: threshold=0.50, topology_pairs=0
+2026-06-12 23:54:31,522 - __main__ - INFO - Initializing: TrajectoryPredictor
+2026-06-12 23:54:31,530 - modules.calibration - INFO - CalibrationStore: loaded 3 camera calibration(s) from config/camera_config.yaml
+2026-06-12 23:54:31,530 - modules.trajectory_predictor - INFO - TrajectoryPredictor initialised (Kalman constant-acceleration): window=10, horizons=[0.5, 1.0, 1.5, 2.0, 3.0] s, process_noise_std=50.0, measurement_noise_std=5.0
+2026-06-12 23:54:31,533 - modules.trajectory_predictor - INFO - LearnedTrajectoryPredictor: loaded checkpoint weights/trajectory_gru.pth (t_obs=8)
+2026-06-12 23:54:31,534 - modules.trajectory_predictor - INFO - EnsembleTrajectoryPredictor: Kalman + GRU ensemble active (3 camera calibration(s))
+2026-06-12 23:54:31,534 - __main__ - INFO - Initializing: AlertSystem
+2026-06-12 23:54:31,534 - modules.alert_system - INFO - AlertSystem initialized
+2026-06-12 23:54:31,534 - modules.alert_system - INFO - Set 3 ROIs for 3 cameras
+2026-06-12 23:54:31,534 - __main__ - INFO - Initializing: IncidentDetector
+2026-06-12 23:54:31,534 - modules.incident_detector - INFO - IncidentDetector initialized
+2026-06-12 23:54:31,534 - __main__ - INFO - Initializing: EvidencePackage
+2026-06-12 23:54:31,535 - modules.evidence_package - INFO - EvidencePackage initialized — output: evidence, buffer: 30s @ 10fps
+2026-06-12 23:54:31,535 - __main__ - INFO - Initializing: Visualizer
+2026-06-12 23:54:31,535 - utils.visualization - INFO - Visualizer initialized
+2026-06-12 23:54:31,535 - __main__ - INFO - Initializing: MetricsCollector
+2026-06-12 23:54:31,535 - utils.metrics - INFO - MetricsCollector initialized
+2026-06-12 23:54:31,535 - __main__ - INFO - Initializing: Eval output (pred_<CAM_ID>.txt)
+2026-06-12 23:54:31,536 - __main__ - INFO - All modules initialised successfully
+2026-06-12 23:54:31,536 - __main__ - INFO - Starting tracking system...
+2026-06-12 23:55:24,234 - __main__ - INFO - Pipeline FPS: 1.9  (frame 100)
+2026-06-12 23:55:24,234 - __main__ - INFO - Reached max frames (100), stopping.
+2026-06-12 23:55:24,234 - __main__ - INFO - Cleaning up...
+2026-06-12 23:55:24,242 - __main__ - INFO - Cleanup completed
+2026-06-14 00:07:46,311 - __main__ - INFO - CARLA client initialized
+2026-06-14 00:07:46,345 - __main__ - INFO - Synchronous mode enabled at 10 fps
+2026-06-14 00:07:46,364 - __main__ - INFO - Initializing: CameraController
+2026-06-14 00:07:46,382 - modules.camera_controller - INFO - Configuration loaded successfully
+2026-06-14 00:07:46,382 - modules.camera_controller - INFO - CameraController initialized with config: config/camera_config.yaml
+2026-06-14 00:07:46,387 - modules.camera_controller - INFO - Camera CAM_001 spawned at [0, 0, 3]
+2026-06-14 00:07:46,388 - modules.camera_controller - INFO - Camera CAM_002 spawned at [50, 0, 3]
+2026-06-14 00:07:46,388 - modules.camera_controller - INFO - Camera CAM_003 spawned at [25, 38, 3]
+2026-06-14 00:07:46,388 - __main__ - INFO - Initializing: TrafficGenerator
+2026-06-14 00:07:46,388 - modules.traffic_generator - INFO - TrafficGenerator initialized: 10 vehicles, 5 pedestrians
+2026-06-14 00:07:46,659 - modules.traffic_generator - ERROR - Error starting walker controller: rpc::rpc_error during call in function set_actor_collisions
+2026-06-14 00:07:46,660 - modules.traffic_generator - ERROR - Error starting walker controller: rpc::rpc_error during call in function set_actor_collisions
+2026-06-14 00:07:46,661 - modules.traffic_generator - ERROR - Error starting walker controller: rpc::rpc_error during call in function set_actor_collisions
+2026-06-14 00:07:46,661 - modules.traffic_generator - ERROR - Error starting walker controller: rpc::rpc_error during call in function set_actor_collisions
+2026-06-14 00:07:46,661 - modules.traffic_generator - ERROR - Error starting walker controller: rpc::rpc_error during call in function set_actor_collisions
+2026-06-14 00:07:46,661 - modules.traffic_generator - INFO - Spawned 10 vehicles and 5 pedestrians
+2026-06-14 00:07:46,662 - __main__ - INFO - Initializing: ObjectDetector
+2026-06-14 00:07:47,630 - modules.detector - INFO - Model loaded: E:\School_project\finalproject\custom_tracking_system\weights\yolo11m_vn.pt
+2026-06-14 00:07:47,631 - modules.detector - INFO - ObjectDetector initialised: E:\School_project\finalproject\custom_tracking_system\weights\yolo11m_vn.pt on cpu
+2026-06-14 00:07:47,631 - __main__ - INFO - Initializing: ByteTrackWrapper (per camera)
+2026-06-14 00:07:48,449 - __main__ - ERROR - Failed to initialize modules: No module named 'boxmot.trackers.bytetrack'
+Traceback (most recent call last):
+  File "E:\School_project\finalproject\custom_tracking_system\main.py", line 180, in initialize_modules
+    self.modules['trackers'] = {
+  File "E:\School_project\finalproject\custom_tracking_system\main.py", line 181, in <dictcomp>
+    cam_id: ByteTrackWrapper(
+  File "E:\School_project\finalproject\custom_tracking_system\modules\tracker.py", line 52, in __init__
+    self._init_tracker()
+  File "E:\School_project\finalproject\custom_tracking_system\modules\tracker.py", line 57, in _init_tracker
+    from boxmot.trackers.bytetrack.byte_tracker import BYTETracker
+ModuleNotFoundError: No module named 'boxmot.trackers.bytetrack'
+2026-06-14 00:09:37,433 - __main__ - INFO - CARLA client initialized
+2026-06-14 00:09:38,450 - __main__ - INFO - Synchronous mode enabled at 10 fps
+2026-06-14 00:09:38,453 - __main__ - INFO - Initializing: CameraController
+2026-06-14 00:09:38,462 - modules.camera_controller - INFO - Configuration loaded successfully
+2026-06-14 00:09:38,462 - modules.camera_controller - INFO - CameraController initialized with config: config/camera_config.yaml
+2026-06-14 00:09:38,694 - modules.camera_controller - INFO - Camera CAM_001 spawned at [0, 0, 3]
+2026-06-14 00:09:38,695 - modules.camera_controller - INFO - Camera CAM_002 spawned at [50, 0, 3]
+2026-06-14 00:09:38,696 - modules.camera_controller - INFO - Camera CAM_003 spawned at [25, 38, 3]
+2026-06-14 00:09:38,697 - __main__ - INFO - Initializing: TrafficGenerator
+2026-06-14 00:09:38,697 - modules.traffic_generator - INFO - TrafficGenerator initialized: 10 vehicles, 5 pedestrians
+2026-06-14 00:09:42,857 - modules.traffic_generator - ERROR - Error starting walker controller: rpc::rpc_error during call in function set_actor_collisions
+2026-06-14 00:09:42,857 - modules.traffic_generator - ERROR - Error starting walker controller: rpc::rpc_error during call in function set_actor_collisions
+2026-06-14 00:09:42,858 - modules.traffic_generator - ERROR - Error starting walker controller: rpc::rpc_error during call in function set_actor_collisions
+2026-06-14 00:09:42,858 - modules.traffic_generator - ERROR - Error starting walker controller: rpc::rpc_error during call in function set_actor_collisions
+2026-06-14 00:09:42,859 - modules.traffic_generator - ERROR - Error starting walker controller: rpc::rpc_error during call in function set_actor_collisions
+2026-06-14 00:09:42,859 - modules.traffic_generator - INFO - Spawned 10 vehicles and 5 pedestrians
+2026-06-14 00:09:42,859 - __main__ - INFO - Initializing: ObjectDetector
+2026-06-14 00:09:43,363 - modules.detector - INFO - Model loaded: E:\School_project\finalproject\custom_tracking_system\weights\yolo11m_vn.pt
+2026-06-14 00:09:43,363 - modules.detector - INFO - ObjectDetector initialised: E:\School_project\finalproject\custom_tracking_system\weights\yolo11m_vn.pt on cpu
+2026-06-14 00:09:43,363 - __main__ - INFO - Initializing: ByteTrackWrapper (per camera)
+2026-06-14 00:09:43,520 - modules.tracker - INFO - ByteTrackWrapper initialised (frame_rate=10, buffer=30)
+2026-06-14 00:09:43,522 - modules.tracker - INFO - ByteTrackWrapper initialised (frame_rate=10, buffer=30)
+2026-06-14 00:09:43,523 - modules.tracker - INFO - ByteTrackWrapper initialised (frame_rate=10, buffer=30)
+2026-06-14 00:09:43,523 - __main__ - INFO - Initializing: ReIDExtractor
+2026-06-14 00:09:43,685 - modules.reid - INFO - Loaded osnet_x1_0 (Market-1501 pretrained) via torchreid
+2026-06-14 00:09:45,791 - modules.reid - INFO - ReIDExtractor ready: model=osnet_x1_0, device=cpu, feature_dim=512
+2026-06-14 00:09:45,791 - __main__ - INFO - Initializing: GlobalTracker
+2026-06-14 00:09:45,791 - modules.global_tracking - INFO - GlobalTracker initialised: threshold=0.50, topology_pairs=0
+2026-06-14 00:09:45,791 - __main__ - INFO - Initializing: TrajectoryPredictor
+2026-06-14 00:09:45,801 - modules.calibration - INFO - CalibrationStore: loaded 3 camera calibration(s) from config/camera_config.yaml
+2026-06-14 00:09:45,801 - modules.trajectory_predictor - INFO - TrajectoryPredictor initialised (Kalman constant-acceleration): window=10, horizons=[0.5, 1.0, 1.5, 2.0, 3.0] s, process_noise_std=50.0, measurement_noise_std=5.0
+2026-06-14 00:09:45,835 - modules.trajectory_predictor - INFO - LearnedTrajectoryPredictor: loaded checkpoint weights/trajectory_gru.pth (t_obs=8)
+2026-06-14 00:09:45,835 - modules.trajectory_predictor - INFO - EnsembleTrajectoryPredictor: Kalman + GRU ensemble active (3 camera calibration(s))
+2026-06-14 00:09:45,835 - __main__ - INFO - Initializing: AlertSystem
+2026-06-14 00:09:45,835 - modules.alert_system - INFO - AlertSystem initialized
+2026-06-14 00:09:45,835 - modules.alert_system - INFO - Set 3 ROIs for 3 cameras
+2026-06-14 00:09:45,835 - __main__ - INFO - Initializing: IncidentDetector
+2026-06-14 00:09:45,835 - modules.incident_detector - INFO - IncidentDetector initialized
+2026-06-14 00:09:45,835 - __main__ - INFO - Initializing: EvidencePackage
+2026-06-14 00:09:45,835 - modules.evidence_package - INFO - EvidencePackage initialized — output: evidence, buffer: 30s @ 10fps
+2026-06-14 00:09:45,836 - __main__ - INFO - Initializing: Visualizer
+2026-06-14 00:09:45,836 - utils.visualization - INFO - Visualizer initialized
+2026-06-14 00:09:45,836 - __main__ - INFO - Initializing: MetricsCollector
+2026-06-14 00:09:45,836 - utils.metrics - INFO - MetricsCollector initialized
+2026-06-14 00:09:45,836 - __main__ - INFO - Initializing: Eval output (pred_<CAM_ID>.txt)
+2026-06-14 00:09:45,837 - __main__ - INFO - All modules initialised successfully
+2026-06-14 00:09:45,837 - __main__ - INFO - Starting tracking system...
+2026-06-14 00:10:35,321 - __main__ - INFO - Pipeline FPS: 2.0  (frame 100)
+2026-06-14 00:10:35,321 - __main__ - INFO - Reached max frames (100), stopping.
+2026-06-14 00:10:35,321 - __main__ - INFO - Cleaning up...
+2026-06-14 00:10:35,330 - modules.camera_controller - INFO - Camera destroyed
+2026-06-14 00:10:35,330 - modules.camera_controller - INFO - Camera destroyed
+2026-06-14 00:10:35,331 - modules.camera_controller - INFO - Camera destroyed
+2026-06-14 00:10:35,382 - modules.traffic_generator - INFO - Cleaning up traffic actors...
+2026-06-14 00:10:35,390 - modules.traffic_generator - INFO - Traffic cleanup completed
+2026-06-14 00:10:35,414 - __main__ - INFO - Cleanup completed
+2026-06-14 00:11:57,669 - __main__ - INFO - CARLA client initialized
+2026-06-14 00:11:57,694 - __main__ - INFO - Synchronous mode enabled at 10 fps
+2026-06-14 00:11:57,696 - __main__ - INFO - Initializing: CameraController
+2026-06-14 00:11:57,704 - modules.camera_controller - INFO - Configuration loaded successfully
+2026-06-14 00:11:57,705 - modules.camera_controller - INFO - CameraController initialized with config: config/camera_config.yaml
+2026-06-14 00:11:57,707 - modules.camera_controller - INFO - Camera CAM_001 spawned at [0, 0, 3]
+2026-06-14 00:11:57,707 - modules.camera_controller - INFO - Camera CAM_002 spawned at [50, 0, 3]
+2026-06-14 00:11:57,709 - modules.camera_controller - INFO - Camera CAM_003 spawned at [25, 38, 3]
+2026-06-14 00:11:57,709 - __main__ - INFO - Initializing: TrafficGenerator
+2026-06-14 00:11:57,709 - modules.traffic_generator - INFO - TrafficGenerator initialized: 10 vehicles, 5 pedestrians
+2026-06-14 00:12:01,829 - modules.traffic_generator - WARNING - Failed to spawn vehicle at Location(x=32.337723, y=130.460068, z=0.600000)
+2026-06-14 00:12:01,830 - modules.traffic_generator - WARNING - Failed to spawn vehicle at Location(x=-111.120361, y=72.898865, z=0.600000)
+2026-06-14 00:12:01,831 - modules.traffic_generator - WARNING - Failed to spawn vehicle at Location(x=22.881157, y=-60.899998, z=0.600000)
+2026-06-14 00:12:01,848 - modules.traffic_generator - ERROR - Error starting walker controller: rpc::rpc_error during call in function set_actor_collisions
+2026-06-14 00:12:01,848 - modules.traffic_generator - ERROR - Error starting walker controller: rpc::rpc_error during call in function set_actor_collisions
+2026-06-14 00:12:01,848 - modules.traffic_generator - ERROR - Error starting walker controller: rpc::rpc_error during call in function set_actor_collisions
+2026-06-14 00:12:01,849 - modules.traffic_generator - ERROR - Error starting walker controller: rpc::rpc_error during call in function set_actor_collisions
+2026-06-14 00:12:01,849 - modules.traffic_generator - ERROR - Error starting walker controller: rpc::rpc_error during call in function set_actor_collisions
+2026-06-14 00:12:01,849 - modules.traffic_generator - INFO - Spawned 7 vehicles and 5 pedestrians
+2026-06-14 00:12:01,849 - __main__ - INFO - Initializing: ObjectDetector
+2026-06-14 00:12:02,345 - modules.detector - INFO - Model loaded: E:\School_project\finalproject\custom_tracking_system\weights\yolo11m_vn.pt
+2026-06-14 00:12:02,345 - modules.detector - INFO - ObjectDetector initialised: E:\School_project\finalproject\custom_tracking_system\weights\yolo11m_vn.pt on cpu
+2026-06-14 00:12:02,345 - __main__ - INFO - Initializing: ByteTrackWrapper (per camera)
+2026-06-14 00:12:02,539 - modules.tracker - INFO - ByteTrackWrapper initialised (frame_rate=10, buffer=30)
+2026-06-14 00:12:02,541 - modules.tracker - INFO - ByteTrackWrapper initialised (frame_rate=10, buffer=30)
+2026-06-14 00:12:02,543 - modules.tracker - INFO - ByteTrackWrapper initialised (frame_rate=10, buffer=30)
+2026-06-14 00:12:02,543 - __main__ - INFO - Initializing: ReIDExtractor
+2026-06-14 00:12:02,709 - modules.reid - INFO - Loaded osnet_x1_0 (Market-1501 pretrained) via torchreid
+2026-06-14 00:12:04,684 - modules.reid - INFO - ReIDExtractor ready: model=osnet_x1_0, device=cpu, feature_dim=512
+2026-06-14 00:12:04,684 - __main__ - INFO - Initializing: GlobalTracker
+2026-06-14 00:12:04,684 - modules.global_tracking - INFO - GlobalTracker initialised: threshold=0.50, topology_pairs=0
+2026-06-14 00:12:04,684 - __main__ - INFO - Initializing: TrajectoryPredictor
+2026-06-14 00:12:04,692 - modules.calibration - INFO - CalibrationStore: loaded 3 camera calibration(s) from config/camera_config.yaml
+2026-06-14 00:12:04,692 - modules.trajectory_predictor - INFO - TrajectoryPredictor initialised (Kalman constant-acceleration): window=10, horizons=[0.5, 1.0, 1.5, 2.0, 3.0] s, process_noise_std=50.0, measurement_noise_std=5.0
+2026-06-14 00:12:04,696 - modules.trajectory_predictor - INFO - LearnedTrajectoryPredictor: loaded checkpoint weights/trajectory_gru.pth (t_obs=8)
+2026-06-14 00:12:04,696 - modules.trajectory_predictor - INFO - EnsembleTrajectoryPredictor: Kalman + GRU ensemble active (3 camera calibration(s))
+2026-06-14 00:12:04,696 - __main__ - INFO - Initializing: AlertSystem
+2026-06-14 00:12:04,696 - modules.alert_system - INFO - AlertSystem initialized
+2026-06-14 00:12:04,697 - modules.alert_system - INFO - Set 3 ROIs for 3 cameras
+2026-06-14 00:12:04,697 - __main__ - INFO - Initializing: IncidentDetector
+2026-06-14 00:12:04,697 - modules.incident_detector - INFO - IncidentDetector initialized
+2026-06-14 00:12:04,697 - __main__ - INFO - Initializing: EvidencePackage
+2026-06-14 00:12:04,697 - modules.evidence_package - INFO - EvidencePackage initialized — output: evidence, buffer: 30s @ 10fps
+2026-06-14 00:12:04,697 - __main__ - INFO - Initializing: Visualizer
+2026-06-14 00:12:04,697 - utils.visualization - INFO - Visualizer initialized
+2026-06-14 00:12:04,697 - __main__ - INFO - Initializing: MetricsCollector
+2026-06-14 00:12:04,697 - utils.metrics - INFO - MetricsCollector initialized
+2026-06-14 00:12:04,697 - __main__ - INFO - All modules initialised successfully
+2026-06-14 00:12:04,697 - __main__ - INFO - Starting tracking system...
+2026-06-14 00:12:05,334 - __main__ - INFO - DEBUG detections per camera: [[], [], []]
+2026-06-14 00:12:05,831 - __main__ - INFO - DEBUG detections per camera: [[], [], []]
+2026-06-14 00:12:06,289 - __main__ - INFO - DEBUG detections per camera: [[], [], []]
+2026-06-14 00:12:06,747 - __main__ - INFO - DEBUG detections per camera: [[], [], []]
+2026-06-14 00:12:07,195 - __main__ - INFO - DEBUG detections per camera: [[], [], []]
+2026-06-14 00:12:07,649 - __main__ - INFO - DEBUG detections per camera: [[], [], []]
+2026-06-14 00:12:08,102 - __main__ - INFO - DEBUG detections per camera: [[], [], []]
+2026-06-14 00:12:08,558 - __main__ - INFO - DEBUG detections per camera: [[], [], []]
+2026-06-14 00:12:08,583 - __main__ - INFO - Reached max frames (8), stopping.
+2026-06-14 00:12:08,583 - __main__ - INFO - Cleaning up...
+2026-06-14 00:12:08,590 - modules.camera_controller - INFO - Camera destroyed
+2026-06-14 00:12:08,590 - modules.camera_controller - INFO - Camera destroyed
+2026-06-14 00:12:08,590 - modules.camera_controller - INFO - Camera destroyed
+2026-06-14 00:12:08,593 - modules.traffic_generator - INFO - Cleaning up traffic actors...
+2026-06-14 00:12:08,600 - modules.traffic_generator - INFO - Traffic cleanup completed
+2026-06-14 00:12:08,622 - __main__ - INFO - Cleanup completed
+2026-06-14 00:12:53,708 - __main__ - INFO - CARLA client initialized
+2026-06-14 00:12:53,732 - __main__ - INFO - Synchronous mode enabled at 10 fps
+2026-06-14 00:12:53,734 - __main__ - INFO - Initializing: CameraController
+2026-06-14 00:12:53,743 - modules.camera_controller - INFO - Configuration loaded successfully
+2026-06-14 00:12:53,744 - modules.camera_controller - INFO - CameraController initialized with config: config/camera_config.yaml
+2026-06-14 00:12:53,746 - modules.camera_controller - INFO - Camera CAM_001 spawned at [0, 0, 3]
+2026-06-14 00:12:53,747 - modules.camera_controller - INFO - Camera CAM_002 spawned at [50, 0, 3]
+2026-06-14 00:12:53,747 - modules.camera_controller - INFO - Camera CAM_003 spawned at [25, 38, 3]
+2026-06-14 00:12:53,747 - __main__ - INFO - Initializing: TrafficGenerator
+2026-06-14 00:12:53,747 - modules.traffic_generator - INFO - TrafficGenerator initialized: 10 vehicles, 5 pedestrians
+2026-06-14 00:12:57,886 - modules.traffic_generator - WARNING - Failed to spawn vehicle at Location(x=-48.819988, y=-4.795075, z=0.600000)
+2026-06-14 00:12:57,900 - modules.traffic_generator - ERROR - Error starting walker controller: rpc::rpc_error during call in function set_actor_collisions
+2026-06-14 00:12:57,900 - modules.traffic_generator - ERROR - Error starting walker controller: rpc::rpc_error during call in function set_actor_collisions
+2026-06-14 00:12:57,900 - modules.traffic_generator - ERROR - Error starting walker controller: rpc::rpc_error during call in function set_actor_collisions
+2026-06-14 00:12:57,901 - modules.traffic_generator - ERROR - Error starting walker controller: rpc::rpc_error during call in function set_actor_collisions
+2026-06-14 00:12:57,901 - modules.traffic_generator - ERROR - Error starting walker controller: rpc::rpc_error during call in function set_actor_collisions
+2026-06-14 00:12:57,901 - modules.traffic_generator - INFO - Spawned 9 vehicles and 5 pedestrians
+2026-06-14 00:12:57,901 - __main__ - INFO - Initializing: ObjectDetector
+2026-06-14 00:12:58,404 - modules.detector - INFO - Model loaded: E:\School_project\finalproject\custom_tracking_system\weights\yolo11m_vn.pt
+2026-06-14 00:12:58,404 - modules.detector - INFO - ObjectDetector initialised: E:\School_project\finalproject\custom_tracking_system\weights\yolo11m_vn.pt on cpu
+2026-06-14 00:12:58,404 - __main__ - INFO - Initializing: ByteTrackWrapper (per camera)
+2026-06-14 00:12:58,565 - modules.tracker - INFO - ByteTrackWrapper initialised (frame_rate=10, buffer=30)
+2026-06-14 00:12:58,567 - modules.tracker - INFO - ByteTrackWrapper initialised (frame_rate=10, buffer=30)
+2026-06-14 00:12:58,571 - modules.tracker - INFO - ByteTrackWrapper initialised (frame_rate=10, buffer=30)
+2026-06-14 00:12:58,571 - __main__ - INFO - Initializing: ReIDExtractor
+2026-06-14 00:12:58,704 - modules.reid - INFO - Loaded osnet_x1_0 (Market-1501 pretrained) via torchreid
+2026-06-14 00:13:00,470 - modules.reid - INFO - ReIDExtractor ready: model=osnet_x1_0, device=cpu, feature_dim=512
+2026-06-14 00:13:00,470 - __main__ - INFO - Initializing: GlobalTracker
+2026-06-14 00:13:00,470 - modules.global_tracking - INFO - GlobalTracker initialised: threshold=0.50, topology_pairs=0
+2026-06-14 00:13:00,470 - __main__ - INFO - Initializing: TrajectoryPredictor
+2026-06-14 00:13:00,479 - modules.calibration - INFO - CalibrationStore: loaded 3 camera calibration(s) from config/camera_config.yaml
+2026-06-14 00:13:00,479 - modules.trajectory_predictor - INFO - TrajectoryPredictor initialised (Kalman constant-acceleration): window=10, horizons=[0.5, 1.0, 1.5, 2.0, 3.0] s, process_noise_std=50.0, measurement_noise_std=5.0
+2026-06-14 00:13:00,483 - modules.trajectory_predictor - INFO - LearnedTrajectoryPredictor: loaded checkpoint weights/trajectory_gru.pth (t_obs=8)
+2026-06-14 00:13:00,483 - modules.trajectory_predictor - INFO - EnsembleTrajectoryPredictor: Kalman + GRU ensemble active (3 camera calibration(s))
+2026-06-14 00:13:00,483 - __main__ - INFO - Initializing: AlertSystem
+2026-06-14 00:13:00,483 - modules.alert_system - INFO - AlertSystem initialized
+2026-06-14 00:13:00,483 - modules.alert_system - INFO - Set 3 ROIs for 3 cameras
+2026-06-14 00:13:00,483 - __main__ - INFO - Initializing: IncidentDetector
+2026-06-14 00:13:00,483 - modules.incident_detector - INFO - IncidentDetector initialized
+2026-06-14 00:13:00,483 - __main__ - INFO - Initializing: EvidencePackage
+2026-06-14 00:13:00,483 - modules.evidence_package - INFO - EvidencePackage initialized — output: evidence, buffer: 30s @ 10fps
+2026-06-14 00:13:00,484 - __main__ - INFO - Initializing: Visualizer
+2026-06-14 00:13:00,484 - utils.visualization - INFO - Visualizer initialized
+2026-06-14 00:13:00,484 - __main__ - INFO - Initializing: MetricsCollector
+2026-06-14 00:13:00,484 - utils.metrics - INFO - MetricsCollector initialized
+2026-06-14 00:13:00,484 - __main__ - INFO - All modules initialised successfully
+2026-06-14 00:13:00,484 - __main__ - INFO - Starting tracking system...
+2026-06-14 00:13:01,079 - __main__ - INFO - DEBUG detections per camera: [[], [], [('person', 0.05)]]
+2026-06-14 00:13:01,560 - __main__ - INFO - DEBUG detections per camera: [[], [], [('person', 0.05)]]
+2026-06-14 00:13:02,051 - __main__ - INFO - DEBUG detections per camera: [[], [], [('person', 0.05)]]
+2026-06-14 00:13:02,529 - __main__ - INFO - DEBUG detections per camera: [[], [], [('person', 0.05)]]
+2026-06-14 00:13:02,986 - __main__ - INFO - DEBUG detections per camera: [[], [], [('person', 0.05)]]
+2026-06-14 00:13:03,431 - __main__ - INFO - DEBUG detections per camera: [[], [], [('person', 0.05)]]
+2026-06-14 00:13:04,050 - __main__ - INFO - DEBUG detections per camera: [[], [], [('person', 0.06), ('person', 0.05)]]
+2026-06-14 00:13:04,552 - __main__ - INFO - DEBUG detections per camera: [[], [], [('person', 0.05)]]
+2026-06-14 00:13:04,579 - __main__ - INFO - Reached max frames (8), stopping.
+2026-06-14 00:13:04,580 - __main__ - INFO - Cleaning up...
+2026-06-14 00:13:04,587 - modules.camera_controller - INFO - Camera destroyed
+2026-06-14 00:13:04,587 - modules.camera_controller - INFO - Camera destroyed
+2026-06-14 00:13:04,589 - modules.camera_controller - INFO - Camera destroyed
+2026-06-14 00:13:04,595 - modules.traffic_generator - INFO - Cleaning up traffic actors...
+2026-06-14 00:13:04,603 - modules.traffic_generator - INFO - Traffic cleanup completed
+2026-06-14 00:13:04,625 - __main__ - INFO - Cleanup completed
+2026-06-14 00:13:33,674 - __main__ - INFO - CARLA client initialized
+2026-06-14 00:13:33,700 - __main__ - INFO - Synchronous mode enabled at 10 fps
+2026-06-14 00:13:33,702 - __main__ - INFO - Initializing: CameraController
+2026-06-14 00:13:33,711 - modules.camera_controller - INFO - Configuration loaded successfully
+2026-06-14 00:13:33,711 - modules.camera_controller - INFO - CameraController initialized with config: config/camera_config.yaml
+2026-06-14 00:13:33,713 - modules.camera_controller - INFO - Camera CAM_001 spawned at [0, 0, 3]
+2026-06-14 00:13:33,714 - modules.camera_controller - INFO - Camera CAM_002 spawned at [50, 0, 3]
+2026-06-14 00:13:33,715 - modules.camera_controller - INFO - Camera CAM_003 spawned at [25, 38, 3]
+2026-06-14 00:13:33,715 - __main__ - INFO - Initializing: TrafficGenerator
+2026-06-14 00:13:33,715 - modules.traffic_generator - INFO - TrafficGenerator initialized: 10 vehicles, 5 pedestrians
+2026-06-14 00:13:37,854 - modules.traffic_generator - WARNING - Failed to spawn vehicle at Location(x=-89.885788, y=27.934278, z=0.600000)
+2026-06-14 00:13:37,855 - modules.traffic_generator - WARNING - Failed to spawn vehicle at Location(x=-48.839951, y=-17.213200, z=0.600000)
+2026-06-14 00:13:37,870 - modules.traffic_generator - ERROR - Error starting walker controller: rpc::rpc_error during call in function set_actor_collisions
+2026-06-14 00:13:37,870 - modules.traffic_generator - ERROR - Error starting walker controller: rpc::rpc_error during call in function set_actor_collisions
+2026-06-14 00:13:37,871 - modules.traffic_generator - ERROR - Error starting walker controller: rpc::rpc_error during call in function set_actor_collisions
+2026-06-14 00:13:37,871 - modules.traffic_generator - ERROR - Error starting walker controller: rpc::rpc_error during call in function set_actor_collisions
+2026-06-14 00:13:37,871 - modules.traffic_generator - ERROR - Error starting walker controller: rpc::rpc_error during call in function set_actor_collisions
+2026-06-14 00:13:37,871 - modules.traffic_generator - INFO - Spawned 8 vehicles and 5 pedestrians
+2026-06-14 00:13:37,872 - __main__ - INFO - Initializing: ObjectDetector
+2026-06-14 00:13:38,385 - modules.detector - INFO - Model loaded: E:\School_project\finalproject\custom_tracking_system\weights\yolo11m_vn.pt
+2026-06-14 00:13:38,385 - modules.detector - INFO - ObjectDetector initialised: E:\School_project\finalproject\custom_tracking_system\weights\yolo11m_vn.pt on cpu
+2026-06-14 00:13:38,385 - __main__ - INFO - Initializing: ByteTrackWrapper (per camera)
+2026-06-14 00:13:38,556 - modules.tracker - INFO - ByteTrackWrapper initialised (frame_rate=10, buffer=30)
+2026-06-14 00:13:38,559 - modules.tracker - INFO - ByteTrackWrapper initialised (frame_rate=10, buffer=30)
+2026-06-14 00:13:38,560 - modules.tracker - INFO - ByteTrackWrapper initialised (frame_rate=10, buffer=30)
+2026-06-14 00:13:38,560 - __main__ - INFO - Initializing: ReIDExtractor
+2026-06-14 00:13:38,695 - modules.reid - INFO - Loaded osnet_x1_0 (Market-1501 pretrained) via torchreid
+2026-06-14 00:13:40,503 - modules.reid - INFO - ReIDExtractor ready: model=osnet_x1_0, device=cpu, feature_dim=512
+2026-06-14 00:13:40,503 - __main__ - INFO - Initializing: GlobalTracker
+2026-06-14 00:13:40,503 - modules.global_tracking - INFO - GlobalTracker initialised: threshold=0.50, topology_pairs=0
+2026-06-14 00:13:40,503 - __main__ - INFO - Initializing: TrajectoryPredictor
+2026-06-14 00:13:40,513 - modules.calibration - INFO - CalibrationStore: loaded 3 camera calibration(s) from config/camera_config.yaml
+2026-06-14 00:13:40,513 - modules.trajectory_predictor - INFO - TrajectoryPredictor initialised (Kalman constant-acceleration): window=10, horizons=[0.5, 1.0, 1.5, 2.0, 3.0] s, process_noise_std=50.0, measurement_noise_std=5.0
+2026-06-14 00:13:40,517 - modules.trajectory_predictor - INFO - LearnedTrajectoryPredictor: loaded checkpoint weights/trajectory_gru.pth (t_obs=8)
+2026-06-14 00:13:40,517 - modules.trajectory_predictor - INFO - EnsembleTrajectoryPredictor: Kalman + GRU ensemble active (3 camera calibration(s))
+2026-06-14 00:13:40,517 - __main__ - INFO - Initializing: AlertSystem
+2026-06-14 00:13:40,517 - modules.alert_system - INFO - AlertSystem initialized
+2026-06-14 00:13:40,517 - modules.alert_system - INFO - Set 3 ROIs for 3 cameras
+2026-06-14 00:13:40,517 - __main__ - INFO - Initializing: IncidentDetector
+2026-06-14 00:13:40,517 - modules.incident_detector - INFO - IncidentDetector initialized
+2026-06-14 00:13:40,517 - __main__ - INFO - Initializing: EvidencePackage
+2026-06-14 00:13:40,517 - modules.evidence_package - INFO - EvidencePackage initialized — output: evidence, buffer: 30s @ 10fps
+2026-06-14 00:13:40,517 - __main__ - INFO - Initializing: Visualizer
+2026-06-14 00:13:40,517 - utils.visualization - INFO - Visualizer initialized
+2026-06-14 00:13:40,517 - __main__ - INFO - Initializing: MetricsCollector
+2026-06-14 00:13:40,517 - utils.metrics - INFO - MetricsCollector initialized
+2026-06-14 00:13:40,517 - __main__ - INFO - All modules initialised successfully
+2026-06-14 00:13:40,517 - __main__ - INFO - Starting tracking system...
+2026-06-14 00:13:40,546 - __main__ - INFO - DEBUG frame 0 shape=(540, 960, 3) dtype=uint8 min=0 max=254
+2026-06-14 00:13:40,573 - __main__ - INFO - DEBUG frame 1 shape=(540, 960, 3) dtype=uint8 min=0 max=255
+2026-06-14 00:13:40,601 - __main__ - INFO - DEBUG frame 2 shape=(540, 960, 3) dtype=uint8 min=0 max=255
+2026-06-14 00:13:41,235 - __main__ - INFO - DEBUG detections per camera: [[], [], [('person', 0.08), ('person', 0.06), ('person', 0.06), ('person', 0.05)]]
+2026-06-14 00:13:41,725 - __main__ - INFO - DEBUG detections per camera: [[], [], [('person', 0.08), ('person', 0.06), ('person', 0.06), ('person', 0.05)]]
+2026-06-14 00:13:41,751 - __main__ - INFO - Reached max frames (2), stopping.
+2026-06-14 00:13:41,751 - __main__ - INFO - Cleaning up...
+2026-06-14 00:13:41,758 - modules.camera_controller - INFO - Camera destroyed
+2026-06-14 00:13:41,759 - modules.camera_controller - INFO - Camera destroyed
+2026-06-14 00:13:41,759 - modules.camera_controller - INFO - Camera destroyed
+2026-06-14 00:13:41,759 - modules.traffic_generator - INFO - Cleaning up traffic actors...
+2026-06-14 00:13:41,766 - modules.traffic_generator - INFO - Traffic cleanup completed
+2026-06-14 00:13:41,787 - __main__ - INFO - Cleanup completed
+2026-06-14 00:14:41,913 - __main__ - INFO - CARLA client initialized
+2026-06-14 00:14:41,941 - __main__ - INFO - Synchronous mode enabled at 10 fps
+2026-06-14 00:14:41,943 - __main__ - INFO - Initializing: CameraController
+2026-06-14 00:14:41,952 - modules.camera_controller - INFO - Configuration loaded successfully
+2026-06-14 00:14:41,952 - modules.camera_controller - INFO - CameraController initialized with config: config/camera_config.yaml
+2026-06-14 00:14:41,955 - modules.camera_controller - INFO - Camera CAM_001 spawned at [0, 0, 3]
+2026-06-14 00:14:41,955 - modules.camera_controller - INFO - Camera CAM_002 spawned at [50, 0, 3]
+2026-06-14 00:14:41,956 - modules.camera_controller - INFO - Camera CAM_003 spawned at [25, 38, 3]
+2026-06-14 00:14:41,956 - __main__ - INFO - Initializing: TrafficGenerator
+2026-06-14 00:14:41,956 - modules.traffic_generator - INFO - TrafficGenerator initialized: 10 vehicles, 5 pedestrians
+2026-06-14 00:14:46,100 - modules.traffic_generator - ERROR - Error starting walker controller: rpc::rpc_error during call in function set_actor_collisions
+2026-06-14 00:14:46,100 - modules.traffic_generator - ERROR - Error starting walker controller: rpc::rpc_error during call in function set_actor_collisions
+2026-06-14 00:14:46,100 - modules.traffic_generator - ERROR - Error starting walker controller: rpc::rpc_error during call in function set_actor_collisions
+2026-06-14 00:14:46,101 - modules.traffic_generator - ERROR - Error starting walker controller: rpc::rpc_error during call in function set_actor_collisions
+2026-06-14 00:14:46,101 - modules.traffic_generator - ERROR - Error starting walker controller: rpc::rpc_error during call in function set_actor_collisions
+2026-06-14 00:14:46,101 - modules.traffic_generator - INFO - Spawned 10 vehicles and 5 pedestrians
+2026-06-14 00:14:46,101 - __main__ - INFO - Initializing: ObjectDetector
+2026-06-14 00:14:46,609 - modules.detector - INFO - Model loaded: E:\School_project\finalproject\custom_tracking_system\weights\yolo11m_vn.pt
+2026-06-14 00:14:46,609 - modules.detector - INFO - ObjectDetector initialised: E:\School_project\finalproject\custom_tracking_system\weights\yolo11m_vn.pt on cpu
+2026-06-14 00:14:46,609 - __main__ - INFO - Initializing: ByteTrackWrapper (per camera)
+2026-06-14 00:14:46,775 - modules.tracker - INFO - ByteTrackWrapper initialised (frame_rate=10, buffer=30)
+2026-06-14 00:14:46,776 - modules.tracker - INFO - ByteTrackWrapper initialised (frame_rate=10, buffer=30)
+2026-06-14 00:14:46,778 - modules.tracker - INFO - ByteTrackWrapper initialised (frame_rate=10, buffer=30)
+2026-06-14 00:14:46,779 - __main__ - INFO - Initializing: ReIDExtractor
+2026-06-14 00:14:46,914 - modules.reid - INFO - Loaded osnet_x1_0 (Market-1501 pretrained) via torchreid
+2026-06-14 00:14:48,927 - modules.reid - INFO - ReIDExtractor ready: model=osnet_x1_0, device=cpu, feature_dim=512
+2026-06-14 00:14:48,927 - __main__ - INFO - Initializing: GlobalTracker
+2026-06-14 00:14:48,927 - modules.global_tracking - INFO - GlobalTracker initialised: threshold=0.50, topology_pairs=0
+2026-06-14 00:14:48,927 - __main__ - INFO - Initializing: TrajectoryPredictor
+2026-06-14 00:14:48,938 - modules.calibration - INFO - CalibrationStore: loaded 3 camera calibration(s) from config/camera_config.yaml
+2026-06-14 00:14:48,938 - modules.trajectory_predictor - INFO - TrajectoryPredictor initialised (Kalman constant-acceleration): window=10, horizons=[0.5, 1.0, 1.5, 2.0, 3.0] s, process_noise_std=50.0, measurement_noise_std=5.0
+2026-06-14 00:14:48,942 - modules.trajectory_predictor - INFO - LearnedTrajectoryPredictor: loaded checkpoint weights/trajectory_gru.pth (t_obs=8)
+2026-06-14 00:14:48,942 - modules.trajectory_predictor - INFO - EnsembleTrajectoryPredictor: Kalman + GRU ensemble active (3 camera calibration(s))
+2026-06-14 00:14:48,942 - __main__ - INFO - Initializing: AlertSystem
+2026-06-14 00:14:48,942 - modules.alert_system - INFO - AlertSystem initialized
+2026-06-14 00:14:48,942 - modules.alert_system - INFO - Set 3 ROIs for 3 cameras
+2026-06-14 00:14:48,942 - __main__ - INFO - Initializing: IncidentDetector
+2026-06-14 00:14:48,942 - modules.incident_detector - INFO - IncidentDetector initialized
+2026-06-14 00:14:48,942 - __main__ - INFO - Initializing: EvidencePackage
+2026-06-14 00:14:48,942 - modules.evidence_package - INFO - EvidencePackage initialized — output: evidence, buffer: 30s @ 10fps
+2026-06-14 00:14:48,943 - __main__ - INFO - Initializing: Visualizer
+2026-06-14 00:14:48,943 - utils.visualization - INFO - Visualizer initialized
+2026-06-14 00:14:48,943 - __main__ - INFO - Initializing: MetricsCollector
+2026-06-14 00:14:48,943 - utils.metrics - INFO - MetricsCollector initialized
+2026-06-14 00:14:48,943 - __main__ - INFO - All modules initialised successfully
+2026-06-14 00:14:48,943 - __main__ - INFO - Starting tracking system...
+2026-06-14 00:14:48,972 - __main__ - INFO - DEBUG frame 0 shape=(540, 960, 3) dtype=uint8 min=0 max=255
+2026-06-14 00:14:49,002 - __main__ - INFO - DEBUG frame 1 shape=(540, 960, 3) dtype=uint8 min=0 max=255
+2026-06-14 00:14:49,031 - __main__ - INFO - DEBUG frame 2 shape=(540, 960, 3) dtype=uint8 min=0 max=255
+2026-06-14 00:14:49,689 - __main__ - INFO - DEBUG detections per camera: [[], [], []]
+2026-06-14 00:14:50,260 - __main__ - INFO - DEBUG detections per camera: [[], [], []]
+2026-06-14 00:14:50,293 - __main__ - INFO - Reached max frames (2), stopping.
+2026-06-14 00:14:50,293 - __main__ - INFO - Cleaning up...
+2026-06-14 00:14:50,304 - modules.camera_controller - INFO - Camera destroyed
+2026-06-14 00:14:50,304 - modules.camera_controller - INFO - Camera destroyed
+2026-06-14 00:14:50,304 - modules.camera_controller - INFO - Camera destroyed
+2026-06-14 00:14:50,305 - modules.traffic_generator - INFO - Cleaning up traffic actors...
+2026-06-14 00:14:50,316 - modules.traffic_generator - INFO - Traffic cleanup completed
+2026-06-14 00:14:50,345 - __main__ - INFO - Cleanup completed

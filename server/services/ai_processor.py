@@ -122,7 +122,8 @@ class AIProcessor:
             self.world, num_vehicles=10, num_pedestrians=5)
         self.traffic_generator.spawn_actors()
 
-        self.detector = ObjectDetector(model_type="yolov8s", half=True)
+        self.detector = ObjectDetector(
+            model_type=str(_tracking_dir / "weights" / "yolo11m_vn.pt"), half=True)
 
         self.trackers = {}
         for cam_id in self.camera_controller.cameras:
@@ -131,6 +132,7 @@ class AIProcessor:
                 lost_track_buffer=30,
                 minimum_matching_threshold=0.8,
                 frame_rate=10,
+                class_map=self.detector.CLASSES,
             )
 
         vehicle_weights = str(_tracking_dir / "weights" / "osnet_veri776.pth")
