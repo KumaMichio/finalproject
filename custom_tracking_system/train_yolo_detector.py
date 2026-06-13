@@ -53,6 +53,8 @@ def main():
                          help="'0' for first GPU, 'cpu', etc. None = auto")
     parser.add_argument('--half', action='store_true',
                          help='enable AMP mixed-precision training (saves VRAM)')
+    parser.add_argument('--workers', type=int, default=8,
+                         help='dataloader worker processes (lower if CPU RAM-limited)')
     parser.add_argument('--out', default='weights/yolo11m_vn.pt')
     parser.add_argument('--project', default='runs/detect')
     parser.add_argument('--name', default='yolo11m_vn')
@@ -66,6 +68,7 @@ def main():
         batch=args.batch,
         device=args.device,
         amp=args.half,
+        workers=args.workers,
         project=args.project,
         name=args.name,
     )
