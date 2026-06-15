@@ -1,25 +1,41 @@
+# Camera duoc dat tai 3 nga tu co den giao thong (2026-06-14) — moi nga tu
+# co 2 traffic light (giao lo 4 huong, nhieu phuong tien qua lai). Camera
+# dat lui ~10m so voi tam nga tu, cao z=6 (tuong duong gan cot den giao
+# thong), goc nhin (view_angle) duoc tang len 110-120 do de bao quat ca
+# duong chinh va duong cat ngang. Vi tri/goc lay tu truy van thuc te
+# world.get_actors().filter('traffic.traffic_light*') + get_waypoint()
+# tren Town10HD_Opt:
+#   - CAM_001: nga tu (-119.2, 12.0) — 2 traffic light, road 735 (N-S) cat
+#     duong E-W. Camera dat tai (-129.2, 12, 6), yaw=0 (nhin +X vao nga tu).
+#   - CAM_002: nga tu (-63.3, 13.6) — 2 traffic light, road 254 cat road 286.
+#     Camera dat tai (-63.3, 3.6, 6), yaw=90 (nhin +Y vao nga tu).
+#   - CAM_003: nga tu (-31.8, 26.9) — 2 traffic light, road 382 cat road 255.
+#     Camera dat tai (-41.8, 26.9, 6), yaw=0 (nhin +X vao nga tu). Vi tri
+#     ban dau (-31.8, 16.9, 6) yaw=90 bi 1 hang cay che khuat (foliage cluster
+#     ngay sat camera, ~1.8m) -> doi sang tiep can tu phia Tay (road 467,
+#     lane -2), khong vuong cay (kiem tra get_environment_objects(Vegetation)).
 cameras:
   camera_0:
-    position: [0, 0, 3]  # [x, y, z] - world coordinates
-    rotation: [0, 0, 0]  # [pitch, yaw, roll]
+    position: [-129.2, 12.0, 6]  # [x, y, z] - world coordinates
+    rotation: [-15, 0, 0]        # [pitch, yaw, roll] - hoi cui xuong de thay mat duong
     camera_id: "CAM_001"
-    view_angle: 90
+    view_angle: 110
     resolution: [960, 540]
     fps: 10
 
   camera_1:
-    position: [50, 0, 3]
-    rotation: [0, 180, 0]
+    position: [-63.3, 3.6, 6]
+    rotation: [-15, 90, 0]
     camera_id: "CAM_002"
     view_angle: 120
     resolution: [960, 540]
     fps: 10
 
   camera_2:
-    position: [25, 38, 3]
-    rotation: [0, -90, 0]
+    position: [-41.8, 26.9, 6]
+    rotation: [-15, 0, 0]
     camera_id: "CAM_003"
-    view_angle: 100
+    view_angle: 110
     resolution: [960, 540]
     fps: 10
 
@@ -28,31 +44,31 @@ cameras:
 # ("camera_0"...) — AlertSystem/IncidentDetector tra cuu theo camera_id.
 # alert_types: "red_light" danh dau vung giao lo de check RED_LIGHT_VIOLATION
 # (xe co toc do > red_light.min_speed va o trong vung nay khi den do CRITICAL).
-# Toa do polygon duoc tinh hinh hoc tu CameraCalibration.world_to_pixel()
-# (modules/calibration.py) — chieu mat dat tu 8m den 25m, +-4m hai ben truc
-# camera, dua tren position/rotation/fov/resolution trong "cameras" o tren.
-# Day la hinh thang vung duong ngay truoc camera nam trong khung hinh
-# (480x540 -> 240..720 px ngang, 328..450 px doc). Van nen kiem tra lai
-# bang anh thuc te tu CARLA neu can do chinh xac cao hon.
+# Toa do polygon duoc tinh tu CameraCalibration.world_to_pixel() (2026-06-14)
+# cho vi tri/goc camera moi (3 nga tu) — vung hinh thang phia truoc camera,
+# sau 5-15m, +-8m hai ben (ca duong chinh va duong cat ngang cua nga tu),
+# nam trong khung hinh 960x540.
 rois:
   CAM_001:
     zones:
       - name: "intersection_main"
-        polygon: [[240, 450], [720, 450], [557, 328], [403, 328]]
+        polygon: [[901, 507], [59, 507], [312, 310], [648, 310]]
         alert_types: ["entry", "red_light"]
   CAM_002:
     zones:
-      - name: "side_road"
-        polygon: [[341, 374], [619, 374], [524, 303], [436, 303]]
+      - name: "intersection_2"
+        polygon: [[827, 465], [133, 465], [342, 303], [618, 303]]
         alert_types: ["entry", "red_light"]
   CAM_003:
     zones:
-      - name: "parking_area"
-        polygon: [[279, 421], [681, 421], [544, 318], [416, 318]]
-        alert_types: ["entry"]
+      - name: "intersection_3"
+        polygon: [[59, 507], [901, 507], [648, 310], [312, 310]]
+        alert_types: ["entry", "red_light"]
 
 # Spatio-Temporal Filter — thời gian đi lại hợp lệ giữa các cặp camera (giây)
-# Tính từ khoảng cách thực tế trong CARLA: CAM_001↔CAM_002 ~50m, CAM_001↔CAM_003 ~39m, CAM_002↔CAM_003 ~39m
+# Tính từ khoảng cách thực tế trong CARLA (vi tri camera moi 2026-06-14, CAM_003
+# da doi sang (-41.8,26.9,6) de tranh hang cay):
+# CAM_001↔CAM_002 ~66.4m, CAM_001↔CAM_003 ~88.7m, CAM_002↔CAM_003 ~31.7m
 # min = 1s (xe nhanh nhất), max = 120s (người đi bộ + vòng đường)
 camera_topology:
   CAM_001__CAM_002: [1, 120]
@@ -68,19 +84,22 @@ incident_detection:
   # so sanh voi "direction" (huong cho phep, vector pixel [dx, dy]) cua camera.
   # Goc lech > angle_threshold_deg va toc do > min_speed trong >= min_frames
   # frame lien tiep => WRONG_WAY (CRITICAL).
-  # direction duoc tinh hinh hoc: voi pitch=0 (camera nhin ngang), huong "ra xa
-  # camera" doc theo truc quang hoc luon chieu len tren khung hinh ([0,-1]) bat
-  # ke yaw — xe di xa camera (dung huong) chuyen dong len, xe di ve phia camera
-  # qua angle_threshold_deg duoc xem la WRONG_WAY. Van nen kiem tra lai bang
-  # video thuc te tu CARLA neu lan duong co huong khac.
+  # direction la huong di chuyen "dung chieu" (vector pixel [dx,dy], se duoc
+  # chuan hoa) cua lan duong chinh ma camera quan sat. Tinh lai (2026-06-14)
+  # cho vi tri/goc camera moi bang get_waypoint().transform.get_forward_vector()
+  # chieu qua CameraCalibration.world_to_pixel():
+  #   - CAM_001: waypoint road 735 lane 2, forward ~(-0.01,1.00) -> pixel dir [1.0, 0.0]
+  #   - CAM_002: waypoint road 286 lane 1, forward ~(-1.00,0.06) -> pixel dir [1.0, -0.04]
+  #   - CAM_003: (vi tri camera doi sang (-41.8,26.9,6) yaw=0 de tranh hang
+  #     cay) waypoint road 382 lane 1, forward ~(1.00,0.07) -> pixel dir [-0.08, -1.0]
   wrong_way:
     lanes:
       CAM_001:
-        direction: [0, -1]   # huong cho phep: ra xa camera (len tren khung hinh)
+        direction: [1.0, 0.0]
       CAM_002:
-        direction: [0, -1]   # huong cho phep: ra xa camera (len tren khung hinh)
+        direction: [1.0, -0.04]
       CAM_003:
-        direction: [0, -1]   # huong cho phep: ra xa camera (len tren khung hinh)
+        direction: [-0.08, -1.0]
     min_speed: 15            # px/s
     angle_threshold_deg: 100
     min_frames: 10

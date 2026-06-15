@@ -393,6 +393,11 @@ class TrackingSystem:
 
                     # Visualisation
                     vis_frame = self.modules['visualizer'].draw_tracks(frame, global_tracks)
+                    if predictions:
+                        predictions_for_viz = {gid: list(pred.values())
+                                                for gid, pred in predictions.items()}
+                        vis_frame = self.modules['visualizer'].draw_predictions(
+                            vis_frame, predictions_for_viz, global_tracks)
                     cv2.imshow(camera_id, vis_frame)
 
                 # ----------------------------------------------------------

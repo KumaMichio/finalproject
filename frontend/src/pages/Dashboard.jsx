@@ -9,7 +9,6 @@ import { api } from '../services/api'
 
 export default function Dashboard() {
   const [cameras, setCameras] = useState([])
-  const [highlightCamera, setHighlightCamera] = useState(null)
   const { incidents, acknowledge, unreadCount, connected } = useIncidents()
   const navigate = useNavigate()
 
@@ -17,13 +16,10 @@ export default function Dashboard() {
     api.getCameras()
       .then(data => setCameras(Array.isArray(data) ? data : []))
       .catch(() => {})
-  }, [])
 
-  useEffect(() => {
-    if (!highlightCamera) return
-    const timer = setTimeout(() => setHighlightCamera(null), 15000)
-    return () => clearTimeout(timer)
-  }, [highlightCamera])
+    // Xoa lich su su co cu moi khi tai lai trang, de bat dau phien demo moi
+    api.clearAlerts().catch(() => {})
+  }, [])
 
   return (
     <div className="flex flex-col h-screen bg-gray-950">
@@ -59,7 +55,6 @@ export default function Dashboard() {
             <CameraGrid
               cameras={cameras}
               incidents={incidents}
-              highlightCamera={highlightCamera}
               onCameraClick={(cam) => navigate(`/alerts?camera=${cam.id}`)}
             />
           ) : (
@@ -81,7 +76,7 @@ export default function Dashboard() {
               onAcknowledge={acknowledge}
             />
           </div>
-          <ScenarioPanel onTriggered={setHighlightCamera} />
+          <ScenarioPanel />
         </div>
       </div>
 

@@ -4,7 +4,7 @@ import CameraFeed from './CameraFeed'
 /**
  * Grid nhiều camera. Tự động chọn layout dựa trên số camera.
  */
-export default function CameraGrid({ cameras, incidents, highlightCamera, onCameraClick }) {
+export default function CameraGrid({ cameras, incidents, onCameraClick }) {
   const count = cameras.length
   const cols = count <= 1 ? 1 : count <= 4 ? 2 : 3
 
@@ -24,7 +24,6 @@ export default function CameraGrid({ cameras, incidents, highlightCamera, onCame
           key={cam.id}
           camera={cam}
           latestIncident={latestPerCam[cam.id] ?? null}
-          highlighted={cam.id === highlightCamera}
           onClick={onCameraClick}
         />
       ))}

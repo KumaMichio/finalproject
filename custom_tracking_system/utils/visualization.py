@@ -30,6 +30,24 @@ class Visualizer:
 
         logger.info("Visualizer initialized")
 
+    def draw_collision_banner(self, frame):
+        """Vẽ banner đỏ "VA CHẠM!" + viền đỏ quanh frame — hiển thị vài giây
+        sau khi ScenarioController ghi nhận 1 va chạm trên camera này, để
+        người xem dễ nhận ra sự kiện đang xảy ra trên dashboard."""
+        frame_copy = frame.copy()
+        h, w = frame_copy.shape[:2]
+        cv2.rectangle(frame_copy, (0, 0), (w - 1, h - 1), (0, 0, 255), 8)
+        text = "VA CHAM!"
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        scale, thickness = 1.2, 3
+        (tw, th), _ = cv2.getTextSize(text, font, scale, thickness)
+        x = (w - tw) // 2
+        cv2.rectangle(frame_copy, (x - 10, 10), (x + tw + 10, 10 + th + 20),
+                       (0, 0, 255), -1)
+        cv2.putText(frame_copy, text, (x, 10 + th + 5), font, scale,
+                     (255, 255, 255), thickness)
+        return frame_copy
+
     def draw_tracks(self, frame, global_tracks, show_trajectories=False):
         """
         Draw tracked objects with global IDs
@@ -97,37 +115,74 @@ class Visualizer:
 
         return frame_copy
 
-    def draw_predictions(self, frame, predictions):
+    # Màu cố định (vàng, BGR) cho mọi đường dự đoán — phân biệt rõ với màu
+    # bounding box (theo từng global_id) để dễ nhận ra khi demo.
+    PREDICTION_COLOR = (0, 255, 255)
+
+    def draw_predictions(self, frame, predictions, global_tracks=None):
         """
-        Draw predicted future positions
+        Draw predicted future trajectory (dashed line + markers) starting
+        from the object's current position.
 
         Args:
             frame: numpy array (H, W, 3)
-            predictions: dict of {global_id: predicted_positions}
+            predictions: dict {global_id: [[x,y], ...]} — vị trí dự đoán tại
+                các horizon (t+0.5s, t+1s, ...), thứ tự tăng dần theo thời gian.
+            global_tracks: optional list track dicts (để vẽ đoạn nối từ vị trí
+                HIỆN TẠI của object tới điểm dự đoán đầu tiên).
 
         Returns:
-            numpy array: frame with predictions
+            numpy array: frame with predicted trajectories overlaid
         """
         frame_copy = frame.copy()
+        color = self.PREDICTION_COLOR
+
+        centers = {}
+        if global_tracks:
+            for t in global_tracks:
+                box = t['box']
+                centers[t['global_id']] = ((box[0] + box[2]) // 2, (box[1] + box[3]) // 2)
 
         for global_id, pred_positions in predictions.items():
             if not pred_positions:
                 continue
 
-            color = self._get_id_color(global_id)
+            points = []
+            if global_id in centers:
+                points.append(centers[global_id])
+            points += [tuple(map(int, p)) for p in pred_positions]
+            if len(points) < 2:
+                continue
 
-            # Draw predicted path
-            for i in range(len(pred_positions) - 1):
-                pt1 = tuple(map(int, pred_positions[i]))
-                pt2 = tuple(map(int, pred_positions[i + 1]))
-                cv2.line(frame_copy, pt1, pt2, color, 1)
+            # Đường nét đứt nối vị trí hiện tại -> các điểm dự đoán tương lai
+            for i in range(len(points) - 1):
+                self._draw_dashed_line(frame_copy, points[i], points[i + 1], color)
 
-            # Draw prediction markers
-            for pos in pred_positions:
-                pt = tuple(map(int, pos))
-                cv2.circle(frame_copy, pt, 2, color, -1)
+            # Marker tại mỗi điểm dự đoán (không tính điểm hiện tại)
+            for pt in points[1:]:
+                cv2.circle(frame_copy, pt, 3, color, -1)
+
+            # Nhãn "predicted" tại điểm dự đoán xa nhất
+            last = points[-1]
+            cv2.putText(frame_copy, "predicted", (last[0] + 5, last[1] - 5),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.45, color, 1)
 
         return frame_copy
+
+    def _draw_dashed_line(self, frame, pt1, pt2, color, thickness=2, dash_len=8):
+        """Vẽ đoạn thẳng nét đứt từ pt1 đến pt2."""
+        dist = float(np.hypot(pt2[0] - pt1[0], pt2[1] - pt1[1]))
+        if dist < 1:
+            return
+        n_dashes = max(1, int(dist / dash_len))
+        for i in range(n_dashes):
+            start = i / n_dashes
+            end = min((i + 0.5) / n_dashes, 1.0)
+            x1 = int(pt1[0] + (pt2[0] - pt1[0]) * start)
+            y1 = int(pt1[1] + (pt2[1] - pt1[1]) * start)
+            x2 = int(pt1[0] + (pt2[0] - pt1[0]) * end)
+            y2 = int(pt1[1] + (pt2[1] - pt1[1]) * end)
+            cv2.line(frame, (x1, y1), (x2, y2), color, thickness)
 
     def draw_rois(self, frame, rois):
         """

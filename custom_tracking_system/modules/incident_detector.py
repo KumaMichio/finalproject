@@ -173,7 +173,7 @@ class IncidentDetector:
                 incidents.append(self._make(
                     type='SUDDEN_STOP', severity='WARNING',
                     gid=gid, cam=camera_id,
-                    msg=f"Xe #{gid} dừng đột ngột: {speed_before:.0f} → {speed_after:.0f} px/s",
+                    msg=f"Xe #{gid} phanh dừng đột ngột giữa đường",
                     details={'speed_before': round(speed_before, 1),
                              'speed_after': round(speed_after, 1)}
                 ))
@@ -199,7 +199,7 @@ class IncidentDetector:
                 incidents.append(self._make(
                     type='SUDDEN_ACCEL', severity='CRITICAL',
                     gid=gid, cam=camera_id,
-                    msg=f"Xe #{gid} tăng tốc đột ngột: {speed_prev:.0f} → {speed_now:.0f} px/s (có thể bỏ trốn)",
+                    msg=f"Xe #{gid} bất ngờ tăng tốc rời khỏi hiện trường, có dấu hiệu bỏ trốn",
                     details={'speed_prev': round(speed_prev, 1),
                              'speed_now': round(speed_now, 1)}
                 ))
@@ -213,10 +213,11 @@ class IncidentDetector:
             gid = track['global_id']
             speed = self._current_speed(gid)
             if speed and speed > self.speed_limit:
+                ratio = speed / self.speed_limit
                 incidents.append(self._make(
                     type='OVERSPEED', severity='WARNING',
                     gid=gid, cam=camera_id,
-                    msg=f"Xe #{gid} vượt tốc độ: {speed:.0f} px/s (giới hạn {self.speed_limit})",
+                    msg=f"Xe #{gid} đang chạy quá tốc độ cho phép (nhanh hơn khoảng {ratio:.1f} lần mức quy định)",
                     details={'speed': round(speed, 1), 'limit': self.speed_limit}
                 ))
         return incidents
@@ -235,8 +236,8 @@ class IncidentDetector:
                         incidents.append(self._make(
                             type='VEHICLE_PROXIMITY', severity='CRITICAL',
                             gid=v1['global_id'], cam=camera_id,
-                            msg=(f"Xe #{v1['global_id']} và #{v2['global_id']} "
-                                 f"tiến gần nhau nguy hiểm (dist={dist:.0f}px)"),
+                            msg=(f"Xe #{v1['global_id']} và xe #{v2['global_id']} "
+                                 f"đang tiến rất gần nhau với tốc độ cao, nguy cơ va chạm"),
                             details={
                                 'other_id': v2['global_id'],
                                 'distance_px': round(dist, 1),
@@ -261,8 +262,8 @@ class IncidentDetector:
                     incidents.append(self._make(
                         type='PEDESTRIAN_DANGER', severity='CRITICAL',
                         gid=v['global_id'], cam=camera_id,
-                        msg=(f"Xe #{v['global_id']} áp sát người #{p['global_id']} "
-                             f"(dist={dist:.0f}px, speed={speed:.0f}px/s)"),
+                        msg=(f"Xe #{v['global_id']} đang áp sát người đi bộ #{p['global_id']} "
+                             f"với tốc độ cao, nguy cơ va chạm cao"),
                         details={
                             'pedestrian_id': p['global_id'],
                             'distance_px': round(dist, 1),
@@ -289,7 +290,7 @@ class IncidentDetector:
                 incidents.append(self._make(
                     type='STOPPED_VEHICLE', severity='WARNING',
                     gid=gid, cam=camera_id,
-                    msg=f"Xe #{gid} dừng giữa đường hơn {self.stop_frames} frame",
+                    msg=f"Xe #{gid} đang dừng bất thường giữa đường trong thời gian dài",
                     details={'stop_frames': self.stop_frames}
                 ))
         return incidents
@@ -317,7 +318,7 @@ class IncidentDetector:
                 incidents.append(self._make(
                     type='LOITERING', severity='WARNING',
                     gid=gid, cam=camera_id,
-                    msg=f"Người #{gid} đứng ở cùng khu vực hơn {self.loiter_frames} frame",
+                    msg=f"Người #{gid} đứng yên tại một khu vực trong thời gian dài, có thể đáng nghi",
                     details={'duration_frames': self.loiter_frames}
                 ))
         return incidents
@@ -341,7 +342,7 @@ class IncidentDetector:
                 incidents.append(self._make(
                     type='CROWD_DENSITY', severity='WARNING',
                     gid=p['global_id'], cam=camera_id,
-                    msg=f"Mật độ đông người tại {camera_id}: {nearby + 1} người trong vùng",
+                    msg=f"Phát hiện đông người tập trung tại khu vực camera {camera_id} ({nearby + 1} người)",
                     details={'person_count': nearby + 1, 'area_px': self.crowd_area_px}
                 ))
                 break  # 1 alert / camera / frame là đủ
@@ -357,7 +358,7 @@ class IncidentDetector:
                 incidents.append(self._make(
                     type='CAMERA_TRANSITION', severity='INFO',
                     gid=gid, cam=camera_id,
-                    msg=f"Đối tượng #{gid} chuyển từ {prev_cam} → {camera_id}",
+                    msg=f"Đối tượng #{gid} di chuyển từ khu vực {prev_cam} sang khu vực {camera_id}",
                     details={'from_camera': prev_cam, 'to_camera': camera_id}
                 ))
             self.last_camera[gid] = camera_id
@@ -411,7 +412,7 @@ class IncidentDetector:
                 incidents.append(self._make(
                     type='WRONG_WAY', severity='CRITICAL',
                     gid=gid, cam=camera_id,
-                    msg=f"Xe #{gid} đi ngược chiều tại {camera_id} (speed={speed:.0f}px/s)",
+                    msg=f"Xe #{gid} đang đi ngược chiều quy định tại {camera_id}",
                     details={
                         'direction':         direction.tolist(),
                         'allowed_direction': allowed.tolist(),
@@ -448,7 +449,7 @@ class IncidentDetector:
                     incidents.append(self._make(
                         type='RED_LIGHT_VIOLATION', severity='CRITICAL',
                         gid=gid, cam=camera_id,
-                        msg=f"Xe #{gid} vượt đèn đỏ tại {camera_id} (speed={speed:.0f}px/s)",
+                        msg=f"Xe #{gid} vượt đèn đỏ tại {camera_id} với tốc độ cao",
                         details={'speed': round(speed, 1), 'light_state': light_state}
                     ))
                     break
@@ -476,6 +477,26 @@ class IncidentDetector:
         c1 = np.array(self._box_center(box1))
         c2 = np.array(self._box_center(box2))
         return float(np.linalg.norm(c1 - c2))
+
+    # Nhãn tiếng Việt cho các loại đối tượng, dùng trong message tự nhiên
+    CLASS_VN = {
+        'person':     'người đi bộ',
+        'car':        'ô tô',
+        'motorcycle': 'xe máy',
+        'bus':        'xe buýt',
+        'truck':      'xe tải',
+    }
+
+    def _label(self, cls: str) -> str:
+        return self.CLASS_VN.get(cls, 'đối tượng')
+
+    def _horizon_text(self, horizon: str) -> str:
+        """Chuyển 't+0.5s' -> '0.5 giây tới' cho message dễ đọc."""
+        try:
+            seconds = horizon.lstrip('t+').rstrip('s')
+            return f"{seconds} giây tới"
+        except Exception:
+            return horizon
 
     def _make(self, type, severity, gid, cam, msg, details=None):
         return {
@@ -531,8 +552,8 @@ class IncidentDetector:
                             type='PREDICTED_COLLISION',
                             severity='CRITICAL',
                             gid=gid, cam=camera_id,
-                            msg=(f"Dự đoán va chạm: Xe #{gid} → Người #{ped['global_id']} "
-                                 f"sau {horizon} (dist={dist:.0f}px)"),
+                            msg=(f"Cảnh báo: Xe #{gid} có thể va chạm với người đi bộ "
+                                 f"#{ped['global_id']} trong {self._horizon_text(horizon)}"),
                             details={
                                 'horizon':           horizon,
                                 'predicted_pos':     pred_pos,
@@ -568,8 +589,8 @@ class IncidentDetector:
                             type='PREDICTED_ROI_ENTRY',
                             severity='WARNING',
                             gid=gid, cam=camera_id,
-                            msg=(f"Dự đoán #{gid} ({track['class']}) vào ROI "
-                                 f"'{roi.get('name', '?')}' sau {horizon}"),
+                            msg=(f"Dự đoán {self._label(track['class'])} #{gid} sẽ tiến vào "
+                                 f"khu vực giao lộ trong {self._horizon_text(horizon)}"),
                             details={
                                 'horizon':      horizon,
                                 'roi_name':     roi.get('name', ''),

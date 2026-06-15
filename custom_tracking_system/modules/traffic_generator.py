@@ -28,14 +28,12 @@ class TrafficGenerator:
         self.num_pedestrians = num_pedestrians
         self.vehicle_list = []
         self.pedestrian_list = []
-        self.walker_controllers = []
 
         logger.info(f"TrafficGenerator initialized: {num_vehicles} vehicles, {num_pedestrians} pedestrians")
 
     def spawn_actors(self):
         """
         Spawn vehicles and pedestrians at random spawn points.
-        In synchronous mode, controllers must be started AFTER a world.tick().
         """
         blueprint_library = self.world.get_blueprint_library()
         spawn_points = self.world.get_map().get_spawn_points()
@@ -47,14 +45,11 @@ class TrafficGenerator:
         # Spawn vehicles
         self._spawn_vehicles(blueprint_library, spawn_points)
 
-        # Spawn pedestrians (actors only — controllers not started yet)
+        # Spawn pedestrians va cho di bo bang WalkerControl truc tiep
         self._spawn_pedestrians(blueprint_library, spawn_points)
 
-        # Tick once so CARLA registers all spawned actors before starting AI
+        # Tick once so CARLA registers all spawned actors
         self.world.tick()
-
-        # Now it is safe to start walker AI controllers
-        self._start_walker_controllers(spawn_points)
 
         logger.info(f"Spawned {len(self.vehicle_list)} vehicles and {len(self.pedestrian_list)} pedestrians")
 
@@ -90,10 +85,14 @@ class TrafficGenerator:
                 logger.error(f"Error spawning vehicle: {e}")
 
     def _spawn_pedestrians(self, blueprint_library, spawn_points):
-        """Spawn pedestrian actors only — do NOT start AI controllers here.
-        Controllers must be started after world.tick() in synchronous mode."""
+        """Spawn pedestrian actors va cho di bo bang WalkerControl truc tiep.
+
+        KHONG dung controller.ai.walker: controller nay goi RPC
+        'set_actor_collisions' khong ton tai o server CARLA 0.9.14
+        (client la 0.9.15) -> world.tick() loi RPC nay vinh vien
+        moi frame sau do, lam camera dung hinh.
+        """
         walker_blueprints = blueprint_library.filter('walker.pedestrian.*')
-        walker_controller_bp = blueprint_library.find('controller.ai.walker')
 
         for i in range(self.num_pedestrians):
             try:
@@ -103,37 +102,35 @@ class TrafficGenerator:
 
                 if pedestrian is not None:
                     self.pedestrian_list.append(pedestrian)
-
-                    # Spawn controller attached to pedestrian (do NOT call start() yet)
-                    controller = self.world.spawn_actor(walker_controller_bp,
-                                                       carla.Transform(),
-                                                       attach_to=pedestrian)
-                    if controller is not None:
-                        self.walker_controllers.append(controller)
-                        logger.debug(f"Spawned pedestrian at {spawn_point.location}")
+                    self._walk_to_random_target(pedestrian, spawn_points)
+                    logger.debug(f"Spawned pedestrian at {spawn_point.location}")
                 else:
                     logger.warning(f"Failed to spawn pedestrian at {spawn_point.location}")
 
             except Exception as e:
                 logger.error(f"Error spawning pedestrian: {e}")
 
-    def _start_walker_controllers(self, spawn_points):
-        """Start walker AI controllers — must be called after world.tick()."""
-        for controller in self.walker_controllers:
-            try:
-                destination = random.choice(spawn_points).location
-                controller.start()
-                controller.go_to_location(destination)
-                controller.set_max_speed(1.0 + random.random() * 2.0)
-            except Exception as e:
-                logger.error(f"Error starting walker controller: {e}")
+    def _walk_to_random_target(self, pedestrian, spawn_points):
+        """Cho pedestrian di bo ve 1 huong ngau nhien bang WalkerControl truc tiep."""
+        try:
+            loc = pedestrian.get_location()
+            target = random.choice(spawn_points).location
+            dx = target.x - loc.x
+            dy = target.y - loc.y
+            dist = max(1e-3, (dx ** 2 + dy ** 2) ** 0.5)
+            control = carla.WalkerControl(
+                direction=carla.Vector3D(x=dx / dist, y=dy / dist, z=0.0),
+                speed=1.0 + random.random() * 1.5,
+            )
+            pedestrian.apply_control(control)
+        except Exception as e:
+            logger.error(f"Error setting pedestrian walk control: {e}")
 
     def update_pedestrians(self):
-        """Periodically retarget pedestrians to a new random destination.
+        """Periodically retarget pedestrians to a new random direction.
 
-        WalkerAIController has no is_at_goal() in this CARLA version, so
-        instead of waiting for arrival we just re-randomize on a fixed
-        interval (every ~10s at 10fps).
+        Khong dung WalkerAIController (xem _spawn_pedestrians) — ap lai
+        WalkerControl voi huong moi moi ~10s (100 frames @ 10fps).
         """
         self._pedestrian_tick = getattr(self, '_pedestrian_tick', 0) + 1
         if self._pedestrian_tick % 100 != 0:
@@ -143,12 +140,8 @@ class TrafficGenerator:
         if not spawn_points:
             return
 
-        for controller in self.walker_controllers:
-            try:
-                destination = random.choice(spawn_points).location
-                controller.go_to_location(destination)
-            except Exception as e:
-                logger.error(f"Error updating pedestrian: {e}")
+        for pedestrian in self.pedestrian_list:
+            self._walk_to_random_target(pedestrian, spawn_points)
 
     def get_actor_info(self):
         """
@@ -160,7 +153,6 @@ class TrafficGenerator:
         return {
             'vehicles': len(self.vehicle_list),
             'pedestrians': len(self.pedestrian_list),
-            'controllers': len(self.walker_controllers)
         }
 
     def cleanup(self):
@@ -181,14 +173,7 @@ class TrafficGenerator:
             except Exception as e:
                 logger.error(f"Error destroying pedestrian: {e}")
 
-        for controller in self.walker_controllers:
-            try:
-                controller.destroy()
-            except Exception as e:
-                logger.error(f"Error destroying controller: {e}")
-
         self.vehicle_list.clear()
         self.pedestrian_list.clear()
-        self.walker_controllers.clear()
 
         logger.info("Traffic cleanup completed")

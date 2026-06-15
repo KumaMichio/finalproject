@@ -316,10 +316,12 @@ class LearnedTrajectoryPredictor:
             self._build_feature_vector = build_feature_vector
             self._intent_labels = INTENT_LABELS
             self.t_obs = checkpoint.get('t_obs', T_OBS)
+            self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
             self.model = TrajectoryGRU(hidden_size=checkpoint.get('hidden_size', 96),
                                         num_modes=checkpoint.get('num_modes', 3))
             self.model.load_state_dict(checkpoint['state_dict'])
+            self.model.to(self.device)
             self.model.eval()
 
             self.norm_mean = np.asarray(checkpoint['norm_mean'], dtype=np.float32)
@@ -379,11 +381,11 @@ class LearnedTrajectoryPredictor:
         ])
 
         with torch.no_grad():
-            obs_tensor = torch.from_numpy(obs_seq).float().unsqueeze(0)  # (1, T_OBS, input_dim)
+            obs_tensor = torch.from_numpy(obs_seq).float().unsqueeze(0).to(self.device)  # (1, T_OBS, input_dim)
             pred_deltas, mode_logits, intent_logits = self.model(obs_tensor)
-            probs = torch.softmax(mode_logits, dim=-1)[0].numpy()
+            probs = torch.softmax(mode_logits, dim=-1)[0].cpu().numpy()
             intent_idx = int(torch.argmax(intent_logits, dim=-1)[0].item())
-            deltas = pred_deltas[0].numpy()  # (num_modes, num_horizons, 2)
+            deltas = pred_deltas[0].cpu().numpy()  # (num_modes, num_horizons, 2)
 
         last_pos = np.array(hist[-1]['pos'], dtype=np.float32)
         pos_std = self.norm_std[:2]

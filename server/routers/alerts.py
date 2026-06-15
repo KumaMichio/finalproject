@@ -35,6 +35,12 @@ def get_alerts(
     )
 
 
+@router.delete("/")
+def clear_alerts(db: Session = Depends(get_db)):
+    deleted = alert_service.clear_all_alerts(db)
+    return {"ok": True, "deleted": deleted}
+
+
 @router.get("/{alert_id}", response_model=AlertResponse)
 def get_alert(alert_id: int, db: Session = Depends(get_db)):
     alert = alert_service.get_alert(db, alert_id)

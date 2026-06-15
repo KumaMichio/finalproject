@@ -27,6 +27,12 @@ async function post(path, body) {
   return data
 }
 
+async function del(path) {
+  const res = await fetch(`${BASE}${path}`, { method: 'DELETE' })
+  if (!res.ok) throw new Error(`DELETE ${path} → ${res.status}`)
+  return res.json()
+}
+
 export const api = {
   getCameras:    ()       => get('/cameras'),
   getStats:      ()       => get('/stats'),
@@ -34,7 +40,10 @@ export const api = {
   getTracks:     ()       => get('/tracks'),
   getTrackById:  (id)     => get(`/tracks/${id}`),
   acknowledgeAlert: (id)  => put(`/alerts/${id}/acknowledge`, {}),
-  streamUrl:     (camId)  => `/stream/${camId}`,
+  clearAlerts:   ()       => del('/alerts'),
+  // Truy cap truc tiep backend, khong qua vite proxy — proxy dev cua vite
+  // buffer/cache response multipart/x-mixed-replace nen MJPEG bi "dong cung".
+  streamUrl:     (camId)  => `http://${window.location.hostname}:8000/stream/${camId}`,
   getScenarios:  ()       => get('/scenarios'),
   triggerScenario: (name) => post(`/scenarios/${name}`),
 }

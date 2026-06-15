@@ -1,5 +1,80 @@
 # Execute Guide: Multi-Camera CCTV Tracking System
 
+## 0. Quick Start (cập nhật 2026-06-14)
+
+> **Đường dẫn project hiện tại**: `c:\Users\Admin\finalproject\` (các đường dẫn
+> `e:\School_project\finalproject\...` trong tài liệu cũ dưới đây chỉ còn giá
+> trị lịch sử — thay bằng đường dẫn trên).
+
+### Khởi động toàn bộ hệ thống
+
+```cmd
+cd c:\Users\Admin\finalproject
+start.bat
+```
+
+Đợi tuần tự: CARLA (port 2000, ~30-60s) → Backend (port 8000, AI pipeline
+init ~10-15s) → Frontend (port 3000). Mở **http://localhost:3000** để demo.
+
+Dừng toàn bộ: `stop.bat`.
+
+### Khởi động lại thủ công (khi cần restart từng phần / debug)
+
+```powershell
+# 1. Kill tat ca
+Get-Process | Where-Object {$_.ProcessName -match "Carla|python|node"} | Stop-Process -Force
+
+# 2. CARLA
+Start-Process -FilePath "c:\Users\Admin\finalproject\WindowsNoEditor\CarlaUE4.exe" `
+  -ArgumentList "-windowed","-ResX=800","-ResY=600","-quality-level=Low"
+# doi port 2000 san sang (~30-60s)
+
+# 3. Backend (--with-ai)
+Start-Process -FilePath "c:\Users\Admin\finalproject\custom_tracking_system\venv_tracking\Scripts\python.exe" `
+  -ArgumentList "app.py","--with-ai" `
+  -WorkingDirectory "c:\Users\Admin\finalproject\server"
+
+# 4. Frontend
+Start-Process -FilePath "cmd.exe" -ArgumentList "/c","npm run dev" `
+  -WorkingDirectory "c:\Users\Admin\finalproject\frontend"
+```
+
+### Lỗi "AI processor chưa chạy" (trigger scenario trả HTTP 400)
+
+**Nguyên nhân**: CARLA simulator bị treo/corrupt sau một thời gian chạy +
+nhiều lần trigger scenario — `world.tick()` timeout 10s
+(`RuntimeError: time-out of 10000ms while waiting for the simulator`).
+Exception này không được `_safe_tick()` bắt (chỉ bắt lỗi
+`set_actor_collisions`), nên AI processor thread crash, `status` chuyển
+`"error"`, và `trigger_scenario()` luôn trả `{"ok": false, "message": "AI
+processor chua chay"}`. FastAPI process vẫn sống — camera stream đứng hình ở
+frame cuối.
+
+**Cách nhận biết**: `curl http://localhost:8000/api/stats/` → `fps` không
+đổi qua nhiều lần gọi; log backend có dòng `AI processor error: time-out of
+10000ms while waiting for the simulator`.
+
+**Khắc phục**: restart CARLA + backend theo "Khởi động lại thủ công" ở trên
+(không cần restart frontend — Vite tự reconnect). Đây là vấn đề ổn định của
+CARLA server, không phải bug ở code AI pipeline.
+
+### Camera bị "đứng hình" (freeze) khi trigger scenario, fps vẫn báo > 10
+
+**Nguyên nhân đã từng gặp**: pedestrian (do `TrafficGenerator` hoặc
+`ScenarioController` spawn) dùng `controller.ai.walker` (`AI walker
+controller`) — `.start()`/`go_to_location()` gọi RPC `set_actor_collisions`
+không tồn tại ở CARLA server 0.9.14 (client 0.9.15). Lỗi này bị delay và bắt
+đầu spam ở mỗi `world.tick()` sau đó; `world.tick()` không advance simulation
+đúng cách → camera trả frame cũ lặp lại (đứng hình) nhưng loop xử lý lại chạy
+nhanh hơn → `fps` báo cáo vọt lên > 10 (dấu hiệu nhận biết).
+
+**Đã fix** (cả 2 nơi spawn pedestrian — `modules/scenario_controller.py` và
+`modules/traffic_generator.py`): bỏ hoàn toàn `controller.ai.walker`, dùng
+`WalkerControl` trực tiếp (set hướng + tốc độ đi bộ thủ công) — không gọi RPC
+`set_actor_collisions`.
+
+---
+
 ## Mục lục
 1. [Yêu cầu hệ thống](#1-yêu-cầu-hệ-thống)
 2. [Cài đặt môi trường](#2-cài-đặt-môi-trường)

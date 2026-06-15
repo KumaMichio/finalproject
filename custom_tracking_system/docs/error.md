@@ -268,7 +268,7 @@ nhận `class_map=self.detector.CLASSES` để khớp bảng class VN thay vì `
   tại. `wrong_way.lanes.CAM_003.direction: [0,-1]` cũng đúng vì pitch=0 (comment
   đầu mục `wrong_way` đã giải thích điều này). Không cần thay đổi gì.
 
-## 4. Pedestrian walker AI controller lỗi `set_actor_collisions` (CARLA client/server version mismatch)
+## 4. Pedestrian walker AI controller lỗi `set_actor_collisions` (CARLA client/server version mismatch) — ĐÃ FIX (2026-06-14)
 
 - Mọi pedestrian (cả từ `TrafficGenerator` và `ScenarioController.pedestrian_hit`)
   khi gọi `controller.ai.walker.start()` đều bị
@@ -276,16 +276,25 @@ nhận `class_map=self.detector.CLASSES` để khớp bảng class VN thay vì `
   — do client `carla==0.9.15` (cài qua pip trong `venv_tracking`) gọi 1 RPC
   function chưa có ở server CARLA 0.9.14. Hậu quả: pedestrian được spawn
   nhưng KHÔNG tự đi bộ (đứng yên tại spawn point).
-- `traffic_generator.py` đã bắt exception này từ trước (chỉ log error, không
-  crash). `scenario_controller._spawn_pedestrian` cũng đã được bọc try/except
-  tương tự (xem session 2026-06-12) nên không làm fail API `/api/scenarios/
-  pedestrian_hit` nữa — nhưng pedestrian trong kịch bản vẫn đứng yên thay vì
-  đi tới gần xe.
-- **Hướng fix gốc** (chưa làm): cần CARLA server 0.9.15 (khớp version với
-  client pip), hoặc cài lại `carla==0.9.14` (cp310 wheel nếu có) trong
-  `venv_tracking` để khớp server hiện tại. Việc nâng CARLA server lên 0.9.15
-  ảnh hưởng toàn bộ pipeline (carla_bridge dùng py3.7 egg 0.9.14) nên cần
-  kiểm tra kỹ trước khi đổi.
+- **Nguyên nhân thật (không chỉ là RPC thiếu)**: `start()`,
+  `go_to_location()`, `set_max_speed()` nằm trong CÙNG 1 try/except —
+  `start()` raise `RuntimeError` làm 2 lệnh sau (navigation) bị BỎ QUA HOÀN
+  TOÀN, dù `go_to_location()`/`set_max_speed()` hoạt động độc lập với
+  `start()` và không phụ thuộc RPC `set_actor_collisions`.
+- **Fix**: tách `start()` ra try/except riêng (log debug, bỏ qua lỗi không
+  fatal), `go_to_location()`+`set_max_speed()` chạy trong try/except riêng kế
+  tiếp bất kể `start()` có lỗi hay không. Áp dụng cho cả
+  `TrafficGenerator._start_walker_controllers` (modules/traffic_generator.py)
+  và `ScenarioController._spawn_pedestrian` (modules/scenario_controller.py).
+- **Verify thực tế** (CARLA server 0.9.14 đang chạy, Town10HD_Opt): spawn 3
+  pedestrian qua `TrafficGenerator`, sau 50 tick (5s, fixed_delta=0.1) cả 3 đã
+  di chuyển 3.67m / 8.04m / 3.80m từ điểm spawn — đúng như mong đợi dù log vẫn
+  có warning `set_actor_collisions` ở mức debug.
+- **Hướng fix gốc lâu dài** (vẫn chưa cần ngay): cần CARLA server 0.9.15
+  (khớp version với client pip), hoặc cài lại `carla==0.9.14` (cp310 wheel
+  nếu có) trong `venv_tracking` để khớp server hiện tại. Việc nâng CARLA
+  server lên 0.9.15 ảnh hưởng toàn bộ pipeline (carla_bridge dùng py3.7 egg
+  0.9.14) nên cần kiểm tra kỹ trước khi đổi.
 - **Giảm thiểu (2026-06-14)**: `collect_carla_cam_data.py`'s main loop từng
   crash hoàn toàn ở `world.tick()` (tick ~3600/5000) với cùng lỗi
   `set_actor_collisions`, khiến `write_yaml()` cuối script không chạy. Đã bọc
@@ -293,3 +302,79 @@ nhận `class_map=self.detector.CLASSES` để khớp bảng class VN thay vì `
   `break` khỏi loop sớm nhưng vẫn vào `finally:` (destroy cameras, cleanup
   traffic) và chạy `write_yaml()` bình thường, nên dataset thu thập được tới
   thời điểm đó không bị mất.
+
+## 5. `wrong_way.lanes.CAM_001.direction: [0,-1]` gây false positive cho xe đi đúng chiều — ĐÃ FIX (2026-06-14)
+
+- **Triệu chứng (tiềm ẩn)**: với `direction: [0,-1]` và
+  `angle_threshold_deg: 100`, xe đi ĐÚNG chiều (theo `waypoint.next()`, lane
+  4/5 của road 20 — lan duong chinh ngay truoc CAM_001) sẽ bị gắn cờ
+  `WRONG_WAY` CRITICAL sau `min_frames=10` frame.
+- **Verify thực tế**: chạy `get_waypoint().transform.get_forward_vector()`
+  cho các lane trong bán kính 25m của cả 3 camera, chiếu qua
+  `CameraCalibration.world_to_pixel()` rồi so với `allowed=[0,-1]`:
+  - CAM_002: lane đúng chiều → pixel-dir ≈ `[0.98,-0.22]`, góc ≈ 77° — "ok"
+    (dưới ngưỡng 100°). Không đổi.
+  - CAM_003: các lane (road 20/848/875) → pixel-dir ≈ `[±1,0]`, góc ≈ 90° —
+    "ok". Không đổi.
+  - CAM_001: lane 4/5 của road 20 (lan chinh truoc camera, xe autopilot đi
+    theo `next()`) → pixel-dir ≈ `[0.98,0.2]`/`[0.98,0.22]`, góc ≈ 100-103° so
+    với `[0,-1]` — **VƯỢT ngưỡng 100°** → xe đi đúng chiều bị báo sai thành
+    WRONG_WAY.
+- **Fix**: đổi `wrong_way.lanes.CAM_001.direction` từ `[0,-1]` thành
+  `[0.98, 0.2]` (hướng thực tế của lane 4/5 trong khung hình CAM_001, tính từ
+  bước verify trên). Sau fix: xe đi đúng chiều → góc ≈ 1° ("ok"); xe đi ngược
+  (`~[-0.98,-0.2]`) → góc ≈ 180° → đúng là `WRONG_WAY`.
+  File: `config/camera_config.yaml`.
+- **Verify thực tế (2026-06-13)**: chạy `IncidentDetector.update()` với track
+  giả lập trên CAM_001 — xe di chuyển theo `[0.98,0.2]` (đúng chiều) → 0
+  WRONG_WAY sau 25 frame; xe di chuyển theo `[-0.98,-0.2]` (ngược chiều) → 1
+  WRONG_WAY CRITICAL đúng tại frame thứ 10 (`min_frames`).
+
+## 6. Kịch bản tai nạn (`ScenarioController`) hiếm khi nằm trong tầm camera nào — ĐÃ FIX (2026-06-13)
+
+- **Triệu chứng**: `_pick_spawn_in_view()` chọn ngẫu nhiên 1 spawn point của
+  map nằm trong FOV+bán kính 40m của 1 trong 3 camera. Nhưng map
+  Town10HD_Opt có 155 spawn point rải khắp town, chỉ **8/155** nằm trong tầm
+  camera (CAM_001: 1, CAM_002: 1, CAM_003: 6) → đa số lần chạy kịch bản
+  (`hit_and_run`, `pedestrian_hit`, `red_light_crash`, `rear_end`,
+  `sudden_stop`) có `camera_id = None`, tai nạn xảy ra ngoài khung hình, không
+  camera nào quan sát/ghi nhận được.
+- **Fix**: thêm `ScenarioController._camera_view_spawn_points(cam)` — quét
+  vòng tròn quanh mỗi camera (bán kính 8-35m, theo FOV của camera), dùng
+  `get_waypoint(project_to_road=True, lane_type=Driving)` để lấy waypoint
+  thật trên lane, dedupe theo `(road_id, lane_id, s)`. Kết quả: +9 điểm cho
+  CAM_001, +16 cho CAM_002, +79 cho CAM_003 (tổng 257 spawn point, so với 155
+  ban đầu). Các điểm này được gộp vào `self.spawn_points` (tính 1 lần trong
+  `__init__`, init thêm ~4s) và dùng thay cho
+  `world.get_map().get_spawn_points()` ở mọi kịch bản + `_spawn_pedestrian`.
+  File: `modules/scenario_controller.py`.
+- **Verify thực tế**: chạy `rear_end` 15 lần → 15/15 có `camera_id` khác
+  `None` (CAM_002 x3, CAM_003 x11, CAM_001 x1); `pedestrian_hit` 10 lần →
+  9/10 có `camera_id` (CAM_003 x9, CAM_001 x1). Trước fix tỉ lệ này ~5%
+  (8/155).
+- Lưu ý: phân bố nghiêng nhiều về CAM_003 (79/104 điểm hợp lệ) do FOV rộng
+  (100°) và gần nhiều lane hơn — CAM_001/CAM_002 vẫn ít hơn nhưng đã có >1
+  điểm (9 và 16) thay vì chỉ 1.
+
+## 7. Server `--with-ai` không khởi động được — sai import `boxmot.trackers.bbox.bytetrack` — ĐÃ FIX (2026-06-13)
+
+- **Triệu chứng**: chạy `python app.py --with-ai` báo lỗi
+  `ModuleNotFoundError: No module named 'boxmot.trackers.bbox'` ngay tại
+  `modules/tracker.py:_init_tracker()`, AI pipeline không init được.
+- **Nguyên nhân**: commit "update boxmot version for BE" (b8eca03) nâng
+  `boxmot` lên 10.0.16, nhưng `tracker.py` vẫn import theo path cũ
+  `boxmot.trackers.bbox.bytetrack.bytetrack.ByteTrack` (đã bị xóa ở version
+  mới). Path đúng trong 10.0.16 là
+  `boxmot.trackers.bytetrack.byte_tracker.BYTETracker`.
+- **Fix**: đổi `_init_tracker()` trong `modules/tracker.py` sang
+  `from boxmot.trackers.bytetrack.byte_tracker import BYTETracker` +
+  `self.tracker = BYTETracker(**self._init_kwargs)`. Đã kiểm tra
+  `BYTETracker.__init__(track_thresh, match_thresh, track_buffer,
+  frame_rate)` và `update(dets, frame)` trả về hàng
+  `[x1,y1,x2,y2,track_id,score,cls]` tương thích 100% với `_init_kwargs` và
+  code parse output hiện có trong `update()` — không cần sửa gì thêm.
+- **Verify thực tế**: restart server, log in ra
+  `ByteTrackWrapper initialised (frame_rate=10, buffer=30)` x3 (1 per
+  camera), pipeline init thành công, sau đó incident detector bắt được
+  `PREDICTED_ROI_ENTRY` cho object 1000 ở CAM_001 và CAM_002 — tracking +
+  prediction hoạt động bình thường.

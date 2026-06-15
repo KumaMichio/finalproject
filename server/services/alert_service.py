@@ -66,3 +66,10 @@ def acknowledge_alert(
 def count_alerts_today(db: Session) -> int:
     today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
     return db.query(Alert).filter(Alert.created_at >= today_start).count()
+
+
+def clear_all_alerts(db: Session) -> int:
+    """Xoa toan bo alert/incident, tra ve so dong da xoa."""
+    count = db.query(Alert).delete()
+    db.commit()
+    return count

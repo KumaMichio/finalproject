@@ -9,7 +9,7 @@ const SCENARIOS = [
   { name: 'sudden_stop', label: 'Dừng đột ngột', icon: '🛑' },
 ]
 
-export default function ScenarioPanel({ onTriggered }) {
+export default function ScenarioPanel() {
   const [pending, setPending] = useState(null)
   const [feedback, setFeedback] = useState(null)
 
@@ -19,7 +19,6 @@ export default function ScenarioPanel({ onTriggered }) {
     try {
       const res = await api.triggerScenario(name)
       setFeedback({ ok: true, message: res.message, cameraId: res.camera_id })
-      if (res.camera_id) onTriggered?.(res.camera_id)
     } catch (e) {
       setFeedback({ ok: false, message: e.message })
     } finally {

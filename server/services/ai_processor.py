@@ -51,6 +51,17 @@ class AIProcessor:
         self.REID_INTERVAL = 3
         self._seen_track_ids: dict = {}  # {camera_id: set(local_track_id)}
 
+        # Hien thi banner "VA CHAM!" tren stream cua camera trong vai giay
+        # sau khi ScenarioController ghi nhan 1 va cham (de nguoi xem thay
+        # ro su kien dang xay ra, khong chi qua DB/alert).
+        self._collision_overlay_until: dict = {}  # {camera_id: expiry_timestamp}
+        self.COLLISION_OVERLAY_SECONDS = 3.0
+
+        # Tu dong don dep actor do scenario tao ra sau 1 khoang thoi gian,
+        # de camera tro lai trang thai giao thong binh thuong.
+        self._scenario_cleanup_timer: threading.Timer | None = None
+        self.SCENARIO_CLEANUP_DELAY = 30.0
+
     def start(self):
         """Khoi dong AI pipeline trong background thread."""
         if self._running:
@@ -275,8 +286,19 @@ class AIProcessor:
             # Lay frames tu cameras
             sync_frames = self.camera_controller.get_synchronized_frames()
             if not sync_frames:
-                self.world.tick()
+                self._safe_tick()
                 continue
+
+            # Lay va cham moi tu ScenarioController NGAY tu dau frame, danh
+            # dau camera lien quan de ve banner "VA CHAM!" len stream trong
+            # vai giay (nguoi xem thay ro su kien dang xay ra).
+            new_collisions = self.scenario_controller.get_new_collisions()
+            if new_collisions:
+                expiry = time.time() + self.COLLISION_OVERLAY_SECONDS
+                for col in new_collisions:
+                    cam_id = col.get("camera_id")
+                    if cam_id:
+                        self._collision_overlay_until[cam_id] = expiry
 
             # Mo 1 DB session cho frame nay
             db = SessionLocal()
@@ -311,6 +333,7 @@ class AIProcessor:
                     # 4. Update trajectory + check alerts
                     now_ts = time.time()
                     predictions_map = {}  # {global_id: dict} cho incident detector
+                    predictions_for_viz = {}  # {global_id: [[x,y],...]} cho visualizer
                     for g_track in global_tracks:
                         gid = g_track["global_id"]
                         box = g_track["box"]
@@ -326,10 +349,11 @@ class AIProcessor:
                         predicted = self.trajectory_predictor.predict(gid)
                         if predicted:
                             predictions_map[gid] = predicted
+                            pred_list = list(predicted.values())
+                            predictions_for_viz[gid] = pred_list
                             # check_alerts() cần list[[x,y]]
                             alerts = self.alert_system.check_alerts(
-                                gid, camera_id,
-                                self.trajectory_predictor.predict_list(gid), box
+                                gid, camera_id, pred_list, box
                             )
                             for alert in alerts:
                                 self.alert_system.log_alert(alert)
@@ -370,9 +394,19 @@ class AIProcessor:
 
                     # 8. Ve visualization len frame
                     vis_frame = self.visualizer.draw_tracks(frame, global_tracks)
+                    if predictions_for_viz:
+                        vis_frame = self.visualizer.draw_predictions(
+                            vis_frame, predictions_for_viz, global_tracks)
+
+                    # 8b. Banner "VA CHAM!" neu camera nay vua co va cham
+                    if self._collision_overlay_until.get(camera_id, 0) > time.time():
+                        vis_frame = self.visualizer.draw_collision_banner(vis_frame)
 
                     # 9. Day frame vao buffer cho MJPEG streaming
                     frame_buffer.put_frame(camera_id, vis_frame)
+
+                # 10. Va cham tu ScenarioController (hit_and_run, rear_end, ...)
+                self._check_scenario_collisions(db, sync_frames, all_global_tracks, new_collisions)
 
                 db.commit()
 
@@ -386,7 +420,54 @@ class AIProcessor:
                 db.close()
 
             # Tick CARLA
+            self._safe_tick()
+
+    def _safe_tick(self):
+        """world.tick() bao boc loi rpc 'set_actor_collisions'.
+
+        Client carla 0.9.15 vs server 0.9.14: pedestrian AI controller.start()
+        gui 1 RPC chua duoc server ho tro, loi nay khong xay ra ngay ma bi
+        tre va noi len o lan world.tick() ke tiep -> neu khong bat se lam chet
+        ca AI processor thread. Loi nay khong anh huong toi simulation/tracking
+        nen chi log warning va tiep tuc.
+        """
+        try:
             self.world.tick()
+        except RuntimeError as e:
+            if "set_actor_collisions" in str(e):
+                logger.warning(f"Ignored non-fatal CARLA RPC error on tick: {e}")
+            else:
+                raise
+
+    def _check_scenario_collisions(self, db, sync_frames: dict, all_global_tracks: list,
+                                    new_collisions: list):
+        """Day cac va cham moi (da lay tu ScenarioController dau frame) thanh incident CRITICAL."""
+        for col in new_collisions:
+            cam_id = col.get("camera_id")
+            incident = {
+                "type":      "VEHICLE_COLLISION",
+                "severity":  "CRITICAL",
+                "global_id": col["attacker_id"],
+                "camera_id": cam_id,
+                "timestamp": datetime.now(),
+                "message":   (f"Phát hiện {col['scenario_desc']} tại {cam_id}: "
+                               f"xe #{col['attacker_id']} đâm {col['strength_desc']} "
+                               f"vào {col['victim_desc']}"),
+                "details":   col,
+            }
+            self._save_incident(db, incident)
+            self._push_incident_ws(incident)
+
+            if cam_id in sync_frames:
+                frames_dict = {cam_id: sync_frames[cam_id]["frame"]}
+            else:
+                frames_dict = {cid: sync_frames[cid]["frame"] for cid in sync_frames}
+
+            self.evidence.capture(
+                incident=incident,
+                frames_dict=frames_dict,
+                global_tracks=all_global_tracks,
+            )
 
     def _save_incident(self, db, incident: dict):
         """Lưu incident vào bảng alerts trong database."""
@@ -434,7 +515,8 @@ class AIProcessor:
             global_id=alert_dict.get("global_id"),
             camera_id=alert_dict.get("camera_id"),
             roi_name=alert_dict.get("roi_name"),
-            message=f"Object {alert_dict.get('global_id')} entering {alert_dict.get('roi_name')}",
+            message=(f"Phương tiện #{alert_dict.get('global_id')} sắp tiến vào "
+                     f"khu vực giao lộ tại {alert_dict.get('camera_id')}"),
             details=json.dumps({
                 "eta_frames": alert_dict.get("eta_frames"),
             }),
@@ -531,14 +613,37 @@ class AIProcessor:
                 message = (f"Da kich hoat kich ban '{name}' - khong xac dinh duoc "
                             f"camera quan sat (vi tri nam ngoai tam camera)")
             logger.info("Scenario triggered: %s (camera_id=%s)", name, camera_id)
+            self._schedule_scenario_cleanup()
             return {"ok": True, "message": message, "camera_id": camera_id}
         except Exception as e:
             logger.error("Scenario trigger error: %s", e, exc_info=True)
             return {"ok": False, "message": str(e)}
 
+    def _schedule_scenario_cleanup(self):
+        """Hen gio xoa cac actor (xe/nguoi do scenario tao ra) sau
+        SCENARIO_CLEANUP_DELAY giay, de camera tro lai binh thuong. Neu co
+        scenario moi duoc trigger truoc khi het gio, hen lai tu dau."""
+        if self._scenario_cleanup_timer is not None:
+            self._scenario_cleanup_timer.cancel()
+
+        def _do_cleanup():
+            try:
+                with self._lock:
+                    self.scenario_controller.cleanup()
+                logger.info("Scenario actors cleaned up, camera tro lai binh thuong")
+            except Exception as e:
+                logger.warning("Scenario cleanup error (non-fatal): %s", e)
+
+        self._scenario_cleanup_timer = threading.Timer(
+            self.SCENARIO_CLEANUP_DELAY, _do_cleanup)
+        self._scenario_cleanup_timer.daemon = True
+        self._scenario_cleanup_timer.start()
+
     def _cleanup(self):
         """Don dep khi dung."""
         try:
+            if self._scenario_cleanup_timer is not None:
+                self._scenario_cleanup_timer.cancel()
             if hasattr(self, "evidence"):
                 self.evidence.flush()
             if hasattr(self, "scenario_controller"):

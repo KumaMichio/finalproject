@@ -3,6 +3,7 @@ Scenario Controller Module
 Tạo các kịch bản tai nạn có kiểm soát trong CARLA để test hệ thống.
 """
 
+import math
 import time
 import random
 import logging
@@ -35,6 +36,8 @@ class ScenarioController:
         self._sensors:  list = []   # collision sensors
         self._actors:   list = []   # actors do scenario tạo ra
         self.collision_log: list = []
+        self._collision_cursor: int = 0   # con tro cho get_new_collisions()
+        self._last_collision_ts: dict = {}   # {attacker_id: last_report_time} - chong spam
 
         # cameras_config: dict camera_key -> {position, rotation, camera_id,
         # view_angle, ...} (lấy từ config["cameras"]). Dùng để chọn spawn
@@ -42,7 +45,20 @@ class ScenarioController:
         # sẽ quan sát được kịch bản.
         self.cameras = list((cameras_config or {}).values())
 
-        logger.info("ScenarioController initialized (%d cameras)", len(self.cameras))
+        # Map mặc định chỉ có rất ít spawn point nằm trong tầm camera (vd.
+        # Town10HD_Opt: 155 spawn point nhưng chỉ ~8 nằm trong FOV của 3
+        # camera). Bổ sung thêm các "spawn point ảo" lấy từ waypoint trên
+        # lane thật, nằm trong tầm quan sát từng camera, để kịch bản tai nạn
+        # nhiều khả năng diễn ra trước camera hơn.
+        self.spawn_points = list(self.world.get_map().get_spawn_points())
+        for cam in self.cameras:
+            extra = self._camera_view_spawn_points(cam)
+            self.spawn_points.extend(extra)
+            logger.debug("Camera %s: +%d spawn point trong tam quan sat",
+                          cam.get('camera_id'), len(extra))
+
+        logger.info("ScenarioController initialized (%d cameras, %d spawn points)",
+                     len(self.cameras), len(self.spawn_points))
 
     # ------------------------------------------------------------------
     # Public: chạy kịch bản
@@ -54,7 +70,7 @@ class ScenarioController:
         Xe A sẽ chạy tiếp (TM ignore vehicles), Xe B dừng lại.
         delay_s: giây chờ trước khi xe A tăng tốc vào xe B.
         """
-        spawn_points = self.world.get_map().get_spawn_points()
+        spawn_points = self.spawn_points
         if len(spawn_points) < 2:
             logger.error("Không đủ spawn points cho kịch bản hit_and_run")
             return {'ok': False, 'camera_id': None}
@@ -76,19 +92,20 @@ class ScenarioController:
 
         def _run():
             time.sleep(delay_s)
-            # Xe A: đâm thẳng về phía trước
-            attacker.set_autopilot(True)
-            self.tm.vehicle_percentage_speed_difference(attacker, -80)  # nhanh hơn 80%
-            self.tm.distance_to_leading_vehicle(attacker, 0)
-            self.tm.ignore_vehicles_percentage(attacker, 100)
-            logger.info("[HIT_AND_RUN] Attacker đang tiến tới nạn nhân...")
+            # Xe A: lái thẳng tới vị trí xe B (đảm bảo va chạm xảy ra gần xe B,
+            # tức là trong tầm camera quan sát được pt_b) thay vì để TM tự
+            # chọn lộ trình ngẫu nhiên (dễ đi lạc khỏi tầm camera, không bao
+            # giờ va chạm).
+            attacker.set_autopilot(False, self.tm.get_port())
+            logger.info("[HIT_AND_RUN] Attacker đang lao tới nạn nhân...")
+            self._pursue(attacker, victim, flee_on_collision=True)
 
         threading.Thread(target=_run, daemon=True).start()
         return {'ok': True, 'attacker': attacker, 'victim': victim, 'camera_id': camera_id}
 
     def pedestrian_hit(self, delay_s: float = 2.0):
         """Xe tốc độ cao áp sát và đâm người đi bộ."""
-        spawn_points = self.world.get_map().get_spawn_points()
+        spawn_points = self.spawn_points
         bp_library   = self.world.get_blueprint_library()
 
         if not spawn_points:
@@ -107,16 +124,20 @@ class ScenarioController:
 
         def _run():
             time.sleep(delay_s)
-            self.tm.ignore_walkers_percentage(vehicle, 100)
-            self.tm.vehicle_percentage_speed_difference(vehicle, -40)
+            # Lái thẳng xe tới vị trí người đi bộ — đảm bảo va chạm xảy ra
+            # gần pedestrian (trong tầm camera quan sát được pt) thay vì để
+            # TM tự chọn lộ trình ngẫu nhiên.
+            vehicle.set_autopilot(False, self.tm.get_port())
             logger.info("[PEDESTRIAN_HIT] Vehicle đang nhắm vào người đi bộ...")
+            if pedestrian is not None:
+                self._pursue(vehicle, pedestrian)
 
         threading.Thread(target=_run, daemon=True).start()
         return {'ok': True, 'vehicle': vehicle, 'pedestrian': pedestrian, 'camera_id': camera_id}
 
     def red_light_crash(self, delay_s: float = 2.0):
         """Hai xe vượt đèn đỏ từ hai hướng đối diện."""
-        spawn_points = self.world.get_map().get_spawn_points()
+        spawn_points = self.spawn_points
         if len(spawn_points) < 2:
             return {'ok': False, 'camera_id': None}
 
@@ -147,7 +168,7 @@ class ScenarioController:
 
     def rear_end(self, delay_s: float = 2.0):
         """Xe đâm từ phía sau xe đang chạy chậm."""
-        spawn_points = self.world.get_map().get_spawn_points()
+        spawn_points = self.spawn_points
         if len(spawn_points) < 2:
             return {'ok': False, 'camera_id': None}
 
@@ -178,7 +199,7 @@ class ScenarioController:
 
     def sudden_stop(self, delay_s: float = 3.0):
         """Xe dừng đột ngột giữa đường."""
-        spawn_points = self.world.get_map().get_spawn_points()
+        spawn_points = self.spawn_points
         if not spawn_points:
             return {'ok': False, 'camera_id': None}
 
@@ -191,7 +212,7 @@ class ScenarioController:
 
         def _run():
             time.sleep(delay_s)
-            vehicle.set_autopilot(False)
+            vehicle.set_autopilot(False, self.tm.get_port())
             vehicle.apply_control(self._carla.VehicleControl(
                 throttle=0.0, brake=1.0, steer=0.0
             ))
@@ -207,6 +228,12 @@ class ScenarioController:
     def get_collision_log(self) -> list:
         """Trả về log va chạm đã xảy ra."""
         return self.collision_log.copy()
+
+    def get_new_collisions(self) -> list:
+        """Trả về các va chạm mới phát sinh kể từ lần gọi trước (và đánh dấu đã đọc)."""
+        new = self.collision_log[self._collision_cursor:]
+        self._collision_cursor = len(self.collision_log)
+        return new
 
     def cleanup(self):
         """Xoá tất cả actors và sensors do scenario tạo ra."""
@@ -249,8 +276,7 @@ class ScenarioController:
         ưu tiên spawn gần vị trí đó (trong tầm camera) và cho đi bộ về một
         điểm gần đó, để pedestrian + vehicle cùng nằm trong khung hình."""
         walker_bps = bp_library.filter('walker.pedestrian.*')
-        ctrl_bp    = bp_library.find('controller.ai.walker')
-        spawn_pts  = self.world.get_map().get_spawn_points()
+        spawn_pts  = self.spawn_points
         if not walker_bps or not spawn_pts:
             return None
 
@@ -264,21 +290,107 @@ class ScenarioController:
 
         ped = self.world.try_spawn_actor(bp, pt)
         if ped:
-            self.world.tick()  # cần tick trước khi spawn controller
-            ctrl = self.world.spawn_actor(ctrl_bp, self._carla.Transform(), attach_to=ped)
-            if ctrl:
-                self._actors.append(ctrl)
-                try:
-                    ctrl.start()
-                    ctrl.go_to_location(goal_pt.location)
-                    ctrl.set_max_speed(1.2)
-                except RuntimeError as e:
-                    # walker AI controller co the loi rpc do version mismatch
-                    # CARLA client/server — pedestrian van duoc spawn, chi
-                    # khong di bo (dung yen), khong lam fail ca kich ban.
-                    logger.warning("Walker AI controller start failed: %s", e)
+            # KHONG dung controller.ai.walker: controller nay goi RPC
+            # 'set_actor_collisions' khong ton tai o server CARLA 0.9.14
+            # (client la 0.9.15) -> world.tick() loi RPC nay vinh vien
+            # moi frame sau do, lam camera dung hinh. Thay vao do dieu
+            # khien pedestrian di bo truc tiep bang WalkerControl.
+            dx = goal_pt.location.x - pt.location.x
+            dy = goal_pt.location.y - pt.location.y
+            dist = max(1e-3, (dx ** 2 + dy ** 2) ** 0.5)
+            control = self._carla.WalkerControl(
+                direction=self._carla.Vector3D(x=dx / dist, y=dy / dist, z=0.0),
+                speed=1.2,
+            )
+            try:
+                ped.apply_control(control)
+            except RuntimeError as e:
+                logger.warning("Walker apply_control failed: %s", e)
             self._actors.append(ped)
         return ped
+
+    def _pursue(self, chaser, target, max_duration: float = 10.0,
+                throttle: float = 1.0, stop_distance: float = 2.5,
+                flee_on_collision: bool = False):
+        """Lái xe `chaser` (manual control, autopilot=False) trực tiếp về phía
+        `target` (vehicle hoặc walker) cho tới khi va chạm (khoảng cách <
+        stop_distance), va chạm thực sự được ghi nhận (collision sensor),
+        bị kẹt (đứng yên khi đang tăng tốc — vd. đâm vào tường), hoặc hết
+        max_duration giây. Dùng để đảm bảo va chạm xảy ra ngay tại vị trí
+        target (đã được chọn nằm trong tầm camera) thay vì để TM tự chọn lộ
+        trình ngẫu nhiên — có thể đi lạc khỏi tầm camera và không bao giờ va
+        chạm.
+
+        flee_on_collision: nếu True và va chạm xảy ra, xe `chaser` sẽ bỏ
+        chạy (autopilot, lái ẩu) thay vì dừng lại — dùng cho hit_and_run để
+        trajectory predictor dự đoán đường đi tiếp theo của xe bỏ trốn.
+
+        QUAN TRỌNG: luôn dừng xe (throttle=0, brake=1) khi kết thúc — nếu
+        không, control cuối (throttle=1.0) sẽ được CARLA giữ nguyên vĩnh
+        viễn, khiến xe tiếp tục rà ga vào vật cản sau khi pursuit kết thúc,
+        gây quá tải physics engine -> world.tick() timeout -> AI processor
+        crash."""
+        carla = self._carla
+        deadline = time.time() + max_duration
+        stuck_since = None
+        fled = False
+        try:
+            while time.time() < deadline:
+                if not chaser.is_alive or not target.is_alive:
+                    return
+                last_col = self._last_collision_ts.get(chaser.id)
+                if last_col and time.time() - last_col < 1.0:
+                    if flee_on_collision:
+                        self._flee(chaser)
+                        fled = True
+                    return
+                t_loc = target.get_transform().location
+                c_tf  = chaser.get_transform()
+                c_loc = c_tf.location
+                dx, dy = t_loc.x - c_loc.x, t_loc.y - c_loc.y
+                dist = (dx ** 2 + dy ** 2) ** 0.5
+                if dist < stop_distance:
+                    return
+                vel = chaser.get_velocity()
+                speed = (vel.x ** 2 + vel.y ** 2) ** 0.5
+                if speed < 0.3:
+                    stuck_since = stuck_since or time.time()
+                    if time.time() - stuck_since > 1.5:
+                        return
+                else:
+                    stuck_since = None
+                target_yaw = math.degrees(math.atan2(dy, dx))
+                yaw_diff = (target_yaw - c_tf.rotation.yaw + 180) % 360 - 180
+                steer = max(-1.0, min(1.0, yaw_diff / 45.0))
+                chaser.apply_control(carla.VehicleControl(
+                    throttle=throttle, steer=steer, brake=0.0))
+                time.sleep(0.1)
+        except RuntimeError:
+            pass
+        finally:
+            if not fled:
+                try:
+                    if chaser.is_alive:
+                        chaser.apply_control(carla.VehicleControl(
+                            throttle=0.0, steer=0.0, brake=1.0))
+                except RuntimeError:
+                    pass
+
+    def _flee(self, vehicle):
+        """Cho xe bỏ chạy sau va chạm: chuyển sang autopilot, lái ẩu
+        (bỏ qua đèn/luật/xe khác, tăng tốc) để rời khỏi hiện trường.
+        Track của xe vẫn được AI pipeline theo dõi như bình thường nên
+        trajectory predictor sẽ dự đoán đường đi tiếp theo của nó."""
+        try:
+            port = self.tm.get_port()
+            vehicle.set_autopilot(True, port)
+            self.tm.ignore_lights_percentage(vehicle, 100)
+            self.tm.ignore_signs_percentage(vehicle, 100)
+            self.tm.ignore_vehicles_percentage(vehicle, 100)
+            self.tm.vehicle_percentage_speed_difference(vehicle, -50)
+            logger.info("[FLEE] Xe #%d bỏ chạy khỏi hiện trường", vehicle.id)
+        except RuntimeError as e:
+            logger.debug("Flee setup warning (non-fatal): %s", e)
 
     def _attach_collision_sensor(self, vehicle, tag: str = ''):
         bp      = self.world.get_blueprint_library().find('sensor.other.collision')
@@ -289,13 +401,35 @@ class ScenarioController:
             strength = (impulse.x**2 + impulse.y**2 + impulse.z**2) ** 0.5
             if strength < 100:   # lọc va chạm rất nhẹ
                 return
+            # Va chạm mạnh (đặc biệt vượt đèn đỏ) có thể bắn collision event
+            # hàng nghìn lần/giây khi 2 actor lồng vào nhau -> đánh dấu cooldown
+            # NGAY (trước khi gọi _camera_for_point/get_transform) để tránh
+            # spam tính toán làm treo CARLA. Chỉ xử lý 1 lần / 8s / attacker.
+            now = time.time()
+            last = self._last_collision_ts.get(event.actor.id, 0)
+            if now - last < 8.0:
+                return
+            self._last_collision_ts[event.actor.id] = now
+
+            # Chỉ ghi nhận va chạm nếu vị trí va chạm THỰC SỰ nằm trong tầm
+            # quan sát của 1 camera lúc này (không dùng camera_id dự đoán
+            # lúc spawn — xe có thể đã di chuyển ra ngoài view).
+            loc = event.actor.get_transform().location
+            visible_camera_id = self._camera_for_point(loc.x, loc.y)
+            if visible_camera_id is None:
+                return
+
             entry = {
-                'scenario':    tag,
-                'timestamp':   datetime.now().isoformat(),
-                'attacker_id': event.actor.id,
-                'victim_id':   event.other_actor.id,
-                'victim_type': event.other_actor.type_id,
-                'strength':    round(strength, 1),
+                'scenario':     tag,
+                'camera_id':    visible_camera_id,
+                'timestamp':    datetime.now().isoformat(),
+                'attacker_id':  event.actor.id,
+                'victim_id':    event.other_actor.id,
+                'victim_type':  event.other_actor.type_id,
+                'strength':     round(strength, 1),
+                'scenario_desc': self._describe_scenario(tag),
+                'victim_desc':   self._describe_victim_type(event.other_actor.type_id),
+                'strength_desc': self._describe_strength(strength),
             }
             self.collision_log.append(entry)
             logger.warning(
@@ -305,6 +439,39 @@ class ScenarioController:
 
         sensor.listen(_on_collision)
         self._sensors.append(sensor)
+
+    # ------------------------------------------------------------------
+    # Mo ta ngon ngu tu nhien (dung cho message hien thi tren dashboard)
+    # ------------------------------------------------------------------
+
+    _SCENARIO_DESC = {
+        'hit_and_run':    'tai nạn rồi bỏ chạy',
+        'pedestrian_hit': 'đâm người đi bộ',
+        'red_light_crash': 'vượt đèn đỏ gây va chạm',
+        'rear_end':       'đâm từ phía sau',
+        'sudden_stop':    'dừng đột ngột gây va chạm',
+    }
+
+    def _describe_scenario(self, tag: str) -> str:
+        return self._SCENARIO_DESC.get(tag, 'va chạm giao thông')
+
+    def _describe_victim_type(self, type_id: str) -> str:
+        if type_id.startswith('vehicle.'):
+            return 'một xe khác'
+        if type_id.startswith('walker.'):
+            return 'người đi bộ'
+        if type_id.startswith('traffic.'):
+            return 'cột đèn giao thông'
+        if type_id.startswith('static.'):
+            return 'vật cản trên đường'
+        return 'một vật thể'
+
+    def _describe_strength(self, strength: float) -> str:
+        if strength > 5000:
+            return 'rất mạnh'
+        if strength > 1000:
+            return 'mạnh'
+        return 'nhẹ'
 
     def _find_nearby_spawn(self, spawn_points, reference, distance: float = 20):
         """Tìm spawn point gần reference trong khoảng distance (m), không trùng."""
@@ -358,6 +525,50 @@ class ScenarioController:
             if angle <= fov / 2 and (best_dist is None or dist < best_dist):
                 best_cam, best_dist = cam.get('camera_id'), dist
         return best_cam
+
+    def _camera_view_spawn_points(self, cam, min_range: float = 8.0,
+                                   max_range: float = 35.0):
+        """Sinh thêm spawn point (carla.Transform) nằm trên lane thật,
+        trong tầm quan sát (FOV + [min_range, max_range]) của 1 camera.
+        Quét theo vòng tròn quanh camera, dùng get_waypoint(project_to_road)
+        để bám đúng lane, dedupe theo (road_id, lane_id, vị trí dọc lane)."""
+        import numpy as np
+        amap = self.world.get_map()
+        cx, cy, _cz = cam.get('position', [0, 0, 0])
+        yaw = cam.get('rotation', [0, 0, 0])[1]
+        fov = cam.get('view_angle', 90)
+        yaw_rad = np.radians(yaw)
+        fx, fy = np.cos(yaw_rad), np.sin(yaw_rad)
+
+        seen = set()
+        points = []
+        for r in np.arange(min_range, max_range + 1e-6, 2.0):
+            for ang_deg in range(0, 360, 10):
+                a = np.radians(ang_deg)
+                x = cx + r * np.cos(a)
+                y = cy + r * np.sin(a)
+
+                dx, dy = x - cx, y - cy
+                cos_a = (dx * fx + dy * fy) / r
+                angle = np.degrees(np.arccos(np.clip(cos_a, -1.0, 1.0)))
+                if angle > fov / 2:
+                    continue
+
+                wp = amap.get_waypoint(self._carla.Location(x=x, y=y, z=0.3),
+                                        project_to_road=True,
+                                        lane_type=self._carla.LaneType.Driving)
+                if wp is None:
+                    continue
+
+                key = (wp.road_id, wp.lane_id, round(wp.s / 3.0))
+                if key in seen:
+                    continue
+                seen.add(key)
+
+                loc = wp.transform.location
+                loc.z += 0.3
+                points.append(self._carla.Transform(loc, wp.transform.rotation))
+        return points
 
     def _pick_spawn_in_view(self, spawn_points):
         """Chọn 1 spawn point nằm trong tầm quan sát của 1 camera nếu có,
