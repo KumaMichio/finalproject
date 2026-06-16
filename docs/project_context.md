@@ -299,12 +299,25 @@ cung ket qua. Khong can recalibrate (xem custom_tracking_system/docs/error.md).
 ## Nhung gi CHUA lam (theo development_roadmap.md)
 
 1. **Vehicle ReID hoan thien** — chon/re-train epoch VeRi-776 tot nhat
-2. **Fine-tune tiep YOLO tren anh render CARLA** — giam domain gap (Recall≈0%
-   trong GT eval voi carla6 checkpoint tren CAM_001/002/003, xem error.md).
-   Da thu thap xong dataset moi (`data/carla_cam_det/`, 2208 anh / ~23k box,
-   dung dung viewpoint CAM_001/002/003 tu camera_config.yaml) — CON THIEU:
-   train fine-tune tiep tu yolo11m_vn.pt (can GPU NVIDIA, may hien tai chi co
-   GTX 1050Ti 4GB/CPU).
+2. **Doi detector YOLO11m -> YOLO11s + fine-tune tren data THAT** (cap nhat
+   2026-06-16, xem post_accident_prediction.md §3.1 + production_model_stack.md):
+   - Doi sang `yolo11s` de tang FPS (~2x) tren may demo chinh RTX 4060 8GB
+     (khong con bi ket 1050Ti). Chon `s` chu khong nano (nano sot xe may nho).
+   - GOP voi viec dong domain gap: train lai TU pretrained `yolo11s.pt` tren
+     dataset camera giam sat THAT (UA-DETRAC/MIO-TCD/DriveIndia + CCTV VN) thay
+     vi chi anh render CARLA — vi do la nguyen nhan Recall≈0% tren anh that
+     (carla6 checkpoint, xem error.md). KHONG transfer weight tu yolo11m_vn.pt
+     sang kien truc nho hon duoc -> train 1 lan.
+   - DA CHOT `yolo11s` (khong do nua). Demo cu chi 10 FPS nhung do la TRAN
+     CARLA synchronous (fixed_delta_seconds=0.1 -> 10 Hz), khong phai yolo11m
+     cham. Loi ich `s`: FPS that tang tren video that, giai phong compute cho
+     predictor + nhanh hau tai nan chay cung, cho phep nang sim len 20 Hz.
+     Hien runtime van chay `weights/yolo11m_vn.pt`.
+   - ITD: da nhan duoc MODEL `best_xl_ITD_v1.2.pt` (yolo11x train tren Indian
+     Traffic Dataset, camera tinh, 8 class) — KHONG phai dataset anh. yolo11x
+     qua nang -> KHONG deploy runtime; dung OFFLINE lam auto-labeler/teacher de
+     gan nhan footage Mo Lao + render CARLA roi train `yolo11s`. Chi tiet +
+     remap 8->5 class: post_accident_prediction.md §3.1.
 3. **Recording lien tuc** — ghi video lien tuc, cat clip su co (hien chi co ring buffer 30s khi su co)
 4. **Camera management UI** — them/xoa camera runtime, health check
 

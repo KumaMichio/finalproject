@@ -299,20 +299,25 @@ tránh đầu tư 2-3 giờ quay rồi mới phát hiện domain gap quá lớn.
 
 ## 7. Rủi ro / hạn chế cần lưu ý
 
-- **Phần cứng (GTX 1050Ti 4GB)**: CARLA + AI pipeline + training model mới
-  cùng lúc sẽ rất nặng. Probabilistic predictor cần thiết kế nhẹ (GRU nhỏ +
-  rule-based path snapping), tránh model attention/transformer lớn
-  (Trajectron++, MTR... — quá nặng cho máy hiện tại, để dành cho UU TIEN 3 nếu
-  nâng cấp GPU).
+- **Phần cứng** — ⚠️ ĐÃ CẬP NHẬT, xem `post_accident_prediction.md` §0 cho
+  cấu hình mới. Máy demo CHÍNH giờ là **RTX 4060 8GB** (không còn 1050Ti 4GB);
+  còn có 1050Ti (fallback) và RX 6700XT (AMD — không dùng cho AI stack). Hệ
+  quả: fine-tune YOLO local được, và predictor có thể nâng lên mức "trung bình"
+  (Trajectron++ / Social-STGCNN inference khả thi trên 4060), không còn bắt
+  buộc chỉ "GRU nhỏ + rule-based". Diffusion / AgentFormer đầy đủ vẫn để
+  benchmark offline (8GB không real-time cùng CARLA nổi).
+  (Ghi chú gốc 1050Ti: probabilistic predictor thiết kế nhẹ, tránh
+  attention/transformer lớn — vẫn đúng cho nhánh fallback 1050Ti.)
 - **OSM → OpenDRIVE**: chất lượng convert phụ thuộc độ chi tiết dữ liệu OSM
   của khu vực chọn (số lane, hướng lane ở VN nhiều khi không khai báo đầy đủ
   trên OSM) — có thể cần chỉnh tay file `.xodr` sau khi convert.
 - **Building blocks đơn giản**: cần kiểm tra CARLA OpenDRIVE standalone có hỗ
   trợ spawn static prop tùy ý theo polygon hay phải dùng prop có sẵn (hộp chữ
   nhật scale theo footprint).
-- **Domain gap detector**: vẫn tồn tại (đã ghi nhận ở `error.md`), không được
-  giải quyết bởi thay đổi này — đây là vấn đề riêng (fine-tune YOLO trên ảnh
-  render CARLA, đang chờ GPU NVIDIA mạnh hơn).
+- **Domain gap detector**: vẫn tồn tại (đã ghi nhận ở `error.md`). GPU mạnh hơn
+  (RTX 4060) đã sẵn sàng → fine-tune YOLO local được; HƯỚNG ĐỀ XUẤT MỚI là
+  fine-tune trên dataset camera giám sát THẬT (UA-DETRAC/MIO-TCD/DriveIndia/…)
+  thay vì chỉ ảnh render CARLA — xem `post_accident_prediction.md` §3.1.
 
 ---
 

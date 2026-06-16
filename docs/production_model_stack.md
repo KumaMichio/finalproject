@@ -169,6 +169,22 @@ FastAPI Backend → WebSocket → React Dashboard (6 camera grid)
 
 YOLOv8s tăng mAP từ 37 → 45 (+20%) trong khi vẫn trong budget VRAM.
 
+> **CẬP NHẬT (2026-06-16) — quyết định detector mới: `yolo11m` → `yolo11s`.**
+> Lý do & ràng buộc đầy đủ ở `post_accident_prediction.md` §3.1. Tóm tắt:
+> - Máy demo chính giờ là **RTX 4060 8GB** (có Tensor Cores — khác hẳn 1050Ti
+>   Pascal; FP16/TensorRT giờ TĂNG TỐC compute chứ không chỉ tiết kiệm VRAM).
+> - Chọn **`yolo11s`** để tăng FPS (~2×, mAP −~4đ) — KHÔNG dùng nano (−~12đ,
+>   sót xe máy nhỏ, mà detection là nút thắt cả pipeline).
+> - **Đã CHỐT `yolo11s`** (không đo nữa). Demo cũ chỉ 10 FPS nhưng đó là TRẦN
+>   CARLA synchronous (`fixed_delta_seconds: 0.1` → 10 Hz), không phải `yolo11m`
+>   chậm. Lợi ích `yolo11s`: (1) FPS thật tăng trên video thật (không trần);
+>   (2) giải phóng compute cho predictor + nhánh hậu tai nạn chạy cùng; (3) cho
+>   phép nâng sim lên 20 Hz nếu cần.
+> - **GỘP với fine-tune data thật**: train lại từ `yolo11s.pt` (COCO) trên
+>   dataset camera giám sát THẬT (UA-DETRAC/MIO-TCD/DriveIndia + CCTV VN) để vừa
+>   đổi biến thể vừa đóng domain gap trong 1 lần — không transfer được weight từ
+>   `yolo11m_vn.pt` sang kiến trúc nhỏ hơn.
+
 #### Inference batched 6 cameras
 
 ```python
@@ -627,7 +643,7 @@ score = clf.predict([[speed, accel, turn, density, hour]])
 
 | Tầng | CARLA *(hiện tại)* | **Production Stack** | VRAM | Trạng thái |
 |---|---|---|---|---|
-| **Detection** | ~~YOLOv5s~~ → ~~YOLOv8s~~ | **YOLO11m** (COCO, 5 class; auto dùng `weights/yolo11m_vn.pt` nếu có) | ~3+ GB | ⏳ Đổi model 2026-06-11 — fine-tune VN đang chuẩn bị (mục 6) |
+| **Detection** | ~~YOLOv5s~~ → ~~YOLOv8s~~ → ~~YOLO11m~~ | **YOLO11s** (kế hoạch — fine-tune trên data giám sát THẬT, 5 class) | ~1.5–2 GB | ⏳ Đổi `m`→`s` để tăng FPS trên RTX 4060 (2026-06-16); train lại từ `yolo11s.pt` + data thật. Hiện vẫn chạy `weights/yolo11m_vn.pt` |
 | **Tracking** | ~~IoU Greedy~~ | **ByteTrack** (boxmot, Kalman + Hungarian) | CPU | ✅ Hoàn thành — 2026-05-29 |
 | **Re-ID** | OSNet (Market-1501) | **OSNet** fine-tune VeRi-776 + Spatio-Temporal | ~0.4 GB | ⏳ Chưa làm |
 | **Trajectory** | Linear Extrap (có lỗi) | **Kalman** từ ByteTrack + time-based | CPU | ⏳ Chưa làm |
@@ -645,7 +661,7 @@ score = clf.predict([[speed, accel, turn, density, hour]])
 | 3 | Sửa **FPS-normalized speed** + proactive incident | 1 ngày | Giảm false positive, thêm predict_collision | CPU only |
 | 4 | Thêm **Spatio-Temporal Filter** (50 dòng code) | 1 ngày | Giảm cross-camera false match | CPU only |
 | 5 | Sửa `TrajectoryPredictor` dùng **timestamp** | 1 ngày | Velocity đúng đơn vị | CPU only |
-| 6 | Fine-tune **YOLO11m** trên dataset VisDrone + CARLA (VN-like) | 3–5 ngày | Nhận diện xe máy VN chính xác | ~3+ GB (RTX 4060 cloud) |
+| 6 | Train lại **YOLO11s** từ `yolo11s.pt` trên data giám sát THẬT (UA-DETRAC/MIO-TCD/DriveIndia + CCTV VN) — gộp đổi biến thể + đóng domain gap | 3–5 ngày | Tăng FPS + nhận diện xe máy VN trên ảnh thật | ~1.5–2 GB (RTX 4060 local) |
 | 7 | Fine-tune **OSNet trên VeRi-776** | 3–5 ngày | Re-ID xe chính xác hơn | ~2–3 GB |
 | 8 | **Isolation Forest** anomaly detection | 2 ngày | Adaptive threshold, ít false positive | CPU only |
 

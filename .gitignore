@@ -7,6 +7,9 @@ custom_tracking_system/models/hub/
 
 # Model weight files — chặn checkpoint trung gian, giữ final model
 *.ckpt_ep*.pth
+# ITD model (yolo11x, 109MB > giới hạn 100MB GitHub; license CC BY-NC, nhận
+# theo request — KHÔNG redistribute lên repo). Dùng offline làm auto-labeler.
+best_xl_ITD_v1.2.pt
 # Bỏ comment dòng dưới nếu không muốn push weights nào cả:
 # *.pth
 # *.pt
