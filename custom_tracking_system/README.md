@@ -107,6 +107,48 @@ rois:
 4. **Behavior Modeling**: Trajectory prediction
 5. **Application Layer**: Alert system và visualization
 
+## Goal Direction Classifier
+
+Dự đoán hướng đi của phương tiện tại ngã tư (straight / left / right / u_turn)
+từ trajectory approach, thiết kế cho CCTV đời thực Hà Nội.
+
+### Thu thập dữ liệu
+
+```bat
+python custom_tracking_system/collect_trajectory_data.py ^
+    --map hanoi_district3 --episodes 120 --steps-per-episode 1800 ^
+    --num-vehicles 20 --moto-ratio 0.70 ^
+    --out custom_tracking_system/data/trajectories_hanoi_v2
+```
+
+Tham số `--moto-ratio` kiểm soát tỉ lệ xe máy trong simulation (default 0.70 = thực tế Hà Nội).  
+Data hiện có: `data/trajectories_hanoi_v2/` — 36,997 goal events, motorcycle 72.7%.
+
+### Train classifier
+
+```bat
+python custom_tracking_system/scripts/train/train_goal_classifier.py ^
+    --data custom_tracking_system/data/trajectories_hanoi_v2
+```
+
+Model output: `weights/goal_classifier.pkl` — GradientBoosting, calibrated, 26 features, window 4s.
+
+### Kết quả (v3, data Hà Nội thực tế)
+
+| Metric | Giá trị |
+|---|---|
+| Accuracy @1.5s trước ngã tư | 70.3% |
+| Accuracy @1.0s (~7m) | 64.8% |
+| ECE (calibration) | 0.104 |
+| Inference 30 xe đồng thời | 4.0ms |
+| Motorcycle accuracy | 70.2% |
+
+Recall theo lớp: straight 75%, right 86%, left 53%, u_turn 17%.  
+U_turn khó detect từ approach trajectory (xe chỉ lộ signature khi đã vào ngã tư).  
+Phù hợp cho dashboard/visualization, thống kê lưu lượng. Chưa đủ cho trigger cảnh báo tự động.
+
+---
+
 ## Metrics & Evaluation
 
 Hệ thống tự động thu thập các metrics:
@@ -114,7 +156,7 @@ Hệ thống tự động thu thập các metrics:
 - **Detection**: mAP, precision, recall
 - **Tracking**: MOTA, IDF1, track accuracy
 - **ReID**: Rank-1 accuracy, mAP
-- **Trajectory**: ADE, FDE
+- **Goal Classifier**: Accuracy theo horizon, ECE, per-class recall
 - **Performance**: FPS, latency
 
 ## Output Files

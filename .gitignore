@@ -50,6 +50,7 @@ evidence/
 *.log
 tracking_system.db
 *.db
+auto_retrain.ps1
 
 # ============================================================
 #  Training datasets & run artifacts (qua lon, tu generate lai duoc)
