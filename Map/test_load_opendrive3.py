@@ -7,9 +7,10 @@ Yeu cau: CARLA server (CarlaUE4.exe) dang chay tai localhost:2000
 """
 import sys
 import time
+from pathlib import Path
 import carla
 
-XODR_PATH = "hanoi_district3.xodr"
+XODR_PATH = Path(__file__).parent / "hanoi_district3.xodr"
 HOST = "127.0.0.1"
 PORT = 2000
 
