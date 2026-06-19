@@ -1,0 +1,19 @@
+{
+  "n_frames": 300,
+  "total_time_s": 49.37,
+  "fps_avg": 6.1,
+  "latency_avg_ms": 164.2,
+  "latency_p50_ms": 169.2,
+  "latency_p95_ms": 208.4,
+  "avg_detections_per_frame": 28.6,
+  "avg_tracks_per_frame": 27.5,
+  "total_unique_tracks": 200,
+  "goal_frames_pct": 98.7,
+  "goal_avg_confidence": 0.425,
+  "goal_direction_counts": {
+    "straight": 5935,
+    "left": 756,
+    "right": 755,
+    "u_turn": 43
+  }
+}

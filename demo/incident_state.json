@@ -1,0 +1,84 @@
+{
+  "phase": "ROUTE_PREDICTED",
+  "timestamp": 1781836647.803477,
+  "accident_track": {
+    "track_id": 42,
+    "x": 490.0,
+    "y": -455.0,
+    "lat": 20.98732643091341,
+    "lon": 105.78560316703222,
+    "heading_deg": -20.0,
+    "direction": "right",
+    "confidence": 0.55,
+    "probabilities": {
+      "straight": 0.3,
+      "right": 0.55,
+      "left": 0.12,
+      "u_turn": 0.03
+    }
+  },
+  "predicted_route": [
+    {
+      "hop": 1,
+      "road_id": "896",
+      "x": 517.405,
+      "y": -433.15,
+      "lat": 20.987127804149846,
+      "lon": 105.78586577728392,
+      "heading_deg": 24.524885462779757,
+      "direction_used": "right",
+      "confidence": 0.55
+    },
+    {
+      "hop": 2,
+      "road_id": "557",
+      "x": 706.88,
+      "y": -360.33,
+      "lat": 20.986461469878915,
+      "lon": 105.78768512159503,
+      "heading_deg": 21.141569682532246,
+      "direction_used": "straight",
+      "confidence": 1.0
+    },
+    {
+      "hop": 3,
+      "road_id": "889",
+      "x": 715.133,
+      "y": -358.239,
+      "lat": 20.98644221092836,
+      "lon": 105.78776441795853,
+      "heading_deg": -5.423618488708373,
+      "direction_used": "straight",
+      "confidence": 1.0
+    },
+    {
+      "hop": 4,
+      "road_id": "620",
+      "x": 517.57,
+      "y": -433.536,
+      "lat": 20.987131284262027,
+      "lon": 105.7858673828662,
+      "heading_deg": -158.85827827797206,
+      "direction_used": "straight",
+      "confidence": 1.0
+    }
+  ],
+  "all_vehicles": [
+    {
+      "track_id": 42,
+      "x": 490.0,
+      "y": -455.0,
+      "lat": 20.98732643091341,
+      "lon": 105.78560316703222,
+      "is_accident": true
+    },
+    {
+      "track_id": 10,
+      "x": 400.0,
+      "y": -420.0,
+      "lat": 20.98701420380013,
+      "lon": 105.7847356926419,
+      "is_accident": false
+    }
+  ]
+}

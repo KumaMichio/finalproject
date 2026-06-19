@@ -22,16 +22,16 @@
 # Cell 2 — train
 !python custom_tracking_system/scripts/train/train_yolo_detector.py \
     --data data/visdrone_carla_vn.yaml \
-    --model yolo11m.pt \
+    --model yolo11s.pt \
     --epochs 50 \
     --batch 16 \
     --device 0 \
     --half \
-    --out weights/yolo11m_vn.pt
+    --out weights/yolo11s_vn.pt
 
 # Cell 3 — download kết quả
 import shutil
-shutil.make_archive('/kaggle/working/yolo_results', 'zip', 'runs/detect/yolo11m_vn')
+shutil.make_archive('/kaggle/working/yolo_results', 'zip', 'runs/detect/yolo11s_vn')
 ```
 
 **Output cần lấy về:**
@@ -39,7 +39,7 @@ shutil.make_archive('/kaggle/working/yolo_results', 'zip', 'runs/detect/yolo11m_
 - `confusion_matrix_normalized.png` — confusion matrix
 - `PR_curve.png` — Precision-Recall curve
 - `results.csv` — số liệu mAP50, mAP50-95 từng epoch
-- `weights/best.pt` → copy thành `weights/yolo11m_vn.pt`
+- `weights/best.pt` → copy thành `weights/yolo11s_vn.pt`
 
 **Số liệu cần ghi vào báo cáo:**
 - mAP50 (tổng 5 class)
@@ -89,14 +89,27 @@ shutil.make_archive('/kaggle/working/reid_results', 'zip', 'weights/osnet_veri')
 
 ---
 
-## Checklist trước khi lên Kaggle
+## ✅ YOLO11s — Đã hoàn thành (2026-06-18)
 
-- [ ] QA ảnh auto-label xong (lọc bbox < 0.4 confidence)
-- [ ] Chạy `prepare_visdrone_dataset.py` để tạo `data/visdrone_vn/`
-- [ ] Chạy `merge_detection_datasets.py` để tạo `data/visdrone_carla_vn/`
-- [ ] Zip và upload dataset lên Kaggle Dataset
+`weights/yolo11s_vn.pt` (19MB) đã train xong. Val trên `data/auto_label_eval/` (800 ảnh, auto-labels):
+
+| Metric | Giá trị |
+|---|---|
+| mAP50 | **89.5%** |
+| mAP50-95 | **77.0%** |
+| Precision | 86.7% |
+| Recall | 81.3% |
+
+Per-class mAP50: motorcycle=97.5%, car=98.1%, bus=89.3%, person=82.8%, truck=79.7%
+
+> ⚠️ Val set dùng auto-labels (không phải ground truth tay) → số liệu cao hơn thực tế.
+> Charts lưu tại `docs/assets/yolo11s_vn/`.
+
+## Checklist trước khi lên Kaggle (OSNet — còn lại)
+
+- [ ] Upload VeRi-776 dataset lên Kaggle (~1.1GB)
 - [ ] Bật GPU T4 x2 trong Kaggle Settings → Accelerator
-- [ ] `!pip install ultralytics -q` ở cell đầu tiên
+- [ ] `!pip install torchreid -q` ở cell đầu tiên
 
 ---
 

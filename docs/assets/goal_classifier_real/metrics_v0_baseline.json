@@ -1,0 +1,55 @@
+{
+  "run_info": {
+    "model_type": "gb",
+    "primary_horizon": 1.0,
+    "class_weight": "none",
+    "junction_frac": 0.5,
+    "n_features": 26
+  },
+  "cross_validation": {
+    "n_folds": 5,
+    "scoring": "accuracy",
+    "mean": 0.6062,
+    "std": 0.0055,
+    "per_fold": [
+      0.6075,
+      0.6003,
+      0.6159,
+      0.6016,
+      0.6056
+    ]
+  },
+  "primary_horizon": {
+    "accuracy": 0.6828,
+    "f1_macro": 0.4927,
+    "class_accuracy": {
+      "straight": 0.9992,
+      "left": 0.313,
+      "right": 0.1868,
+      "u_turn": 0.2484
+    },
+    "n_samples": 6277
+  },
+  "per_horizon": {
+    "0.5": {
+      "accuracy": 0.6292,
+      "f1_macro": 0.2933,
+      "ece": 0.0542
+    },
+    "1.0": {
+      "accuracy": 0.6828,
+      "f1_macro": 0.4927,
+      "ece": 0.1849
+    },
+    "1.5": {
+      "accuracy": 0.6283,
+      "f1_macro": 0.3517,
+      "ece": 0.1206
+    },
+    "2.0": {
+      "accuracy": 0.6226,
+      "f1_macro": 0.342,
+      "ece": 0.1106
+    }
+  }
+}

@@ -133,8 +133,10 @@ class AIProcessor:
             self.world, num_vehicles=10, num_pedestrians=5)
         self.traffic_generator.spawn_actors()
 
-        self.detector = ObjectDetector(
-            model_type=str(_tracking_dir / "weights" / "yolo11m_vn.pt"), half=True)
+        _yolo_s = _tracking_dir / "weights" / "yolo11s_vn.pt"
+        _yolo_m = _tracking_dir / "weights" / "yolo11m_vn.pt"
+        _yolo_weights = str(_yolo_s if _yolo_s.exists() else _yolo_m)
+        self.detector = ObjectDetector(model_type=_yolo_weights, half=True)
 
         self.trackers = {}
         for cam_id in self.camera_controller.cameras:

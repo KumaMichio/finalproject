@@ -10,6 +10,15 @@ custom_tracking_system/models/hub/
 # ITD model (yolo11x, 109MB > giới hạn 100MB GitHub; license CC BY-NC, nhận
 # theo request — KHÔNG redistribute lên repo). Dùng offline làm auto-labeler.
 best_xl_ITD_v1.2.pt
+# Large weights — vượt giới hạn 100MB GitHub, backup Google Drive
+custom_tracking_system/weights/yolo11m_vn.pt
+custom_tracking_system/weights/yolo11s_vn.pt
+custom_tracking_system/weights/osnet_veri776.pth
+custom_tracking_system/weights/goal_classifier.pkl
+custom_tracking_system/weights/goal_classifier_real.pkl
+# Stock YOLO weights (auto-download được từ ultralytics)
+custom_tracking_system/yolo11s.pt
+custom_tracking_system/yolo11m.pt
 # Bỏ comment dòng dưới nếu không muốn push weights nào cả:
 # *.pth
 # *.pt
@@ -51,6 +60,11 @@ evidence/
 tracking_system.db
 *.db
 auto_retrain.ps1
+# Demo/eval output — generated files, không cần commit
+custom_tracking_system/data/eval/debug_*.jpg
+custom_tracking_system/data/eval/*.txt
+# Video output — lưu ngoài nếu cần giữ
+custom_tracking_system/out_goal*.mp4
 
 # ============================================================
 #  Training datasets & run artifacts (qua lon, tu generate lai duoc)

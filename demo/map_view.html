@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Traffic AI — Accident Route Prediction</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #0d1117; color: #e6edf3; display: flex; flex-direction: column; height: 100vh; }
+    #header { padding: 10px 16px; background: #161b22; border-bottom: 1px solid #30363d; display: flex; align-items: center; gap: 16px; }
+    #header h1 { font-size: 1rem; font-weight: 600; }
+    #phase-badge { padding: 3px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600; background: #21262d; color: #8b949e; }
+    #phase-badge.accident { background: #3d1f1f; color: #f85149; }
+    #phase-badge.predicted { background: #1f3d1f; color: #56d364; }
+    #main { display: flex; flex: 1; overflow: hidden; }
+    #map { flex: 1; }
+    #sidebar { width: 280px; background: #161b22; border-left: 1px solid #30363d; overflow-y: auto; padding: 12px; font-size: 0.82rem; }
+    .section-title { color: #8b949e; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.08em; margin: 12px 0 6px; }
+    .info-row { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid #21262d; }
+    .info-row .label { color: #8b949e; }
+    .info-row .value { color: #e6edf3; font-weight: 500; }
+    #hop-list { margin-top: 4px; }
+    .hop-item { padding: 5px 0; border-bottom: 1px solid #21262d; }
+    .hop-item .hop-label { color: #56d364; font-weight: 600; }
+    .hop-item .hop-detail { color: #8b949e; font-size: 0.75rem; margin-top: 2px; }
+    #status-dot { width: 8px; height: 8px; border-radius: 50%; background: #56d364; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+    #vehicles-count { color: #8b949e; font-size: 0.8rem; margin-left: auto; }
+  </style>
+</head>
+<body>
+<div id="header">
+  <div id="status-dot"></div>
+  <h1>Traffic AI — Accident Route Prediction</h1>
+  <span id="phase-badge">IDLE</span>
+  <span id="vehicles-count">—</span>
+</div>
+<div id="main">
+  <div id="map"></div>
+  <div id="sidebar">
+    <div class="section-title">Accident Vehicle</div>
+    <div id="acc-info">
+      <div class="info-row"><span class="label">Track ID</span><span class="value" id="acc-id">—</span></div>
+      <div class="info-row"><span class="label">Position</span><span class="value" id="acc-pos">—</span></div>
+      <div class="info-row"><span class="label">Direction</span><span class="value" id="acc-dir">—</span></div>
+      <div class="info-row"><span class="label">Confidence</span><span class="value" id="acc-conf">—</span></div>
+    </div>
+    <div class="section-title">Predicted Route</div>
+    <div id="hop-list"></div>
+    <div class="section-title">Probabilities</div>
+    <div id="prob-bars"></div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  // Map centered near hanoi_district3 origin (~21.0°N, 105.78°E)
+  const MAP_CENTER = [20.985, 105.783];
+  const MAP_ZOOM   = 15;
+
+  const map = L.map('map', { preferCanvas: true }).setView(MAP_CENTER, MAP_ZOOM);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap',
+    maxZoom: 19,
+  }).addTo(map);
+
+  // Layer groups
+  const layerVehicles = L.layerGroup().addTo(map);
+  const layerRoute    = L.layerGroup().addTo(map);
+  const layerAccident = L.layerGroup().addTo(map);
+
+  // Icons
+  const iconNormal = L.divIcon({
+    html: '<div style="width:10px;height:10px;border-radius:50%;background:#4da6ff;border:1px solid #fff;"></div>',
+    iconSize: [10, 10], className: ''
+  });
+  const iconAccident = L.divIcon({
+    html: '<div style="width:14px;height:14px;border-radius:50%;background:#f85149;border:2px solid #ff9900;box-shadow:0 0 8px #f85149;"></div>',
+    iconSize: [14, 14], className: ''
+  });
+
+  const ROUTE_COLORS = ['#ff9900', '#f85149', '#d29922', '#56d364'];
+
+  let prevPhase = null;
+
+  function updateSidebar(state) {
+    const at    = state.accident_track;
+    const phase = state.phase || 'IDLE';
+
+    // Phase badge
+    const badge = document.getElementById('phase-badge');
+    badge.textContent = phase;
+    badge.className = 'phase-badge';
+    if (phase.includes('ACCIDENT'))  badge.classList.add('accident');
+    if (phase.includes('PREDICTED')) badge.classList.add('predicted');
+
+    // Vehicle count
+    const vcount = (state.all_vehicles || []).length;
+    document.getElementById('vehicles-count').textContent = `${vcount} vehicles`;
+
+    if (!at) {
+      document.getElementById('acc-id').textContent   = '—';
+      document.getElementById('acc-pos').textContent  = '—';
+      document.getElementById('acc-dir').textContent  = '—';
+      document.getElementById('acc-conf').textContent = '—';
+      document.getElementById('hop-list').innerHTML   = '';
+      document.getElementById('prob-bars').innerHTML  = '';
+      return;
+    }
+
+    document.getElementById('acc-id').textContent   = '#' + at.track_id;
+    document.getElementById('acc-pos').textContent  =
+      at.lat ? `${at.lat.toFixed(5)}, ${at.lon.toFixed(5)}` : `(${at.x}, ${at.y})`;
+    document.getElementById('acc-dir').textContent  = at.direction || '—';
+    document.getElementById('acc-conf').textContent = at.confidence ? `${(at.confidence*100).toFixed(0)}%` : '—';
+
+    // Route hops
+    const hops   = state.predicted_route || [];
+    const hopDiv = document.getElementById('hop-list');
+    hopDiv.innerHTML = '';
+    hops.forEach(wp => {
+      const d = document.createElement('div');
+      d.className = 'hop-item';
+      const latStr = wp.lat ? `${wp.lat.toFixed(5)}, ${wp.lon.toFixed(5)}` : `(${wp.x.toFixed(0)}, ${wp.y.toFixed(0)})`;
+      d.innerHTML = `
+        <div class="hop-label">Hop ${wp.hop} — road ${wp.road_id}</div>
+        <div class="hop-detail">${latStr} | hdg ${wp.heading_deg.toFixed(0)}°</div>`;
+      hopDiv.appendChild(d);
+    });
+
+    // Probability bars
+    const probs  = at.probabilities || {};
+    const dirs   = ['straight', 'left', 'right', 'u_turn'];
+    const colors = { straight: '#4da6ff', left: '#ff9900', right: '#56d364', u_turn: '#f85149' };
+    const probDiv = document.getElementById('prob-bars');
+    probDiv.innerHTML = '';
+    dirs.forEach(d => {
+      const p = probs[d] || 0;
+      probDiv.innerHTML += `
+        <div style="margin:4px 0;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:2px;">
+            <span style="color:${colors[d]}">${d}</span>
+            <span>${(p*100).toFixed(0)}%</span>
+          </div>
+          <div style="background:#21262d;border-radius:3px;height:6px;">
+            <div style="width:${(p*100).toFixed(0)}%;background:${colors[d]};height:6px;border-radius:3px;"></div>
+          </div>
+        </div>`;
+    });
+  }
+
+  function updateMap(state) {
+    layerVehicles.clearLayers();
+    layerRoute.clearLayers();
+    layerAccident.clearLayers();
+
+    const at    = state.accident_track;
+    const phase = state.phase || 'IDLE';
+
+    // Draw all vehicles
+    (state.all_vehicles || []).forEach(v => {
+      if (!v.lat) return;
+      const isAcc = v.is_accident || (at && at.track_id === v.track_id);
+      const icon  = isAcc ? iconAccident : iconNormal;
+      L.marker([v.lat, v.lon], { icon })
+       .bindTooltip(`#${v.track_id}`, { permanent: false, className: 'leaflet-tooltip' })
+       .addTo(layerVehicles);
+    });
+
+    // Draw accident vehicle marker if not in all_vehicles
+    if (at && at.lat) {
+      L.marker([at.lat, at.lon], { icon: iconAccident })
+       .bindPopup(`<b>Accident Vehicle #${at.track_id}</b><br>Dir: ${at.direction} (${(at.confidence*100).toFixed(0)}%)`)
+       .addTo(layerAccident)
+       .openPopup();
+    }
+
+    // Draw predicted route polylines
+    const hops = state.predicted_route || [];
+    if (at && at.lat && hops.length > 0) {
+      const pts = [[at.lat, at.lon]];
+      hops.forEach(wp => { if (wp.lat) pts.push([wp.lat, wp.lon]); });
+
+      // Main route line
+      L.polyline(pts, {
+        color:  ROUTE_COLORS[0],
+        weight: 4,
+        opacity: 0.85,
+        dashArray: '8 4',
+      }).addTo(layerRoute);
+
+      // Waypoint circles
+      hops.forEach((wp, i) => {
+        if (!wp.lat) return;
+        L.circleMarker([wp.lat, wp.lon], {
+          radius: 6,
+          color: ROUTE_COLORS[i % ROUTE_COLORS.length],
+          fillColor: ROUTE_COLORS[i % ROUTE_COLORS.length],
+          fillOpacity: 0.9,
+          weight: 2,
+        }).bindTooltip(`Hop ${wp.hop} (${wp.direction_used})`, { permanent: false })
+          .addTo(layerRoute);
+      });
+    }
+  }
+
+  async function fetchAndUpdate() {
+    try {
+      const resp = await fetch('/api/state');
+      if (!resp.ok) return;
+      const state = await resp.json();
+      updateSidebar(state);
+      updateMap(state);
+    } catch (e) {
+      console.warn('fetch failed', e);
+    }
+  }
+
+  // Poll every 500ms
+  fetchAndUpdate();
+  setInterval(fetchAndUpdate, 500);
+</script>
+</body>
+</html>

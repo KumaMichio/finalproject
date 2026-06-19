@@ -3,9 +3,9 @@
 **Tên dự án:** Hệ Thống Giám Sát Camera CCTV Đa Kênh Ứng Dụng Trí Tuệ Nhân Tạo
 *(Multi-Camera CCTV Tracking System with AI)*
 
-**Môi trường mô phỏng:** CARLA Simulator 0.9.14 (Town10HD_Opt)
+**Môi trường mô phỏng:** CARLA Simulator 0.9.14 (Town10HD_Opt + hanoi_district3.xodr)
 
-**Cập nhật lần cuối:** 2026-06-12 (xem Phụ Lục — Cập Nhật 2026-06-13/14 ở cuối tài liệu cho tiến độ mới nhất)
+**Cập nhật lần cuối:** 2026-06-19 (xem Phụ Lục ở cuối tài liệu cho tiến độ từng giai đoạn: 2026-06-13/14, 2026-06-18, và 2026-06-19)
 
 ---
 
@@ -186,6 +186,12 @@ proactive alerts đã được kích hoạt (trước đó bị lỗi do thiếu
 | **Kalman Filter** | Trajectory (baseline) | ✅ Hoàn thành | Constant-acceleration, dt-aware |
 | **TrajectoryGRU (Ensemble)** | Trajectory (learned) | ✅ **Train hoàn thành (50 epoch)** | Loss 0.248→0.117, 22,148 sample từ 9 episode CARLA thật |
 | **Incident Detector** | Phát hiện sự cố | ✅ Hoàn thành | 12 loại, proactive hoạt động |
+| **Goal Classifier (CARLA)** | Phân loại hướng quẹo — CARLA | ✅ Hoàn thành | 70.3% test acc, 35K samples, world-space |
+| **Goal Classifier (Real CCTV)** | Phân loại hướng quẹo — CCTV thực | ✅ Hoàn thành (v3) | 59.7% honest test acc, 6,959 tracks, 33 features, bbox norm |
+| **YOLO11s** | Detection nhanh hơn (thay YOLO11m) | ✅ Fine-tune hoàn thành | mAP50=89.5%, mAP50-95=77.0% trên auto-label val; `weights/yolo11s_vn.pt` |
+| **GoalClassifier real-time module** | Tích hợp pkl → pipeline | ✅ Hoàn thành | `modules/goal_classifier.py` — ROI-gated, heading guard 12°, min_frames=10 |
+| **Route Predictor** | Multi-hop route prediction qua junction graph | ✅ Hoàn thành | `route_predictor.py` — 4-hop, pyproj UTM48, CARLA Y-flip handled |
+| **Georeference** | CARLA (x,y) ↔ lat/lon | ✅ Hoàn thành | `georeference.py` — round-trip error 0.000 m |
 
 ---
 
@@ -195,14 +201,15 @@ proactive alerts đã được kích hoạt (trước đó bị lỗi do thiếu
 
 | Thành phần | Hoàn thành | Ghi chú |
 |---|---|---|
-| **AI Pipeline** (`custom_tracking_system/`) — 8 bước Detect→Track→ReID→GlobalID→Trajectory→Alert→Incident→Evidence | **100%** (code) | YOLO11m + TrajectoryGRU đã fine-tune/train xong |
+| **AI Pipeline** (`custom_tracking_system/`) — 8 bước Detect→Track→ReID→GlobalID→Trajectory→Alert→Incident→Evidence | **100%** (code) | YOLO11s + ByteTrack + GoalClassifier đã tích hợp; 6.1 FPS CPU-only |
 | **Backend API** (`server/`) — REST (17 endpoints) + WebSocket (alerts/tracks/stats) + MJPEG + SQLite | **100%** | Đã sửa 13 bugs, hoạt động đúng |
 | **Web Dashboard** (`frontend/`) | **90%** | Thiếu Camera Management UI / ROI editor |
 | **Dataset chuẩn bị (Detection)** | **100%** | VisDrone-VN (6,471/548) + CARLA CCTV (1,191/159, 8 camera/100 xe/60 người) đã merge thành `data/visdrone_carla_vn2` |
 | **Fine-tune YOLO11m** | ✅ **100%** (18 + 10 epoch) | mAP50=0.5575, mAP50-95=0.3342, checkpoint đã deploy vào `weights/yolo11m_vn.pt` |
 | **Re-train OSNet/VeRi-776 (lấy metrics)** | ⚠️ Bị chặn | Cần tải lại dataset VeRi-776 (không còn trên máy) |
 | **Train TrajectoryGRU đủ epoch** | ✅ **100%** (50/50 epoch) | Loss 0.248→0.117, checkpoint `weights/trajectory_gru.pth` đã lưu |
-| **Ground Truth Evaluation (MOTA/IDF1/mAP)** | **0%** | `ground_truth.py` có sẵn, chưa nối `motmetrics` |
+| **Demo pipeline** (accident → route → map) | **100%** | `demo_accident_scenario.py` + `route_predictor.py` + `demo/server.py` + `demo/map_view.html` |
+| **Ground Truth Evaluation (MOTA/IDF1/mAP)** | ✅ **100%** | MOTA overall=-23.6%, domain gap xác nhận, chi tiết Phụ Lục 2026-06-19 |
 | **Recording liên tục** | **0%** | Chưa implement (`EvidencePackage` chỉ lưu khi có sự cố) |
 | **VideoSource → RTSP thực** | **80%** | `main.py --source {bridge,rtsp,file,webcam}` đã sẵn sàng; `server/ai_processor.py` vẫn dùng `CameraController` (CARLA) trực tiếp |
 
@@ -235,7 +242,7 @@ proactive alerts đã được kích hoạt (trước đó bị lỗi do thiếu
 | 3 | Trajectory prediction chỉ ở pixel-space riêng từng camera | Đã thêm `CameraCalibration` (pixel↔world); cần áp dụng đồng bộ cho dashboard "lên map" |
 | 4 | YOLO pretrained COCO nhận diện kém xe máy VN | Fine-tune YOLO11m trên VisDrone-VN + dữ liệu CARLA tự thu thập (đang chạy) |
 | 5 | Huấn luyện trên máy local RAM/VRAM hạn chế gây OOM | Giảm batch size (16→8), giảm dataloader workers (8→4), resume từ checkpoint khi crash |
-| 6 | Chưa có đánh giá định lượng MOTA/IDF1/mAP cho tracking | Việc tiếp theo: nối `ground_truth.py` với `motmetrics` |
+| 6 | Domain gap YOLO11s_vn.pt trên CARLA renders → Recall≈0% | Đã eval 4 cấu hình: COCO model tệ hơn VN (max conf=0.098); hạ threshold không giúp (FP tăng nhanh hơn FN giảm); conf=0.35 VN tốt nhất (MOTA=-23.6%). Fix: fine-tune `data/carla_cam_det/` (GPU cloud) |
 
 ---
 
@@ -245,11 +252,25 @@ proactive alerts đã được kích hoạt (trước đó bị lỗi do thiếu
    sung, mAP50=0.5575.
 2. ✅ ~~Train TrajectoryGRU đủ epoch~~ — **Xong** (2026-06-12), 50 epoch, loss
    0.248→0.117, dữ liệu từ 9 episode CARLA thật.
-3. ⏳ **Tải lại dataset VeRi-776** (~1.1GB) rồi re-train OSNet/VeRi-776, lưu log
+3. ✅ ~~Auto-label turning direction từ 120 video CCTV thực~~ — **Xong** (2026-06-18),
+   `autolabel_turning.py`, 6,959 tracks, straight 56% / left 22% / right 19% / u_turn 3%.
+4. ✅ ~~Train Goal Classifier trên dữ liệu CCTV thực~~ — **Xong** (2026-06-18),
+   `train_goal_classifier_real.py`, 59.7% honest test acc, 33 features, bbox normalization.
+5. ✅ ~~Phase 4 — End-to-end test~~ — **Xong** (2026-06-19):
+   - Fix `ByteTrackWrapper` cho boxmot v19 API (import path mới)
+   - Tích hợp `GoalClassifier` real-time vào `main.py` (ROI-gated, heading guard)
+   - Benchmark: **6.1 FPS** CPU-only trên video 640×360, p95=208ms
+   - Output video với overlay goal predictions đã xác minh (6 non-straight events)
+6. ✅ ~~Parse xodr + Georeference + Route Predictor + Demo script~~ — **Xong** (2026-06-19):
+   - `scripts/parse_xodr.py` → `Map/junction_graph.json` (52 junctions, 464 roads)
+   - `georeference.py` → CARLA↔UTM48↔lat/lon, round-trip 0.000m
+   - `route_predictor.py` → 4-hop junction traversal, predict_probabilistic()
+   - `scripts/demo_accident_scenario.py` + `demo/server.py` + `demo/map_view.html`
+   - CARLA verify: hanoi_district3.xodr loads OK (541 spawn points, georef lat/lon in range)
+7. ⏳ **Tải lại dataset VeRi-776** (~1.1GB) → re-train OSNet/VeRi-776, lưu log
    `val_acc` và biểu đồ vào `docs/assets/osnet_veri776/`.
-4. **Ground Truth Evaluation** — nối `motmetrics` để có MOTA/IDF1 cho ByteTrack.
-5. **Calibration pixel↔world toàn hệ thống** — hiển thị trajectory dự đoán "lên map".
-6. **Recording liên tục + Camera Management UI** — các tính năng vận hành còn thiếu.
+8. ✅ **Ground Truth Evaluation** — **Xong** (2026-06-19): MOTA=-23.6%, FP=433, FN=1822, IDS=0. Bug frame_id đã sửa. Chi tiết ở Phụ Lục.
+9. ⏳ **Record demo video** từ CARLA camera output (kịch bản đầy đủ tai nạn → route map).
 
 ---
 
@@ -312,3 +333,443 @@ báo cáo giữ nguyên để lưu lịch sử.
   `world.tick()` trong `collect_carla_cam_data.py` để không mất dữ liệu đã
   thu thập, nhưng nguyên nhân gốc (version mismatch) cần đồng bộ CARLA
   server/client để fix triệt để.
+
+---
+
+## Phụ Lục — Cập Nhật 2026-06-18
+
+### Phase 2 — Auto-labeling hướng quẹo từ dữ liệu CCTV thực (autolabel_turning.py)
+
+**Mục tiêu:** Gán nhãn tự động (straight / left / right / u_turn) cho 478,263 dòng
+trajectory thu thập từ 120 video CCTV thực tế Hà Nội (Phase 1) — không cần vẽ ROI
+thủ công, không cần ground truth người dùng.
+
+**Script:** `custom_tracking_system/scripts/autolabel_turning.py`
+
+**Thuật toán (heading-change method):**
+1. Chia mỗi track thành 2 pha: Entry (25% đầu, tối thiểu 5 frames) và Exit (25% cuối)
+2. Tính `entry_heading` và `exit_heading` bằng **circular mean** (đúng cho góc)
+3. `heading_change = circular_diff(exit_heading, entry_heading)` ∈ (-180°, 180°]
+4. Phân loại: |Δh| < 30° → straight; |Δh| > 150° → u_turn; Δh > 0 → right (CW = rẽ phải VN); Δh < 0 → left
+5. Bộ lọc chất lượng: n_frames ≥ 15; mean_speed ≥ 5 px/s; heading_std ≤ 60°
+
+**Kết quả:**
+- **6,959 tracks được gán nhãn** từ 111 video (110/111 video có ≥ 3 nhãn)
+
+| Nhãn | Số track | Tỷ lệ |
+|---|---|---|
+| straight | 3,603 | 56% |
+| left | 1,341 | 21.8% |
+| right | 1,158 | 18.4% |
+| u_turn | 143 | 2.3% |
+
+**Files đầu ra:**
+- `custom_tracking_system/data/turning_labels.csv` — nhãn 6,959 tracks (19 cột)
+- `custom_tracking_system/data/turning_labels_stats.json` — thống kê đầy đủ
+
+---
+
+### Phase 3 — Goal Classifier trên dữ liệu CCTV thực (train_goal_classifier_real.py)
+
+**Mục tiêu:** Train mô hình phân loại hướng quẹo trên pixel-space thực (6,959 tracks
+từ Phase 2), so sánh với baseline CARLA world-space (70.3% test acc).
+
+**Script:** `custom_tracking_system/scripts/train/train_goal_classifier_real.py`
+
+#### Cấu hình mô hình (v3 — cuối cùng)
+
+| Thành phần | Chi tiết |
+|---|---|
+| **Model** | `GradientBoostingClassifier(n_estimators=200, max_depth=4, lr=0.1)` bọc trong `CalibratedClassifierCV` |
+| **Features** | **33 features** (26 pixel-space + 7 bbox normalization) |
+| **junction_frac** | 0.65 — dùng features từ cửa sổ `[t_junction − h, t_junction]` |
+| **Class weights** | custom: straight×1.0, left×2.5, right×2.5, u_turn×6.0 |
+| **Train/test split** | 80/20 stratified tại **TRACK level** (4,996 train / 1,249 test) |
+| **CV** | 3-fold stratified (train set only), scoring=balanced_accuracy |
+
+#### Bbox normalization — 7 features mới
+
+Pixel speed (px/s) phụ thuộc vào zoom camera → không khả chuyển giữa camera.
+Giải pháp: ước lượng px/m từ kích thước bbox và kích thước thực của lớp đối tượng.
+
+```python
+CLASS_REAL_AREA_M2 = {
+    "motorcycle": 1.26, "car": 8.33, "bus": 25.0, "truck": 17.5, "person": 0.85
+}
+px_per_m       = sqrt(w_px * h_px) / sqrt(CLASS_REAL_AREA_M2[cls])
+speed_ms_est   = speed_px / px_per_m      # tốc độ ước lượng m/s
+speed_norm_bbox = speed_px / sqrt(w_px * h_px)  # zoom-invariant
+```
+
+7 features bổ sung: `speed_ms_mean`, `speed_ms_std`, `speed_ms_last`, `speed_ms_recent`,
+`speed_norm_bbox`, `bbox_size_mean`, `px_per_m_mean`
+
+#### Lịch sử các run
+
+| Run | Cấu hình | Accuracy | F1 macro | Ghi chú |
+|---|---|---|---|---|
+| v0 (baseline) | jf=0.5, no weights, 26 feat | 68.28% | 0.493 | ⚠️ **INFLATED** — eval trên train set |
+| v1 | jf=0.65, balanced weights, 26 feat | 76.69% | — | ⚠️ **INFLATED** — u_turn recall 100% = overfit |
+| v2 | jf=0.65, custom weights, 26 feat | **58.1%** | **0.508** | ✅ HONEST — proper 80/20 test split |
+| **v3 (final)** | jf=0.65, custom weights, **33 feat** | **59.7%** | **0.519** | ✅ HONEST + bbox normalization |
+
+#### Kết quả cuối cùng — Run v3 (TEST SET HONEST)
+
+| Metric | Giá trị |
+|---|---|
+| Accuracy | **59.7%** |
+| Balanced accuracy | **52.0%** |
+| F1 macro | **0.519** |
+| ECE (calibration) | 0.116 |
+| n_test | 1,249 samples |
+
+Per-class recall:
+
+| Lớp | Recall | Precision | F1 | Support |
+|---|---|---|---|---|
+| straight | 64.4% | 73.8% | 68.8% | 720 |
+| left | 53.7% | 49.1% | 51.3% | 268 |
+| right | 55.2% | 41.8% | 47.6% | 232 |
+| u_turn | 34.5% | 47.6% | 40.0% | 29 ← quá ít, không đáng tin |
+
+Per-horizon (insight chính: **h=1.5s và h=2.0s tốt nhất**):
+
+| Horizon | Accuracy | F1 macro | n_test |
+|---|---|---|---|
+| 0.5s | 52.6% | 0.413 | 1,023 |
+| 1.0s | 59.7% | 0.519 | 1,249 |
+| **1.5s** | **61.3%** | **0.549** | 1,249 |
+| 2.0s | 61.3% | 0.547 | 1,249 |
+
+Top feature importances: `head_rate_mean` (#1), `heading_range` (#2), `total_sign_heading` (#3).
+Bbox features đóng góp thực sự: `bbox_size_mean` (#6), `speed_ms_last` (#7), `speed_norm_bbox` (#13).
+
+#### So sánh CARLA vs Real CCTV
+
+| | CARLA (baseline) | Real CCTV v3 (final) |
+|---|---|---|
+| Test accuracy | **70.3%** | **59.7%** |
+| F1 macro | ~0.610 | 0.519 |
+| Samples | 35,000+ | 6,245 |
+| Feature space | world-space (m/s, m) | pixel-space + bbox norm |
+| Lý do gap | — | Ít data, pixel noise, junction point ước lượng thay vì GPS chính xác |
+
+**Kết luận:** 59.7% trên test set honest (straight/left/right đều >50% recall) là kết quả
+chấp nhận được cho bài toán không có calibration camera. Bbox normalization cải thiện
+right recall +5.2pp (50.0% → 55.2%) chứng minh đây là hướng đúng.
+
+#### Files tạo ra (2026-06-18)
+
+| File | Mô tả |
+|---|---|
+| `custom_tracking_system/scripts/autolabel_turning.py` | Phase 2 — auto-labeler |
+| `custom_tracking_system/scripts/train/train_goal_classifier_real.py` | Phase 3 — training script |
+| `custom_tracking_system/data/turning_labels.csv` | 6,959 tracks với nhãn hướng quẹo |
+| `custom_tracking_system/data/turning_labels_stats.json` | Thống kê phân phối nhãn |
+| `custom_tracking_system/weights/goal_classifier_real.pkl` | Model (CalibratedCV + GB) |
+| `custom_tracking_system/weights/goal_scaler_real.pkl` | StandardScaler |
+| `custom_tracking_system/weights/goal_label_encoder_real.pkl` | LabelEncoder |
+| `custom_tracking_system/weights/goal_feature_names_real.json` | 33 tên features |
+| `docs/assets/goal_classifier_real/metrics.json` | Metrics v3 đầy đủ |
+| `docs/assets/goal_classifier_real/metrics_v0_baseline.json` | Baseline reference (inflated) |
+| `docs/assets/goal_classifier_real/metrics_v1_jf065_balanced.json` | Balanced weights (inflated) |
+
+---
+
+## Phụ Lục — Đánh giá mức độ đủ để viết báo cáo (2026-06-19)
+
+### Đánh giá so với luận văn mẫu (DoAn.pdf — SafeWalk Hanoi, 69 trang)
+
+**Những gì đã đủ** (tốt hơn luận văn mẫu):
+
+| Hạng mục | Luận văn mẫu | Dự án này |
+|---|---|---|
+| Kết quả detection | mAP50=0.687 (2 giai đoạn) | mAP50=89.5% YOLO11s, per-class |
+| Thành phần AI | 1 mô hình | 3 thành phần: YOLO + ByteTrack + Goal Classifier |
+| Run history | Không có | v0→v1→v2→v3, honest eval, so sánh inflated vs honest |
+| Số liệu đánh giá | mAP, P, R, confusion matrix | mAP, F1, ECE, per-class recall, per-horizon |
+| Dữ liệu thực | ~500 ảnh | 111 video CCTV, 6,959 tracks auto-labeled |
+
+**Những gì còn thiếu cho báo cáo hoàn chỉnh:**
+
+- **OSNet/ReID**: chưa có Rank-1 accuracy → 1 component trong pipeline chưa có kết quả
+- **End-to-end test**: chưa có số liệu chạy `main.py --source file` với video thực
+- **Ground truth eval**: chưa có MOTA/IDF1 cho ByteTrack (dùng auto-label, không phải GT tay)
+- **Phân tích yêu cầu / use case**: luận văn mẫu dành ~15 trang — phần này có thể viết nhưng chưa có
+- **So sánh baseline**: chưa có bảng so sánh với hệ thống hiện có (YOLOv8, DeepSORT, v.v.)
+
+**Kết luận**: Có thể viết báo cáo tương đương nếu:
+1. Chấp nhận mô tả OSNet là "công việc tương lai" (đã có kế hoạch trong `gpu_cloud_tasks.md`)
+2. Tập trung 3 đóng góp chính: YOLO11s VN, ByteTrack multi-camera, Goal Classifier real CCTV
+3. Phần yếu nhất là **chưa có end-to-end test** — đây là ưu tiên trước khi viết chương đánh giá
+
+---
+
+## Phụ Lục — Kế hoạch Demo sản phẩm (2026-06-19)
+
+### Kịch bản demo
+
+> Camera AI phát hiện tai nạn → đánh dấu xe gây tai nạn → cross-camera tracking → dự đoán đường đi dài hạn → vẽ lên bản đồ → hỗ trợ cảnh sát chặn đường.
+
+### So sánh 2 phương án demo
+
+| Tiêu chí | CARLA thuần | Video CCTV thực |
+|---|---|---|
+| Kịch bản tai nạn | Script tự động, hoàn toàn kiểm soát | Không thể dàn dựng ngoài đường |
+| Cross-camera ReID | Dùng GT ID (bypass OSNet cho demo) | Cần OSNet trained (chưa có) |
+| Tọa độ GPS | Tự động từ OpenDRIVE georef | Cần calibrate homography từng camera |
+| Đường trên bản đồ | hanoi_district3.xodr đã có | Cần đo thực tế hoặc OSM align |
+| Tính thuyết phục | Cao (có thể lặp lại) | Cao hơn về hình ảnh nhưng thiếu nhiều component |
+| Effort | Trung bình | Rất cao (OSNet + calibration) |
+
+**Quyết định**: CARLA + hanoi_district3 + Leaflet map (xem chi tiết mục demo bên dưới).
+
+### Setup đề xuất — CARLA-based demo
+
+**4 component cần build:**
+
+1. **`scripts/demo_accident_scenario.py`** — script dàn dựng kịch bản trong CARLA:
+   - Spawn 2 camera tại 2 ngã tư liền tiếp trong hanoi_district3
+   - Cho traffic chạy bình thường ~30s
+   - Script trigger collision giữa 2 xe (dùng CARLA event hoặc physics impulse)
+   - Đánh dấu xe gây tai nạn = `accident_marker = True` → gọi route predictor
+
+2. **`modules/route_predictor.py`** — dự đoán đường dài hạn (multi-hop):
+   - Parse hanoi_district3.xodr → extract junction graph (junction → [exit_road, ...])
+   - Tại mỗi junction, chạy Goal Classifier → xác suất [left/straight/right]
+   - Chaining N hops (2-3 ngã tư tiếp theo) → sinh probability tree
+   - Output: `[{path: [[lat,lon], ...], probability: 0.73}, ...]`
+
+3. **Georeference** (1 lần):
+   - Khi load hanoi_district3.xodr, lưu mapping CARLA world (x,y) ↔ lat/lon thực
+   - Dựa trên gốc tọa độ của file .xodr (đã bao gồm trong header OpenDRIVE)
+
+4. **`frontend/map_view.html`** — Leaflet.js:
+   - Tile layer: OpenStreetMap (đúng khu vực Hà Nội đã chọn)
+   - Camera icons tại vị trí thực trong bản đồ
+   - Marker đỏ tại vị trí tai nạn
+   - Polylines theo probability (đậm = xác suất cao, nhạt = thấp)
+
+### Điều kiện tiên quyết trước khi bắt đầu build
+
+- [x] End-to-end test `main.py --source file` — **DONE** (Phase 4, 2026-06-19)
+- [x] Kiểm tra hanoi_district3.xodr load được trong CARLA — **DONE** (541 spawn points, 2026-06-19)
+- [x] Parse .xodr để extract junction graph — **DONE** (`Map/junction_graph.json`, 2026-06-19)
+
+---
+
+## Phụ Lục — Cập Nhật 2026-06-19
+
+### Phase 4 — End-to-end test + Goal Classifier Integration
+
+**Vấn đề:** boxmot v19.0.0 đổi import path hoàn toàn:
+- Cũ: `boxmot.trackers.bytetrack.byte_tracker.BYTETracker`
+- Mới: `boxmot.trackers.bbox.bytetrack.bytetrack.ByteTrack`
+
+**Fix:** `custom_tracking_system/modules/tracker.py` — `_init_tracker()` dùng direct import với fallback `create_tracker`. ByteTrack custom params (`track_thresh=0.25`, `match_thresh=0.8`, `frame_rate=10`) được truyền đúng.
+
+**GoalClassifier Integration** (`modules/goal_classifier.py`):
+- Wrap `goal_classifier_real.pkl` (GradientBoostingClassifier + CalibratedCV, 33 features)
+- ROI-gated: với CARLA/bridge source, chỉ predict khi vehicle trong intersection polygon; clear history khi ra ROI
+- Heading guard: force "straight" nếu `total_abs_heading < 12°` trong cửa sổ 1.5s
+- Min frames: 10 frames (~1.5s tại 6fps) trước lần predict đầu tiên
+- Tích hợp vào `main.py` + `visualization.py` (`draw_goal_predictions()`)
+
+**Benchmark kết quả** (300 frames, Hàng Bông 640×360, CPU-only):
+
+| Metric | Kết quả |
+|---|---|
+| Pipeline FPS (avg) | **6.1** (real-time trên CPU) |
+| Per-frame latency | 164ms avg, p50=169ms, p95=208ms |
+| Avg detections/frame | 28.6 |
+| Total unique track IDs (300 frames) | 200 |
+| Frames với goal prediction | 296/300 (99%) |
+| Direction distribution | straight 79.2%, left 10.1%, right 10.1%, u_turn 0.6% |
+
+**Visualize output** (`scripts/visualize_goal_predictions.py`): 6 non-straight confident events (conf ≥ 50%): left×4, right×2 — xác nhận heading guard hoạt động đúng (30 frames flip-flop đầu bị suppress).
+
+---
+
+### Parse xodr + Junction Graph
+
+**Script:** `custom_tracking_system/scripts/parse_xodr.py`
+
+**Output:** `Map/junction_graph.json`
+
+| | |
+|---|---|
+| Junctions | 52 |
+| Roads | 464 |
+| Format | `{junctions: {id: {center, connections, incoming_roads}}, roads: {id: {start, end, heading_rad, length, predecessor, successor}}}` |
+| Tọa độ | OpenDRIVE local (metres), CARLA Y-flip được xử lý trong `route_predictor.py` |
+
+---
+
+### Georeference (`georeference.py`)
+
+| | |
+|---|---|
+| File | `custom_tracking_system/georeference.py` |
+| Projection | pyproj Transformer UTM zone 48 → WGS84 |
+| Offset | x=581165.61, y=2320490.53 (từ xodr `<offset>` element) |
+| CARLA Y-flip | `utm_n = -carla_y + offset_y` |
+| Round-trip error | 0.000 m ✅ |
+| CARLA (0,0) → | lat=20.983237, lon=105.780868 (tây-nam Hà Nội) |
+| Lưu ý | CARLA server 0.9.14 in `cannot parse georeference` khi load xodr — không ảnh hưởng vì georef xử lý ở Python, không phụ thuộc CARLA |
+
+---
+
+### Route Predictor (`route_predictor.py`)
+
+**File:** `custom_tracking_system/route_predictor.py`
+
+Thuật toán chọn outgoing road tại junction:
+
+| Direction | Target deviation | Tolerance |
+|---|---|---|
+| straight | 0° | ±60° |
+| left | -90° | ±70° |
+| right | +90° | ±70° |
+| u_turn | 180° | ±70° |
+
+API:
+```python
+rp = RoutePredictor.from_map('hanoi_district3', georef=gr)
+route = rp.predict(x, y, heading_deg, direction='right', n_hops=4)
+# → [{hop:1, road_id:'896', x:517.4, y:-433.1, lat:20.9871, lon:105.7858, ...}, ...]
+
+multi = rp.predict_probabilistic(x, y, heading_deg,
+    direction_probs={'straight':0.40, 'right':0.35, 'left':0.20, 'u_turn':0.05},
+    n_hops=2, min_prob=0.15)
+```
+
+---
+
+### Demo Components
+
+**`scripts/demo_accident_scenario.py`:**
+- `--dry-run` mode: test không cần CARLA, ghi `demo/incident_state.json` với route 4 hops
+- CARLA mode: spawn 12 xe, force collision, GoalClassifier → RoutePredictor loop 20Hz
+- Output file: `demo/incident_state.json` cập nhật realtime
+
+**`demo/server.py`** (Flask 3.1.3):
+- `GET /api/state` → 200 OK, phase=ROUTE_PREDICTED, route_hops=4 (verified)
+- `POST /api/incidents/{id}/mark` → manually mark accident vehicle
+- `GET /api/tracks/{id}/routes` → predicted route JSON
+
+**`demo/map_view.html`** (Leaflet 1.9.4):
+- Poll `/api/state` mỗi 500ms
+- Accident vehicle: red pulsing marker + popup
+- Route: dashed orange polyline + hop circles
+- Sidebar: probability bars, per-hop lat/lon
+
+---
+
+### CARLA Load Test (2026-06-19)
+
+**Script:** `custom_tracking_system/scripts/test_load_opendrive.py`
+
+```
+PASS — hanoi_district3.xodr loads correctly in CARLA
+  Spawn points : 541
+  Junctions    : 38  (CARLA topology — khác 52 trong xodr do CARLA group junctions)
+  Georef check : lat=20.98505, lon=105.78718 — TRONG RANGE Hà Nội ✅
+  Tick test    : vehicle teleport OK (0,0 → spawn point sau 1 tick) ✅
+```
+
+Client API 0.9.15 vs server 0.9.14: version mismatch nhưng không ảnh hưởng chức năng cơ bản.
+
+---
+
+### Files tạo ra (2026-06-19)
+
+| File | Mô tả |
+|---|---|
+| `custom_tracking_system/modules/goal_classifier.py` | GoalClassifier real-time module |
+| `custom_tracking_system/modules/tracker.py` | Fix boxmot v19 ByteTrack import |
+| `custom_tracking_system/main.py` | ROI-gated goal classification + visualization |
+| `custom_tracking_system/utils/visualization.py` | `draw_goal_predictions()` |
+| `custom_tracking_system/georeference.py` | CARLA ↔ lat/lon converter |
+| `custom_tracking_system/route_predictor.py` | Multi-hop route prediction |
+| `custom_tracking_system/scripts/parse_xodr.py` | Parse xodr → junction_graph.json |
+| `custom_tracking_system/scripts/test_load_opendrive.py` | CARLA xodr load verify |
+| `custom_tracking_system/scripts/demo_accident_scenario.py` | Kịch bản demo CARLA |
+| `custom_tracking_system/scripts/benchmark_pipeline.py` | FPS benchmark |
+| `custom_tracking_system/scripts/visualize_goal_predictions.py` | Output video với overlay |
+| `custom_tracking_system/scripts/trace_single_track.py` | Per-track prediction trace |
+| `custom_tracking_system/scripts/test_georeference.py` | Georef unit test |
+| `custom_tracking_system/scripts/test_route_predictor.py` | Route predictor smoke test |
+| `Map/junction_graph.json` | Junction graph (52 nodes, 464 edges) |
+| `demo/server.py` | Flask demo server |
+| `demo/map_view.html` | Leaflet accident route map |
+| `demo/incident_state.json` | Live incident state (realtime) |
+| `docs/assets/benchmark_pipeline.json` | Benchmark metrics JSON |
+
+---
+
+## Phụ Lục — Ground Truth Evaluation MOTA/IDF1 (2026-06-19)
+
+### Bug phát hiện và sửa
+
+**Nguyên nhân pred files rỗng / frame ID mismatch:**
+
+Trong `main.py`, GT và pred dùng hai nguồn frame ID khác nhau:
+- GT (dòng 341): `f.write(f"{frame_count},...")` → sequential (1, 2, 3...)
+- Pred (dòng 372, trước fix): `eval_frame = sync_frames[camera_id].get('frame_number', frame_count)` → CARLA tick ID (ví dụ: 2354074, 2354075...)
+
+Kết quả: GT và pred không bao giờ khớp frame → toàn bộ GT là FN, toàn bộ pred là FP → MOTA âm giả tạo.
+
+**Fix:** `main.py` dòng 372: đổi thành `eval_frame = frame_count` (luôn dùng sequential counter như GT).
+
+### Kết quả chính thức (100 frames, Town10HD_Opt, 3 camera)
+
+```
+        IDF1  IDP  IDR Rcll Prcn GT MT PT ML  FP   FN IDs  FM   MOTA  MOTP IDt IDa IDm
+CAM_001  0.7% 2.5% 0.4% 0.4% 2.5%  8  0  0  8 116  721   0   0 -15.6% 0.260   0   0   0
+CAM_002  0.0% 0.0% 0.0% 0.0% 0.0%  5  0  0  5 317  401   0   0 -79.1%   NaN   0   0   0
+CAM_003  0.0%  NaN 0.0% 0.0%  NaN  7  0  0  7   0  700   0   0   0.0%   NaN   0   0   0
+OVERALL  0.3% 0.7% 0.2% 0.2% 0.7% 20  0  0 20 433 1822   0   0 -23.6%   NaN   0   0   0
+```
+
+Files đầu ra:
+- `custom_tracking_system/docs/assets/mot_eval/summary.csv`
+- `custom_tracking_system/docs/assets/mot_eval/mot_metrics.png`
+
+### Phân tích kết quả
+
+| Chỉ số | Giá trị | Giải thích |
+|--------|---------|-----------|
+| MOTA overall | **-23.6%** | Âm vì FP (433) lớn hơn số GT boxes khớp được |
+| Recall | **0.2%** | Gần như tất cả GT vehicle bị bỏ sót |
+| FP | **433** | YOLO phát hiện nhiễu background (props, buildings) trong CARLA render |
+| FN | **1822** | GT vehicle bị miss hoàn toàn |
+| IDS | **0** | Không có identity switch (không có track nào match được để switch) |
+| MOTP | **0.260** | CAM_001 có 1 partial match với IoU≈0.74 — khi match được, chất lượng localization tốt |
+
+**Root cause:** Domain gap giữa YOLO11s_vn.pt (train trên VisDrone drone-view + CCTV thực VN) và CARLA Town10HD synthetic renders từ 3 camera góc thấp. Model phát hiện nhiều FP (background noise) nhưng gần như không detect được GT vehicle ở đúng vị trí (IoU < 0.5).
+
+### Thử nghiệm các biện pháp cải thiện (2026-06-19)
+
+Thêm 2 flag vào `main.py`: `--detector` (override weights) và `--conf` (override threshold).
+
+**Kết quả thử nghiệm (mỗi lần 100 frames, Town10HD_Opt):**
+
+| Cấu hình | MOTA | Recall | Precision | FP | FN | IDS |
+|----------|------|--------|-----------|-----|-----|-----|
+| yolo11s_vn conf=0.35 (default) | **-23.6%** | 0.2% | 0.7% | 433 | 1822 | 0 |
+| yolo11s_vn conf=0.25 | -65.4% | 0.0% | 0.0% | 915 | 1400 | 0 |
+| yolo11s_vn conf=0.20 | -54.3% | 6.0% | 9.2% | 1280 | 2023 | 19 |
+| yolo11s_vn conf=0.10 | -68.5% | 1.2% | 1.8% | 1062 | 1506 | 1 |
+| yolo11s COCO (stock) | N/A | 0% | — | 0 | — | 0 |
+
+**Phân tích:**
+
+- **yolo11s COCO tệ hơn VN model** — detect vehicle ở max conf=0.098 (tất cả bị filter ở bất kỳ threshold nào ≥ 0.10). VN fine-tune trên VisDrone + một phần CARLA data cho confidence cao hơn hẳn.
+- **Hạ threshold không cải thiện MOTA** — tỷ lệ FP/TP xấu: mỗi GT vehicle detect được thì đi kèm 2–5 FP từ background CARLA (tường, cột, xe đỗ không có trong GT). MOTA = 1 − (FP+FN+IDS)/GT, FP tăng nhanh hơn FN giảm.
+- **conf=0.35 vẫn là điểm tốt nhất** trong không gian này: ít FP nhất (433), MOTA ít âm nhất (-23.6%).
+- **Debug frame (CAM_001)**: ở conf≥0.05, yolo11s_vn detect 21 objects (top: car=0.393, car=0.342, người=0.235…), yolo11s_coco chỉ detect 8 objects (max=0.098).
+
+**Kết luận:** Không có threshold nào hoặc model COCO nào khắc phục được domain gap mà không fine-tune. TP/FP ratio hiện tại ≈ 1:100.
+
+**Hướng khắc phục duy nhất có hiệu quả:**
+- Fine-tune thêm trên `data/carla_cam_det/` (2208 ảnh, đúng viewpoint CAM_001/002/003, GT từ CARLA actors) → cần GPU cloud (GTX 1050Ti 4GB không đủ). Dự kiến TP/FP ratio > 1:1 → MOTA dương.

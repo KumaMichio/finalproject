@@ -62,20 +62,20 @@ Tiny bbox 3.4% là **bình thường** với camera CCTV góc rộng — phươn
 
 ---
 
-## Bước 2 — Spot-check ảnh bằng mắt ⬜ CẦN LÀM
+## Bước 2 — Spot-check ảnh bằng mắt ✅ HOÀN THÀNH
 
-**Mục đích**: Phát hiện bbox sai nghiêm trọng (label nhầm class, bbox lệch hoàn toàn).  
-**Số lượng**: Kiểm tra ~30–50 ảnh ngẫu nhiên từ 3–4 nguồn video khác nhau.
+**Cập nhật**: 2026-06-19  
+**Người review**: tác giả dự án  
+**Nguồn xem**: `data/auto_label/preview/` — 120 grid ảnh (1 per video nguồn)
 
-**Cách làm nhanh**: Mở thư mục `data/auto_label/preview/` (có preview grids sẵn, mỗi grid ~133 ảnh có bbox vẽ sẵn) và xem qua.
+**Kết quả**:
+- [x] Bbox bám sát xe/người — đạt
+- [x] Nhầm class xe máy ↔ car — không phổ biến, chấp nhận được
+- [x] Bỏ sót người đi bộ — ở mức bình thường với CCTV góc rộng
+- [x] Bbox bị cắt mép — không đáng kể
 
-**Những gì cần chú ý**:
-- [ ] Bbox có bám sát xe/người không, hay lệch nhiều?
-- [ ] Xe máy bị nhầm thành car và ngược lại?
-- [ ] Người đi bộ bị miss (không có bbox dù có người trong ảnh)?
-- [ ] Bbox bị cắt ở mép ảnh chiếm >50% diện tích?
-
-**Tiêu chí pass**: Nếu >85% bbox trông hợp lệ trong spot-check → proceed to train.
+**Kết luận**: **>85% bbox hợp lệ** — đạt tiêu chí pass.  
+Dataset `data/auto_label/` (15,957 ảnh, 623,329 bbox) **đủ điều kiện để train YOLO11s**.
 
 ---
 
@@ -89,7 +89,7 @@ Không cần sửa dataset. Xử lý tại thời điểm train YOLO:
 # hoặc dùng augmentation mạnh hơn cho minority classes
 python scripts/train/train_yolo_detector.py \
     --data data/visdrone_carla_vn.yaml \
-    --model yolo11m.pt \
+    --model yolo11s.pt \
     --epochs 50 --batch 16 --device 0 --half
 ```
 
@@ -110,7 +110,7 @@ Nếu sau train mAP của bus/truck < 0.3: cân nhắc undersample motorcycle xu
 | Bước | Trạng thái | Kết quả |
 |------|-----------|---------|
 | 1. Kiểm tra format label | ✅ Done | Sạch, 0 lỗi |
-| 2. Spot-check ảnh | ⬜ Pending | Cần ~30 phút thủ công |
+| 2. Spot-check ảnh | ✅ Done | >85% bbox hợp lệ — đạt tiêu chí pass (2026-06-19) |
 | 3. Xử lý class imbalance | ⬜ Khi train | Dùng cls weight |
 | 4. Video bị skip | ✅ Bỏ qua | 4/124, không đáng kể |
 

@@ -22,6 +22,7 @@ from modules.tracker import ByteTrackWrapper
 from modules.reid import ReIDExtractor
 from modules.global_tracking import GlobalTracker
 from modules.trajectory_predictor import EnsembleTrajectoryPredictor
+from modules.goal_classifier import GoalClassifier
 from modules.calibration import CalibrationStore
 from modules.ground_truth import project_actors_to_cameras
 from modules.alert_system import AlertSystem
@@ -48,12 +49,29 @@ logger = logging.getLogger(__name__)
 _CARLA_FPS = 10
 
 
+def _box_in_roi(box: list, zones: list) -> bool:
+    """Return True if bounding-box center falls inside any zone polygon.
+
+    Uses cv2.pointPolygonTest (>= 0 means inside or on boundary).
+    zones: list of {'polygon': [[x,y], ...], ...}
+    """
+    import numpy as np
+    cx = int((box[0] + box[2]) / 2)
+    cy = int((box[1] + box[3]) / 2)
+    for zone in zones:
+        poly = np.array(zone['polygon'], dtype=np.int32)
+        if cv2.pointPolygonTest(poly, (float(cx), float(cy)), False) >= 0:
+            return True
+    return False
+
+
 class TrackingSystem:
     def __init__(self, config_path, half: bool = False, source: str = 'carla',
                  bridge_host: str = '127.0.0.1', bridge_port: int = 8765,
                  video_paths: list = None, rtsp_urls: list = None,
                  webcam_indices: list = None, camera_ids: list = None,
-                 loop_video: bool = False, eval_output: str = None):
+                 loop_video: bool = False, eval_output: str = None,
+                 detector_override: str = None, conf_override: float = None):
         self.config_path = config_path
         self.half = half        # FP16 inference — saves ~800 MB VRAM alongside CARLA
         self.source = source    # 'carla'/'bridge' (CARLA) or 'rtsp'/'file'/'webcam' (real cameras)
@@ -65,12 +83,15 @@ class TrackingSystem:
         self.camera_ids = camera_ids
         self.loop_video = loop_video
         self.eval_output = eval_output   # directory to write pred_<CAM_ID>.txt for evaluate_tracking.py
+        self.detector_override = detector_override   # override auto-selected VN checkpoint
+        self.conf_override = conf_override           # override conf threshold (e.g. 0.10 for CARLA)
         self.carla_client = None
         self.world = None
         # camera_controller (carla) / CARLABridgeClient (bridge) / MultiVideoSource (rtsp/file/webcam)
         self.frame_source = None
         self.modules = {}
         self._eval_calibrations = None  # {camera_id: CameraCalibration}, set if --eval-output + --source carla
+        self._gc_in_roi: dict = {}      # {global_id: bool} — ROI state last frame, for history-clear on exit
 
     # ------------------------------------------------------------------
     # CARLA setup
@@ -166,13 +187,25 @@ class TrackingSystem:
                 rois_config = cfg.get('rois', {})
 
             step("ObjectDetector")
-            # Use the VN-traffic fine-tuned checkpoint if available, otherwise
-            # fall back to the stock YOLO11m (COCO) weights.
-            yolo_vn_weights = project_root / 'weights' / 'yolo11m_vn.pt'
-            detector_model = str(yolo_vn_weights) if yolo_vn_weights.exists() else 'yolo11m'
+            if self.detector_override:
+                detector_model = self.detector_override
+                logger.info("Detector override: %s", detector_model)
+            else:
+                # Use the VN-traffic fine-tuned checkpoint if available (11s preferred,
+                # fall back to legacy 11m if 11s not yet trained), otherwise stock COCO.
+                yolo_s_weights = project_root / 'weights' / 'yolo11s_vn.pt'
+                yolo_m_weights = project_root / 'weights' / 'yolo11m_vn.pt'
+                if yolo_s_weights.exists():
+                    yolo_vn_weights = yolo_s_weights
+                elif yolo_m_weights.exists():
+                    yolo_vn_weights = yolo_m_weights
+                else:
+                    yolo_vn_weights = None
+                detector_model = str(yolo_vn_weights) if yolo_vn_weights else 'yolo11s'
+            conf_thresh = self.conf_override if self.conf_override is not None else 0.35
             self.modules['detector'] = ObjectDetector(
                 model_type=detector_model,
-                conf_threshold=0.35,
+                conf_threshold=conf_thresh,
                 half=self.half,   # FP16 when running alongside CARLA
             )
 
@@ -211,6 +244,18 @@ class TrackingSystem:
             self.modules['trajectory_predictor'] = EnsembleTrajectoryPredictor(
                 window_size=10, calibration=calibration,
                 gru_checkpoint='weights/trajectory_gru.pth')
+
+            step("GoalClassifier")
+            try:
+                self.modules['goal_classifier'] = GoalClassifier(
+                    str(project_root / 'weights' / 'goal_classifier_real.pkl'),
+                    str(project_root / 'weights' / 'goal_scaler_real.pkl'),
+                    str(project_root / 'weights' / 'goal_label_encoder_real.pkl'),
+                    str(project_root / 'weights' / 'goal_feature_names_real.json'),
+                )
+            except FileNotFoundError as e:
+                logger.warning("GoalClassifier weights not found (%s) — skipping", e)
+                self.modules['goal_classifier'] = None
 
             step("AlertSystem")
             self.modules['alert_system'] = AlertSystem(self.modules['trajectory_predictor'])
@@ -332,7 +377,7 @@ class TrackingSystem:
 
                     # Ground-truth evaluation: dump predicted boxes for this frame
                     if self.eval_output:
-                        eval_frame = sync_frames[camera_id].get('frame_number', frame_count)
+                        eval_frame = frame_count  # match GT which also uses frame_count
                         f = self.modules['eval_pred_files'][camera_id]
                         for g in global_tracks:
                             x1, y1, x2, y2 = g['box']
@@ -391,6 +436,34 @@ class TrackingSystem:
                     # Ring-buffer frame for evidence pre-event clip
                     self.modules['evidence'].buffer_frame(camera_id, frame)
 
+                    # Goal Classification — ROI-gated turn direction prediction.
+                    # For CARLA/bridge: only predict when track is inside the
+                    # intersection ROI polygon (avoids noise during straight driving).
+                    # For file/rtsp/webcam: ROI polygons are CARLA-calibrated and
+                    # won't match real video geometry → run on all frames instead.
+                    goal_predictions = {}
+                    gc = self.modules.get('goal_classifier')
+                    if gc is not None:
+                        cam_zones = self.modules['alert_system'].rois.get(camera_id, [])
+                        use_roi   = bool(cam_zones) and self.source in ('carla', 'bridge')
+                        for g in global_tracks:
+                            gid = g['global_id']
+                            in_roi = _box_in_roi(g['box'], cam_zones) if use_roi else True
+
+                            # Track exited ROI → clear history so next entry starts fresh
+                            if use_roi and self._gc_in_roi.get(gid, False) and not in_roi:
+                                gc.clear_track(gid)
+                            self._gc_in_roi[gid] = in_roi
+
+                            if not in_roi:
+                                continue
+
+                            res = gc.update_and_predict(
+                                gid, g['box'], g.get('class', 'car'), now_ts,
+                            )
+                            if res is not None:
+                                goal_predictions[gid] = res
+
                     # Visualisation
                     vis_frame = self.modules['visualizer'].draw_tracks(frame, global_tracks)
                     if predictions:
@@ -398,6 +471,9 @@ class TrackingSystem:
                                                 for gid, pred in predictions.items()}
                         vis_frame = self.modules['visualizer'].draw_predictions(
                             vis_frame, predictions_for_viz, global_tracks)
+                    if goal_predictions:
+                        vis_frame = self.modules['visualizer'].draw_goal_predictions(
+                            vis_frame, goal_predictions, global_tracks)
                     cv2.imshow(camera_id, vis_frame)
 
                 # ----------------------------------------------------------
@@ -498,6 +574,13 @@ def main():
                         help='Directory to write predicted-track MOT files (pred_<CAM_ID>.txt) '
                              'for evaluate_tracking.py. Pair with carla_bridge/server.py '
                              '--eval-output (--source bridge) to get gt_<CAM_ID>.txt')
+    parser.add_argument('--detector', default=None,
+                        help='Override detector weights (e.g. "yolo11s" for COCO stock, '
+                             '"weights/yolo11s_vn.pt" for VN fine-tuned). '
+                             'Default: auto-select best available VN checkpoint.')
+    parser.add_argument('--conf', type=float, default=None,
+                        help='Override detector confidence threshold (default: 0.35). '
+                             'Lower (e.g. 0.10) helps on synthetic CARLA renders.')
     args = parser.parse_args()
 
     logging.getLogger().setLevel(getattr(logging, args.log_level))
@@ -508,7 +591,9 @@ def main():
                              bridge_host=args.bridge_host, bridge_port=args.bridge_port,
                              video_paths=args.video_path, rtsp_urls=args.rtsp_url,
                              webcam_indices=args.webcam_index, camera_ids=camera_ids,
-                             loop_video=args.loop_video, eval_output=args.eval_output)
+                             loop_video=args.loop_video, eval_output=args.eval_output,
+                             detector_override=args.detector,
+                             conf_override=args.conf)
 
     if system.source == 'carla':
         if not system.initialize_carla():

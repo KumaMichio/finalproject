@@ -115,6 +115,52 @@ class Visualizer:
 
         return frame_copy
 
+    # Direction arrow chars (ASCII-safe for OpenCV putText)
+    _DIR_ARROW = {'straight': '^', 'left': '<', 'right': '>', 'u_turn': 'U'}
+    # BGR colors per direction
+    _DIR_COLOR = {
+        'straight': (255, 255, 255),   # white
+        'left':     (0, 165, 255),     # orange
+        'right':    (0, 255, 0),       # green
+        'u_turn':   (0, 0, 255),       # red
+    }
+
+    def draw_goal_predictions(self, frame, goal_predictions, global_tracks=None):
+        """
+        Overlay goal classification result on each tracked object.
+
+        Args:
+            frame:            numpy array (H, W, 3)
+            goal_predictions: {global_id: {'direction': str, 'confidence': float, ...}}
+            global_tracks:    list of track dicts (used to get box position)
+
+        Returns:
+            numpy array: frame with goal overlays
+        """
+        frame_copy = frame.copy()
+        box_map = {}
+        if global_tracks:
+            for t in global_tracks:
+                box_map[t['global_id']] = t['box']
+
+        for gid, pred in goal_predictions.items():
+            box = box_map.get(gid)
+            if box is None:
+                continue
+
+            direction  = pred.get('direction', '?')
+            confidence = pred.get('confidence', 0.0)
+            arrow      = self._DIR_ARROW.get(direction, '?')
+            color      = self._DIR_COLOR.get(direction, (200, 200, 200))
+            x1, y1, x2, y2 = box
+
+            # Draw label below bottom-right of box
+            label = f"{arrow}{direction[:1].upper()} {confidence:.0%}"
+            cv2.putText(frame_copy, label, (x1, y2 + 16),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.55, color, 2)
+
+        return frame_copy
+
     # Màu cố định (vàng, BGR) cho mọi đường dự đoán — phân biệt rõ với màu
     # bounding box (theo từng global_id) để dễ nhận ra khi demo.
     PREDICTION_COLOR = (0, 255, 255)

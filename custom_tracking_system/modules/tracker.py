@@ -54,8 +54,21 @@ class ByteTrackWrapper:
                     frame_rate, lost_track_buffer)
 
     def _init_tracker(self):
-        from boxmot.trackers.bytetrack.byte_tracker import BYTETracker
-        self.tracker = BYTETracker(**self._init_kwargs)
+        # boxmot >=19 moved ByteTrack; try new location first, fall back to old.
+        try:
+            from boxmot.trackers.bbox.bytetrack.bytetrack import ByteTrack
+            self.tracker = ByteTrack(
+                track_thresh=self._init_kwargs.get('track_thresh', 0.25),
+                track_buffer=self._init_kwargs.get('track_buffer', 30),
+                match_thresh=self._init_kwargs.get('match_thresh', 0.8),
+                frame_rate=self._init_kwargs.get('frame_rate', 10),
+            )
+        except ImportError:
+            from boxmot.trackers.tracker_zoo import create_tracker
+            self.tracker = create_tracker(
+                'bytetrack', tracker_config=None, reid_weights=None,
+                device='cpu', half=False,
+            )
 
     def update(self, detections: list, frame: np.ndarray) -> list:
         """
