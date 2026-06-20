@@ -1,38 +1,58 @@
 # Nhiệm vụ cần GPU Cloud
 
-> Cập nhật: 2026-06-17  
+> Cập nhật: 2026-06-20  
 > Platform khuyến nghị: Kaggle (T4 x2, miễn phí 30h/tuần) hoặc Google Colab Pro
 
 ---
 
-## 1. YOLO11m Fine-tune
+## 1. YOLO11s Fine-tune vòng 2 — carla_cam_det_v2 ⭐ ƯU TIÊN
 
-**Mục đích**: Fine-tune YOLO11m pretrained trên dataset giao thông Việt Nam để phát hiện 5 lớp: `person, car, motorcycle, bus, truck`.
+**Mục đích:** Fine-tune lại `yolo11s_vn.pt` trên `data/carla_cam_det_v2/` để xóa domain gap CARLA (MOTA hiện tại = −23.6%, Recall = 3.96%). Dataset v2 có 16,247 ảnh đúng viewpoint camera TL-mounted → kỳ vọng MOTA dương sau fine-tune.
 
-**Dữ liệu đầu vào** (chuẩn bị local trước, upload lên Kaggle):
-- `data/auto_label/` — 15.957 ảnh CARLA đã auto-label (cần QA trước)
-- `data/visdrone_vn/` — VisDrone dataset lọc lấy 5 class (chạy `prepare_visdrone_dataset.py`)
-- Merge: `python merge_detection_datasets.py --datasets visdrone=data/visdrone_vn carla=data/auto_label --out data/visdrone_carla_vn`
+**Dữ liệu đầu vào** (`data/carla_cam_det_v2/` — đã sẵn sàng, upload lên Kaggle):
+
+```
+data/carla_cam_det_v2/
+  train/images/   14,791 ảnh (6 camera TL-mounted Town10HD_Opt)
+  train/labels/   117,489 boxes (car 67%, motorcycle 17%, truck 14%)
+  val/images/     1,456 ảnh
+  val/labels/
+  data.yaml
+```
+
+**Class weights** (bù motorcycle underrepresentation — avg bbox 6.7px vs car 31.9px):
+
+```python
+# person=1.0, car=0.5, motorcycle=3.0, bus=1.0, truck=0.5
+# Truyền qua model.train() hoặc data.yaml
+```
 
 **Lệnh chạy trên Kaggle notebook:**
 ```python
 # Cell 1 — cài dependencies
 !pip install ultralytics -q
 
-# Cell 2 — train
-!python custom_tracking_system/scripts/train/train_yolo_detector.py \
-    --data data/visdrone_carla_vn.yaml \
-    --model yolo11s.pt \
-    --epochs 50 \
-    --batch 16 \
-    --device 0 \
-    --half \
-    --out weights/yolo11s_vn.pt
+# Cell 2 — fine-tune từ yolo11s_vn.pt (không train from scratch)
+from ultralytics import YOLO
+model = YOLO('weights/yolo11s_vn.pt')   # upload file này lên Kaggle trước
+model.train(
+    data='data/carla_cam_det_v2/data.yaml',
+    epochs=30,
+    batch=16,
+    imgsz=960,
+    device=0,
+    half=True,
+    name='yolo11s_carla_v2'
+)
 
 # Cell 3 — download kết quả
 import shutil
-shutil.make_archive('/kaggle/working/yolo_results', 'zip', 'runs/detect/yolo11s_vn')
+shutil.make_archive('/kaggle/working/yolo_results', 'zip', 'runs/detect/yolo11s_carla_v2')
 ```
+
+> **Lưu ý:** Upload `weights/yolo11s_vn.pt` (19MB) lên Kaggle dataset trước khi chạy.
+
+**Ước tính thời gian:** ~45–90 phút trên T4 (30 epochs, 960px, 14K ảnh)
 
 **Output cần lấy về:**
 - `results.png` — training curves (loss, mAP theo epoch)

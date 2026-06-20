@@ -77,6 +77,9 @@ class AlertSystem:
             roi_name = roi['name']
             polygon = roi['polygon']
 
+            if not polygon:   # ROI chưa được calibrate (polygon rỗng) → skip
+                continue
+
             # Estimate arrival time (None if trajectory never enters ROI)
             eta = self._estimate_arrival_time(predicted_positions, polygon)
 

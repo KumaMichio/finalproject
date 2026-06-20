@@ -5,7 +5,7 @@
 
 **Môi trường mô phỏng:** CARLA Simulator 0.9.14 (Town10HD_Opt + hanoi_district3.xodr)
 
-**Cập nhật lần cuối:** 2026-06-19 (xem Phụ Lục ở cuối tài liệu cho tiến độ từng giai đoạn: 2026-06-13/14, 2026-06-18, và 2026-06-19)
+**Cập nhật lần cuối:** 2026-06-20 (xem Phụ Lục ở cuối tài liệu cho tiến độ từng giai đoạn: 2026-06-13/14, 2026-06-18, 2026-06-19, và 2026-06-20)
 
 ---
 
@@ -73,24 +73,30 @@ cần viết lại pipeline.**
 
 ## 3. Các Model AI Sử Dụng & Tiến Độ
 
-### 3.1 Object Detection — YOLO11m
+### 3.1 Object Detection — YOLO11s (primary) / YOLO11m (legacy)
 
 | | |
 |---|---|
 | **Vai trò** | Phát hiện 5 lớp: `person, car, motorcycle, bus, truck` trên mỗi khung hình camera |
-| **Model trước đây** | YOLOv8s (pretrained COCO) — mAP COCO 44.9, hoạt động ổn định nhưng nhận diện xe máy VN kém |
-| **Model hiện tại** | **YOLO11m** (~20M params), fine-tune từ checkpoint pretrained COCO |
-| **Dataset fine-tune** | `data/visdrone_carla_vn` = VisDrone2019-DET (convert 10→5 lớp VN) **+** dữ liệu CARLA tự thu thập (`collect_carla_detection_data.py`, 6 camera CCTV đặt tại góc phố/gắn tường, 184 ảnh/191 box) |
-| **Số lượng ảnh** | 6,643 train (6,471 VisDrone + 172 CARLA) / 560 val (548 VisDrone + 12 CARLA) |
-| **Tiến độ huấn luyện** | ✅ **Hoàn thành 18/18 epoch** (2026-06-12), batch=8, imgsz=640, RTX 4060 |
-| **Kết quả cuối cùng** | mAP50=**0.559**, mAP50-95=**0.334**, precision=**0.677**, recall=**0.529** (so với epoch 1: mAP50=0.346, mAP50-95=0.189 — **mAP50 +61.6%, mAP50-95 +76.7%**) |
-| **Sản phẩm** | `weights/yolo11m_vn.pt` (đã copy từ `best.pt`) + `results.png`, `confusion_matrix.png`, `BoxPR_curve.png`, `BoxF1_curve.png`, `BoxP_curve.png`, `BoxR_curve.png`, `results.csv` lưu tại `docs/assets/yolo11m_vn_carla/` |
+| **Model trước đây** | YOLOv8s (pretrained COCO) → YOLO11m → **hiện tại: YOLO11s** |
+| **Model hiện tại (production)** | **YOLO11s_vn** (~9.4M params, 21.3 GFLOPs) — `weights/yolo11s_vn.pt`; `main.py` tự động ưu tiên yolo11s nếu có, fallback sang yolo11m |
+| **Dataset fine-tune** | VisDrone2019-DET (convert 10→5 lớp VN) + `carla_cam_det/` (2,208 ảnh, 3 camera) + **`carla_cam_det_v2/`** (16,247 ảnh, 6 camera TL-mounted, 117,489 boxes — sẵn sàng cho fine-tune tiếp) |
+| **Tiến độ huấn luyện** | ✅ **Hoàn thành** (train trên Kaggle T4), checkpoint `weights/yolo11s_vn.pt` |
 
-**Trạng thái:** ✅ **Hoàn thành fine-tune** (2026-06-12). Camera CARLA được đặt lại
-vị trí thực tế (góc phố, gắn tường/cột — không xuyên tường, không dưới đất)
-trước khi thu thập dữ liệu CARLA bổ sung. Quá trình train bị gián đoạn 2 lần do
-máy bị reset (epoch 2→6 và epoch 17→18) nhưng đã resume thành công từ
-checkpoint mỗi lần. `ObjectDetector` đã dùng checkpoint mới này.
+**Kết quả đánh giá — YOLO11s_vn (carla_cam_det val, 216 ảnh, 2,234 box):**
+
+| Metric | YOLO11s_vn | YOLO11m_vn | Ghi chú |
+|---|---|---|---|
+| mAP50 | **2.32%** | 2.66% | Trên CARLA domain — domain gap là nguyên nhân chính |
+| mAP50-95 | 0.63% | 1.07% | |
+| Precision | 80.5% | 89.7% | Khi detect được thì box chính xác (MOTP IoU≈0.74) |
+| Recall | **3.96%** | 2.78% | yolo11s recall cao hơn yolo11m nhẹ |
+
+> **Domain gap:** Cả hai model được fine-tune trên ảnh thực (VisDrone drone-view + CCTV CCTV), nhưng CARLA render có texture/lighting khác hẳn → recall thấp. Fix thực sự: fine-tune tiếp trên `data/carla_cam_det/` (2,208 ảnh từ đúng viewpoint CARLA) — cần GPU cloud (~1-2h T4). Số liệu mAP trên tập VisDrone+CARLA val (honest, không auto-label): yolo11m đạt mAP50≈55.75% trên tập mixed (không có sẵn để đo yolo11s do dataset VisDrone không còn trên máy).
+
+**Trạng thái:** ✅ **Hoàn thành fine-tune** (2026-06-12 → 2026-06-18). `main.py` tự chọn
+`yolo11s_vn.pt` làm detector mặc định khi tệp tồn tại. YOLO11m vẫn giữ làm fallback.
+Quá trình train YOLO11m bị gián đoạn 2 lần do máy bị reset nhưng đã resume thành công.
 
 ---
 
@@ -106,8 +112,16 @@ checkpoint mỗi lần. `ObjectDetector` đã dùng checkpoint mới này.
 **Trạng thái:** ✅ **Hoàn thành** (2026-05-29). Đã tích hợp vào `ai_processor.py`
 và `main.py`, hoạt động ổn định.
 
-> **Còn thiếu:** đánh giá định lượng MOTA/IDF1 (chưa nối `motmetrics`) — hiện chỉ
-> đánh giá định tính qua quan sát.
+**Kết quả MOTA/IDF1 chính thức (2026-06-19, 100 frames, 3 camera Town10HD_Opt, yolo11s_vn conf=0.35):**
+
+| Camera | MOTA | IDF1 | FP | FN | Mostly Lost |
+|---|---|---|---|---|---|
+| CAM_001 | −15.6% | 0.71% | 116 | 721 | 8/8 |
+| CAM_002 | −79.1% | 0.0% | 317 | 401 | 5/5 |
+| CAM_003 | 0.0% | 0.0% | 0 | 700 | 7/7 |
+| **OVERALL** | **−23.6%** | **0.26%** | **433** | **1,822** | **20/20** |
+
+MOTP CAM_001 = 0.260 → IoU≈0.74 (khi detect được, box định vị tốt). Nguyên nhân MOTA thấp: domain gap detection (FN quá nhiều), không phải lỗi tracking logic.
 
 ---
 
@@ -179,16 +193,16 @@ proactive alerts đã được kích hoạt (trước đó bị lỗi do thiếu
 
 | Model | Vai trò | Trạng thái | Ghi chú |
 |---|---|---|---|
-| **YOLO11m** | Detection (5 lớp VN) | ✅ **Fine-tune hoàn thành (18 + 10 epoch bổ sung)** | mAP50 0.346→0.559→0.5575, mAP50-95 0.189→0.334→0.3342 |
-| **ByteTrack** | Tracking trong camera | ✅ Hoàn thành | Chưa có MOTA/IDF1 định lượng |
+| **YOLO11s_vn** ⭐ (production) | Detection (5 lớp VN) | ✅ Fine-tune hoàn thành | CARLA domain: mAP50=2.32%, P=80.5%, R=3.96% (domain gap); `weights/yolo11s_vn.pt` |
+| **YOLO11m_vn** (fallback) | Detection (5 lớp VN, legacy) | ✅ Fine-tune hoàn thành (18+10 epoch) | VisDrone val: mAP50=55.75%; CARLA domain: mAP50=2.66% — tương đương yolo11s |
+| **ByteTrack** | Tracking trong camera | ✅ Hoàn thành | MOTA overall=−23.6% (CARLA, 100 frames, bị ảnh hưởng bởi domain gap detection) |
 | **OSNet (Market-1501)** | Re-ID người | ✅ Hoàn thành | Pretrained, không cần train thêm |
 | **OSNet/VeRi-776** | Re-ID xe | ✅ Đã train, tích hợp xong | ⚠️ Re-train cần tải lại dataset VeRi-776 (~1.1GB) |
 | **Kalman Filter** | Trajectory (baseline) | ✅ Hoàn thành | Constant-acceleration, dt-aware |
 | **TrajectoryGRU (Ensemble)** | Trajectory (learned) | ✅ **Train hoàn thành (50 epoch)** | Loss 0.248→0.117, 22,148 sample từ 9 episode CARLA thật |
 | **Incident Detector** | Phát hiện sự cố | ✅ Hoàn thành | 12 loại, proactive hoạt động |
-| **Goal Classifier (CARLA)** | Phân loại hướng quẹo — CARLA | ✅ Hoàn thành | 70.3% test acc, 35K samples, world-space |
-| **Goal Classifier (Real CCTV)** | Phân loại hướng quẹo — CCTV thực | ✅ Hoàn thành (v3) | 59.7% honest test acc, 6,959 tracks, 33 features, bbox norm |
-| **YOLO11s** | Detection nhanh hơn (thay YOLO11m) | ✅ Fine-tune hoàn thành | mAP50=89.5%, mAP50-95=77.0% trên auto-label val; `weights/yolo11s_vn.pt` |
+| **Goal Classifier (CARLA)** | Phân loại hướng quẹo — CARLA | ✅ Hoàn thành | 70.3% test acc @1.5s, 35K samples, world-space features |
+| **Goal Classifier (Real CCTV)** | Phân loại hướng quẹo — CCTV thực | ✅ Hoàn thành (v3) | 59.7% honest test acc @1.5s, 6,959 tracks, 33 features, bbox norm |
 | **GoalClassifier real-time module** | Tích hợp pkl → pipeline | ✅ Hoàn thành | `modules/goal_classifier.py` — ROI-gated, heading guard 12°, min_frames=10 |
 | **Route Predictor** | Multi-hop route prediction qua junction graph | ✅ Hoàn thành | `route_predictor.py` — 4-hop, pyproj UTM48, CARLA Y-flip handled |
 | **Georeference** | CARLA (x,y) ↔ lat/lon | ✅ Hoàn thành | `georeference.py` — round-trip error 0.000 m |
@@ -204,7 +218,7 @@ proactive alerts đã được kích hoạt (trước đó bị lỗi do thiếu
 | **AI Pipeline** (`custom_tracking_system/`) — 8 bước Detect→Track→ReID→GlobalID→Trajectory→Alert→Incident→Evidence | **100%** (code) | YOLO11s + ByteTrack + GoalClassifier đã tích hợp; 6.1 FPS CPU-only |
 | **Backend API** (`server/`) — REST (17 endpoints) + WebSocket (alerts/tracks/stats) + MJPEG + SQLite | **100%** | Đã sửa 13 bugs, hoạt động đúng |
 | **Web Dashboard** (`frontend/`) | **90%** | Thiếu Camera Management UI / ROI editor |
-| **Dataset chuẩn bị (Detection)** | **100%** | VisDrone-VN (6,471/548) + CARLA CCTV (1,191/159, 8 camera/100 xe/60 người) đã merge thành `data/visdrone_carla_vn2` |
+| **Dataset chuẩn bị (Detection)** | **100%** | VisDrone-VN (6,471/548) + CARLA CCTV v1 (1,191/159) merge → `data/visdrone_carla_vn2`; **CARLA v2: 16,247 ảnh, 117,489 boxes** (`data/carla_cam_det_v2/`) — 6 camera TL-mounted, sẵn sàng fine-tune |
 | **Fine-tune YOLO11m** | ✅ **100%** (18 + 10 epoch) | mAP50=0.5575, mAP50-95=0.3342, checkpoint đã deploy vào `weights/yolo11m_vn.pt` |
 | **Re-train OSNet/VeRi-776 (lấy metrics)** | ⚠️ Bị chặn | Cần tải lại dataset VeRi-776 (không còn trên máy) |
 | **Train TrajectoryGRU đủ epoch** | ✅ **100%** (50/50 epoch) | Loss 0.248→0.117, checkpoint `weights/trajectory_gru.pth` đã lưu |
@@ -242,7 +256,7 @@ proactive alerts đã được kích hoạt (trước đó bị lỗi do thiếu
 | 3 | Trajectory prediction chỉ ở pixel-space riêng từng camera | Đã thêm `CameraCalibration` (pixel↔world); cần áp dụng đồng bộ cho dashboard "lên map" |
 | 4 | YOLO pretrained COCO nhận diện kém xe máy VN | Fine-tune YOLO11m trên VisDrone-VN + dữ liệu CARLA tự thu thập (đang chạy) |
 | 5 | Huấn luyện trên máy local RAM/VRAM hạn chế gây OOM | Giảm batch size (16→8), giảm dataloader workers (8→4), resume từ checkpoint khi crash |
-| 6 | Domain gap YOLO11s_vn.pt trên CARLA renders → Recall≈0% | Đã eval 4 cấu hình: COCO model tệ hơn VN (max conf=0.098); hạ threshold không giúp (FP tăng nhanh hơn FN giảm); conf=0.35 VN tốt nhất (MOTA=-23.6%). Fix: fine-tune `data/carla_cam_det/` (GPU cloud) |
+| 6 | Domain gap YOLO11s_vn.pt trên CARLA renders → Recall≈0% | Đã eval 4 cấu hình: COCO model tệ hơn VN (max conf=0.098); hạ threshold không giúp (FP tăng nhanh hơn FN giảm); conf=0.35 VN tốt nhất (MOTA=-23.6%). Fix: **fine-tune trên `carla_cam_det_v2/`** (16,247 ảnh, 6 camera TL-mounted, sẵn sàng — cần GPU cloud ~1-2h T4; class weights [1.0, 0.5, 3.0, 1.0, 0.5] để bù motorcycle underrepresentation) |
 
 ---
 
@@ -773,3 +787,193 @@ Thêm 2 flag vào `main.py`: `--detector` (override weights) và `--conf` (overr
 
 **Hướng khắc phục duy nhất có hiệu quả:**
 - Fine-tune thêm trên `data/carla_cam_det/` (2208 ảnh, đúng viewpoint CAM_001/002/003, GT từ CARLA actors) → cần GPU cloud (GTX 1050Ti 4GB không đủ). Dự kiến TP/FP ratio > 1:1 → MOTA dương.
+- **2026-06-20:** Dataset `carla_cam_det_v2` (16,247 ảnh, 6 camera TL-mounted) đã sẵn sàng — thay thế hoàn toàn v1 cho vòng fine-tune tiếp theo.
+
+---
+
+## Phụ Lục — Cập Nhật 2026-06-20
+
+### Camera Config v3 — Gắn camera trên cột đèn giao thông (Town10HD_Opt)
+
+**Vấn đề với config v2 (góc tường/mái nhà):**
+
+| Camera | Vị trí v2 | Vấn đề |
+|--------|-----------|--------|
+| CAM_001 | −109.2, 5.1, 6 | z=6 nằm trong sàn cầu vượt (overpass z≈7m) |
+| CAM_002 | −109.2, 22.0, 6 | Hướng vào mặt tiền tòa nhà vòm (arch facade) |
+| CAM_005 | −41.8, 16.9, 6 | Xe spawn ngoài đường do góc camera lệch |
+
+**Giải pháp: truy vấn vị trí đèn giao thông thực tế từ CARLA actor API**
+
+Vị trí đèn TL trong Town10HD_Opt (đo từ CARLA, 2026-06-18):
+
+| Giao lộ | TL Bắc (TL_N) | TL Nam (TL_S) |
+|---------|--------------|--------------|
+| A | (−119.2, 5.1) | (−119.2, 19.0) |
+| B | (−64.3, 7.1) | (−62.4, 20.2) |
+| C | (−31.9, 20.3) ⚠️ | (−31.6, 33.6) |
+
+**⚠️ CAM_005 — cây si khổng lồ tại TL_N giao lộ C:**
+
+TL_N giao lộ C tại (−31.9, 20.3) bị chắn bởi cây si có chiều cao ước tính >10m. Ở z=6 camera nằm trong thân cây; ở z=9 camera nằm trong tán cây dày đặc. Không thể đặt camera ở vị trí này ở bất kỳ độ cao hợp lý nào.
+
+**Giải pháp CAM_005:** Dời sang hướng tiếp cận đông của giao lộ C tại (−20.0, 26.9, 9) với yaw=200° (hướng Tây-Tây-Bắc), bao phủ làn xe tiếp cận từ đông và phần bắc giao lộ C.
+
+**Cấu hình v3 cuối cùng:**
+
+| Camera | ID | Vị trí (x, y, z) | Xoay (pitch, yaw, roll) | Gắn tại |
+|--------|----|--------------------|--------------------------|---------|
+| camera_0 | CAM_001 | −119.2, 5.1, 9 | −30, 90, 0 | TL_N giao lộ A |
+| camera_1 | CAM_002 | −119.2, 19.0, 9 | −30, 270, 0 | TL_S giao lộ A |
+| camera_2 | CAM_003 | −64.3, 7.1, 9 | −30, 90, 0 | TL_N giao lộ B |
+| camera_3 | CAM_004 | −62.4, 20.2, 9 | −30, 270, 0 | TL_S giao lộ B |
+| camera_4 | CAM_005 | −20.0, 26.9, 9 | −30, 200, 0 | Hướng đông giao lộ C (cây si chắn TL_N) |
+| camera_5 | CAM_006 | −31.6, 33.6, 9 | −30, 270, 0 | TL_S giao lộ C |
+
+**Thay đổi so với v2:**
+
+| Tham số | v2 | v3 | Lý do |
+|---------|----|----|-------|
+| z (cao độ) | 6 m | **9 m** | z=6 nằm trong sàn cầu vượt (overpass deck z≈7m); z=9 thoát khỏi cả cầu và tán cây |
+| Pitch | −25° | **−30°** | Góc nhìn dốc hơn để bao phủ toàn bộ giao lộ từ z=9 |
+| XY origin | Góc tường/mái | **XY đèn TL thực tế** | Đảm bảo trường nhìn ngay phía trên giao lộ |
+| CAM_002 x | −109.2 | **−119.2** | Dời vào đúng cột TL_S — hướng cũ nhìn vào tòa nhà |
+| CAM_005 | (−41.8, 16.9) yaw=45 | **(−20.0, 26.9) yaw=200** | Cây si không thể tránh ở bất kỳ z nào |
+| Yaw strategy | Góc chéo 45°/225° | **90° (nhìn Nam) / 270° (nhìn Bắc)** | Căn thẳng với trục đường; FOV 105° bao phủ đủ giao lộ |
+
+**Ghi chú convention yaw CARLA:** 0°=Đông, 90°=Nam, 180°=Tây, 270°=Bắc (chiều kim đồng hồ từ Đông).
+
+---
+
+### Dataset carla_cam_det_v2 — Thu thập dữ liệu (2026-06-20)
+
+**Script:** `custom_tracking_system/collect_carla_cam_det_v2.py`
+
+**Hai lần thu thập:**
+
+| Run | Phương pháp spawn | Ảnh thu | Boxes |
+|-----|-------------------|---------|-------|
+| Run 1 | Random (toàn bản đồ) | 8,662 | ~63,514 |
+| Run 2 | Ưu tiên gần giao lộ (80m radius) | ~7,585 | ~53,975 |
+| **Tổng** | | **~16,247** | **~117,489** |
+
+**Thống kê dataset cuối cùng (`data/carla_cam_det_v2/`):**
+
+| Tập | Ảnh | Boxes | Avg boxes/img |
+|-----|-----|-------|---------------|
+| train | 14,791 | 117,489 | 7.9 |
+| val | 1,456 | — | — |
+
+**Phân bố theo camera (train):**
+
+| Camera | Ảnh | Boxes | Avg/img |
+|--------|-----|-------|---------|
+| CAM_001 | 1,117 | 5,590 | 5.0 |
+| CAM_002 | 2,337 | 16,051 | 6.9 |
+| CAM_003 | 2,611 | 17,235 | 6.6 |
+| CAM_004 | 2,966 | 28,305 | 9.5 |
+| CAM_005 | 2,735 | 19,656 | 7.2 |
+| CAM_006 | 3,025 | 30,652 | 10.1 |
+
+**Phân bố theo lớp (train):**
+
+| Lớp | Số boxes | Tỷ lệ | Avg bbox width (px) |
+|-----|---------|-------|---------------------|
+| car | 79,621 | **67%** | ~31.9 px |
+| motorcycle | 20,963 | **17%** | ~6.7 px (min 4.0 px) |
+| truck | 16,905 | **14%** | ~54.1 px |
+| bus | ~0 | ~0% | — |
+
+**Phân tích mất cân bằng lớp motorcycle:**
+
+Blueprint spawn: 70% xe máy → thực tế annotation chỉ 17% xe máy. Nguyên nhân:
+
+- `MIN_BOX_PX=4` — xe máy rộng ~0.5m → bbox ≈ 0.5m × (px/m) px
+- Ở khoảng cách >70m, bbox xe máy <4px → bị loại bỏ khỏi annotation
+- Xe ô tô rộng ~2m → visible ở khoảng cách 80m+ (bbox ~13px)
+- 71% ảnh train *có* ít nhất 1 annotation xe máy → không phải vắng mặt hoàn toàn, chỉ là ít per-frame
+
+**Giải pháp khi fine-tune:** Class weights `[person=1.0, car=0.5, motorcycle=3.0, bus=1.0, truck=0.5]`
+
+---
+
+### Cải tiến collect_carla_cam_det_v2.py (2026-06-20)
+
+#### 1. Sửa crash `client.get_trafficmanager()` (VERSION MISMATCH)
+
+**Lỗi gốc:** CARLA client 0.9.15 / server 0.9.14 → `client.get_trafficmanager(port)` gây `STATUS_STACK_BUFFER_OVERRUN` (C++ memory violation, không bắt được bằng Python try/except).
+
+**Fix:** Xóa hoàn toàn `get_trafficmanager()`. Dùng `actor.set_autopilot(True)` không có tham số TM port — CARLA tự khởi động TM mặc định an toàn.
+
+```python
+# Trước (crash):
+tm = client.get_trafficmanager(tm_port)
+actor.set_autopilot(True, tm_port)
+
+# Sau (ổn định):
+actor.set_autopilot(True)   # TM port mặc định, không gọi get_trafficmanager()
+```
+
+#### 2. Spawn ưu tiên gần giao lộ (Intersection-biased spawning)
+
+Run 1 (random spawn): CAM_001 chỉ có 420 ảnh/8,662 (4.9%) vì xe tập trung ở phần xa giao lộ A.
+
+**Fix Run 2:** Partition điểm spawn thành 2 nhóm, ưu tiên nhóm trong vòng 80m từ tâm 3 giao lộ:
+
+```python
+_INTERSECTION_CENTERS = [(-119.2, 12.0), (-63.3, 13.6), (-31.8, 26.9)]
+_INTERSECTION_RADIUS_M = 80
+
+near_pts  = [sp for sp in all_spawn_pts if _near_any_intersection(sp)]
+other_pts = [sp for sp in all_spawn_pts if not _near_any_intersection(sp)]
+candidate_pts = near_pts + other_pts   # near first
+```
+
+**Kết quả:** 77/80 xe spawn trong vòng 80m giao lộ (Run 2). CAM_001 tăng lên 1,117 ảnh tổng.
+
+#### 3. Lọc LaneType.Driving
+
+```python
+from carla import LaneType
+all_spawn_pts = [sp for sp in carla_map.get_spawn_points()
+                 if carla_map.get_waypoint(sp.location).lane_type == LaneType.Driving]
+```
+
+Kết quả với Town10HD_Opt: 155/155 điểm đã là Driving lanes (filter không lọc bớt gì nhưng giữ làm defensive code cho bản đồ khác).
+
+---
+
+### Phân tích hành vi giao thông trong CARLA TM (2026-06-20)
+
+**Bối cảnh:** CARLA Traffic Manager (TM) chạy server-side. Với version mismatch 0.9.14/0.9.15, không thể gọi `get_trafficmanager()` để cấu hình TM — chỉ có thể dùng `set_autopilot(True)` với cấu hình mặc định.
+
+**Những gì TM làm đúng (quan sát được):**
+
+| Hành vi | Kết quả |
+|---------|---------|
+| Giữ làn đường | ✅ Xe đi đúng làn, không đè vạch |
+| Dừng đèn đỏ | ✅ Xe dừng trước vạch stop |
+| Không xuyên qua nhau | ✅ Collision avoidance hoạt động |
+| Di chuyển liên tục | ✅ Xe tiếp tục di chuyển sau khi đèn xanh |
+
+**Hạn chế do không thể cấu hình TM:**
+
+| Hành vi không kiểm soát được | Nguyên nhân |
+|-------------------------------|-------------|
+| Khoảng cách theo xe (tailgating) | `set_desired_speed()`, `set_distance_to_leading_vehicle()` cần TM handle |
+| Vi phạm đèn đỏ ngẫu nhiên | `set_percentage_running_red_light()` cần TM handle |
+| Đổi làn | `set_lane_change_behavior()` cần TM handle |
+| Phân phối tốc độ | `set_percentage_speed_difference()` cần TM handle |
+
+**Kết luận cho thu thập dữ liệu:** Hành vi hiện tại (xe đi đúng làn, dừng đèn đỏ) đủ để tạo dataset detection cho fine-tune YOLO. Việc không có vi phạm đèn đỏ hay đổi làn *không ảnh hưởng* đến chất lượng bounding box annotation vì YOLO chỉ cần box + label, không cần behavior đặc biệt.
+
+---
+
+### Files tạo ra / cập nhật (2026-06-20)
+
+| File | Thay đổi |
+|------|---------|
+| `custom_tracking_system/config/camera_config.yaml` | **Viết lại hoàn toàn v3** — 6 camera TL-mounted, z=9, pitch=-30, yaw căn trục đường |
+| `custom_tracking_system/config/camera_config_6cam.yaml` | **Mirror của camera_config.yaml** (sync thủ công) |
+| `custom_tracking_system/collect_carla_cam_det_v2.py` | **Sửa crash TM** + intersection-biased spawn + LaneType.Driving filter |
+| `data/carla_cam_det_v2/` | **Dataset mới** — 16,247 ảnh, 117,489 boxes, 6 camera |

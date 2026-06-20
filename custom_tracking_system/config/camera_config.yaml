@@ -1,131 +1,182 @@
-# Camera duoc dat tai 3 nga tu co den giao thong (2026-06-14) — moi nga tu
-# co 2 traffic light (giao lo 4 huong, nhieu phuong tien qua lai). Camera
-# dat lui ~10m so voi tam nga tu, cao z=6 (tuong duong gan cot den giao
-# thong), goc nhin (view_angle) duoc tang len 110-120 do de bao quat ca
-# duong chinh va duong cat ngang. Vi tri/goc lay tu truy van thuc te
-# world.get_actors().filter('traffic.traffic_light*') + get_waypoint()
-# tren Town10HD_Opt:
-#   - CAM_001: nga tu (-119.2, 12.0) — 2 traffic light, road 735 (N-S) cat
-#     duong E-W. Camera dat tai (-129.2, 12, 6), yaw=0 (nhin +X vao nga tu).
-#   - CAM_002: nga tu (-63.3, 13.6) — 2 traffic light, road 254 cat road 286.
-#     Camera dat tai (-63.3, 3.6, 6), yaw=90 (nhin +Y vao nga tu).
-#   - CAM_003: nga tu (-31.8, 26.9) — 2 traffic light, road 382 cat road 255.
-#     Camera dat tai (-41.8, 26.9, 6), yaw=0 (nhin +X vao nga tu). Vi tri
-#     ban dau (-31.8, 16.9, 6) yaw=90 bi 1 hang cay che khuat (foliage cluster
-#     ngay sat camera, ~1.8m) -> doi sang tiep can tu phia Tay (road 467,
-#     lane -2), khong vuong cay (kiem tra get_environment_objects(Vegetation)).
+# Camera config v3 — 6 cameras mounted on traffic light poles, 3 intersections in Town10HD_Opt
+#
+# Traffic light positions queried from CARLA (2026-06-18):
+#   Intersection A (-119.2, 12.0): TL_N=(-119.2, 5.1)   TL_S=(-119.2, 19.0)
+#   Intersection B ( -63.3, 13.6): TL_N=( -64.3, 7.1)   TL_S=( -62.4, 20.2)
+#   Intersection C ( -31.8, 26.9): TL_N=( -31.9, 20.3)  TL_S=( -31.6, 33.6)
+#
+# Mount design:
+#   XY = exact traffic light pole base position (from CARLA actor query)
+#   Z  = 9m  (above overpass deck ~z=7 and tree canopy ~z=8 in Town10HD_Opt)
+#            NOTE: TL poles are only ~6m tall, but the overpass structure and trees
+#            at the intersection block the view at z=6.  z=9 is the minimum height
+#            to clear both obstructions while keeping cameras at TL XY positions.
+#   Pitch = -30°  (steeper than -25° for better downward view at z=9 over intersection)
+#   FOV   = 105°  (covers full intersection width ≈ 18m at 7m horizontal distance)
+#
+# Yaw strategy — N TL looks South, S TL looks North:
+#   North TL (y < center_y): yaw=90  (due South, +Y direction in CARLA)
+#   South TL (y > center_y): yaw=270 (due North, -Y direction in CARLA)
+#   With 105° horizontal FOV, both E-W and N-S approach lanes are covered.
+#
+# Changes from v2:
+#   - Cameras moved from diagonal corners (10m off-road) to actual TL pole XY
+#   - CAM_002 fix: (-109.2, 22.0) → (-119.2, 19.0) [was facing arch building]
+#   - CAM_005 fix: (-41.8, 16.9) → (-31.9, 20.3) [was blocked by NW corner trees]
+#   - Pitch changed from -25° to -30° (steeper for better intersection coverage)
+#   - Z kept at 9 (same as v2) — needed to clear overpass deck and tree canopy
+
 cameras:
   camera_0:
-    position: [-129.2, 12.0, 6]  # [x, y, z] - world coordinates
-    rotation: [-15, 0, 0]        # [pitch, yaw, roll] - hoi cui xuong de thay mat duong
     camera_id: "CAM_001"
-    view_angle: 110
+    position: [-119.2, 5.1, 9]      # North TL pole, intersection A
+    rotation: [-30, 90, 0]           # pitch=-30°  yaw=90° (looking due South into intersection)
+    view_angle: 105
     resolution: [960, 540]
     fps: 10
 
   camera_1:
-    position: [-63.3, 3.6, 6]
-    rotation: [-15, 90, 0]
     camera_id: "CAM_002"
-    view_angle: 120
+    position: [-119.2, 19.0, 9]     # South TL pole, intersection A  [FIX: was at arch building]
+    rotation: [-30, 270, 0]          # yaw=270° (looking due North into intersection)
+    view_angle: 105
     resolution: [960, 540]
     fps: 10
 
   camera_2:
-    position: [-41.8, 26.9, 6]
-    rotation: [-15, 0, 0]
     camera_id: "CAM_003"
-    view_angle: 110
+    position: [-64.3, 7.1, 9]       # North TL pole, intersection B
+    rotation: [-30, 90, 0]
+    view_angle: 105
     resolution: [960, 540]
     fps: 10
 
-# Regions of Interest (ROI) cho mỗi camera
-# QUAN TRONG: key phai la camera_id ("CAM_001"...), khong phai ten config
-# ("camera_0"...) — AlertSystem/IncidentDetector tra cuu theo camera_id.
-# alert_types: "red_light" danh dau vung giao lo de check RED_LIGHT_VIOLATION
-# (xe co toc do > red_light.min_speed va o trong vung nay khi den do CRITICAL).
-# Toa do polygon duoc tinh tu CameraCalibration.world_to_pixel() (2026-06-14)
-# cho vi tri/goc camera moi (3 nga tu) — vung hinh thang phia truoc camera,
-# sau 5-15m, +-8m hai ben (ca duong chinh va duong cat ngang cua nga tu),
-# nam trong khung hinh 960x540.
+  camera_3:
+    camera_id: "CAM_004"
+    position: [-62.4, 20.2, 9]      # South TL pole, intersection B
+    rotation: [-30, 270, 0]
+    view_angle: 105
+    resolution: [960, 540]
+    fps: 10
+
+  camera_4:
+    camera_id: "CAM_005"
+    position: [-20.0, 26.9, 9]      # East approach of intersection C — North TL at (-31.9, 20.3)
+                                     # is completely blocked by a large banyan tree even at z=9.
+                                     # East road at (-20, 26.9) is tree-free; yaw=200 looks WNW
+                                     # to cover both E-W approach and intersection C north arm.
+    rotation: [-30, 200, 0]          # yaw=200° = WNW (slightly north of due west)
+    view_angle: 105
+    resolution: [960, 540]
+    fps: 10
+
+  camera_5:
+    camera_id: "CAM_006"
+    position: [-31.6, 33.6, 9]      # South TL pole, intersection C
+    rotation: [-30, 270, 0]
+    view_angle: 105
+    resolution: [960, 540]
+    fps: 10
+
+# Regions of Interest — to be calibrated after verifying new camera positions
 rois:
   CAM_001:
     zones:
-      - name: "intersection_main"
-        polygon: [[901, 507], [59, 507], [312, 310], [648, 310]]
+      - name: "intersection_A_north"
+        polygon: []
         alert_types: ["entry", "red_light"]
   CAM_002:
     zones:
-      - name: "intersection_2"
-        polygon: [[827, 465], [133, 465], [342, 303], [618, 303]]
+      - name: "intersection_A_south"
+        polygon: []
         alert_types: ["entry", "red_light"]
   CAM_003:
     zones:
-      - name: "intersection_3"
-        polygon: [[59, 507], [901, 507], [648, 310], [312, 310]]
+      - name: "intersection_B_north"
+        polygon: []
+        alert_types: ["entry", "red_light"]
+  CAM_004:
+    zones:
+      - name: "intersection_B_south"
+        polygon: []
+        alert_types: ["entry", "red_light"]
+  CAM_005:
+    zones:
+      - name: "intersection_C_north"
+        polygon: []
+        alert_types: ["entry", "red_light"]
+  CAM_006:
+    zones:
+      - name: "intersection_C_south"
+        polygon: []
         alert_types: ["entry", "red_light"]
 
-# Spatio-Temporal Filter — thời gian đi lại hợp lệ giữa các cặp camera (giây)
-# Tính từ khoảng cách thực tế trong CARLA (vi tri camera moi 2026-06-14, CAM_003
-# da doi sang (-41.8,26.9,6) de tranh hang cay):
-# CAM_001↔CAM_002 ~66.4m, CAM_001↔CAM_003 ~88.7m, CAM_002↔CAM_003 ~31.7m
-# min = 1s (xe nhanh nhất), max = 120s (người đi bộ + vòng đường)
+# Spatio-Temporal Filter
 camera_topology:
-  CAM_001__CAM_002: [1, 120]
-  CAM_002__CAM_001: [1, 120]
-  CAM_001__CAM_003: [1, 120]
-  CAM_003__CAM_001: [1, 120]
-  CAM_002__CAM_003: [1, 120]
-  CAM_003__CAM_002: [1, 120]
+  CAM_001__CAM_002: [0.5, 10]
+  CAM_002__CAM_001: [0.5, 10]
+  CAM_003__CAM_004: [0.5, 10]
+  CAM_004__CAM_003: [0.5, 10]
+  CAM_005__CAM_006: [0.5, 10]
+  CAM_006__CAM_005: [0.5, 10]
+  CAM_001__CAM_003: [3, 60]
+  CAM_001__CAM_004: [3, 60]
+  CAM_002__CAM_003: [3, 60]
+  CAM_002__CAM_004: [3, 60]
+  CAM_003__CAM_001: [3, 60]
+  CAM_004__CAM_001: [3, 60]
+  CAM_003__CAM_002: [3, 60]
+  CAM_004__CAM_002: [3, 60]
+  CAM_003__CAM_005: [2, 60]
+  CAM_003__CAM_006: [2, 60]
+  CAM_004__CAM_005: [2, 60]
+  CAM_004__CAM_006: [2, 60]
+  CAM_005__CAM_003: [2, 60]
+  CAM_006__CAM_003: [2, 60]
+  CAM_005__CAM_004: [2, 60]
+  CAM_006__CAM_004: [2, 60]
+  CAM_001__CAM_005: [5, 120]
+  CAM_001__CAM_006: [5, 120]
+  CAM_002__CAM_005: [5, 120]
+  CAM_002__CAM_006: [5, 120]
+  CAM_005__CAM_001: [5, 120]
+  CAM_006__CAM_001: [5, 120]
+  CAM_005__CAM_002: [5, 120]
+  CAM_006__CAM_002: [5, 120]
 
-# Cau hinh IncidentDetector (modules/incident_detector.py)
 incident_detection:
-  # Di nguoc chieu: huong di chuyen cua object (vector dich chuyen px) duoc
-  # so sanh voi "direction" (huong cho phep, vector pixel [dx, dy]) cua camera.
-  # Goc lech > angle_threshold_deg va toc do > min_speed trong >= min_frames
-  # frame lien tiep => WRONG_WAY (CRITICAL).
-  # direction la huong di chuyen "dung chieu" (vector pixel [dx,dy], se duoc
-  # chuan hoa) cua lan duong chinh ma camera quan sat. Tinh lai (2026-06-14)
-  # cho vi tri/goc camera moi bang get_waypoint().transform.get_forward_vector()
-  # chieu qua CameraCalibration.world_to_pixel():
-  #   - CAM_001: waypoint road 735 lane 2, forward ~(-0.01,1.00) -> pixel dir [1.0, 0.0]
-  #   - CAM_002: waypoint road 286 lane 1, forward ~(-1.00,0.06) -> pixel dir [1.0, -0.04]
-  #   - CAM_003: (vi tri camera doi sang (-41.8,26.9,6) yaw=0 de tranh hang
-  #     cay) waypoint road 382 lane 1, forward ~(1.00,0.07) -> pixel dir [-0.08, -1.0]
   wrong_way:
     lanes:
       CAM_001:
-        direction: [1.0, 0.0]
+        direction: [0.0, 1.0]   # South (+Y) = normal flow on N-S road
       CAM_002:
-        direction: [1.0, -0.04]
+        direction: [0.0, -1.0]  # North (-Y) = normal flow on N-S road
       CAM_003:
-        direction: [-0.08, -1.0]
-    min_speed: 15            # px/s
+        direction: [0.0, 1.0]
+      CAM_004:
+        direction: [0.0, -1.0]
+      CAM_005:
+        direction: [0.0, 1.0]
+      CAM_006:
+        direction: [0.0, -1.0]
+    min_speed: 15
     angle_threshold_deg: 100
     min_frames: 10
-    window: 8                 # so frame nhin lai de tinh vector dich chuyen
-
-  # Vuot den do: chi kich hoat khi traffic light gan camera dang Red VA
-  # object (toc do > min_speed) nam trong 1 ROI co alert_types chua "red_light".
+    window: 8
   red_light:
-    min_speed: 10            # px/s
-    search_radius_m: 40      # ban kinh tim traffic light gan camera (CARLA world)
-
-  # Cac loai incident bi tat vi xay ra qua thuong xuyen trong giao thong binh
-  # thuong (gay nhieu alert feed), khong phai dau hieu tai nan ro rang.
-  # Van duoc tinh toan ben trong nhung se khong xuat hien trong incidents/alerts.
+    min_speed: 10
+    search_radius_m: 40
   disabled_types:
-    - SUDDEN_ACCEL       # tang toc dot ngot - xay ra lien tuc khi xe chay binh thuong
-    - CAMERA_TRANSITION  # chi mang tinh thong tin (object chuyen camera), khong phai canh bao
-    - STOPPED_VEHICLE    # xe dung den do/giao lo cung trigger, gay nhieu
-    - VEHICLE_PROXIMITY  # xe gan nhau trong giao thong binh thuong cung trigger lien tuc
+    - SUDDEN_ACCEL
+    - CAMERA_TRANSITION
+    - STOPPED_VEHICLE
+    - VEHICLE_PROXIMITY
 
-# System settings
 system:
   synchronous_mode: true
   fixed_delta_seconds: 0.1
-  max_age: 30  # frames
-  min_hits: 3   # frames
+  max_age: 30
+  min_hits: 3
   reid_threshold: 0.5
   trajectory_window: 10
   prediction_steps: 5

@@ -1,0 +1,74 @@
+# Camera config v3 — dataset collection, 6 TL-mounted cameras, 3 intersections in Town10HD_Opt
+# (mirror of camera_config.yaml — kept in sync manually)
+#
+# Traffic light positions (queried 2026-06-18):
+#   Intersection A: TL_N=(-119.2, 5.1)  TL_S=(-119.2, 19.0)
+#   Intersection B: TL_N=( -64.3, 7.1)  TL_S=( -62.4, 20.2)
+#   Intersection C: TL_N=( -31.9, 20.3) TL_S=( -31.6, 33.6)
+
+cameras:
+  camera_0:
+    camera_id: "CAM_001"
+    position: [-119.2, 5.1, 9]
+    rotation: [-30, 90, 0]
+    view_angle: 105
+    resolution: [960, 540]
+    fps: 10
+
+  camera_1:
+    camera_id: "CAM_002"
+    position: [-119.2, 19.0, 9]
+    rotation: [-30, 270, 0]
+    view_angle: 105
+    resolution: [960, 540]
+    fps: 10
+
+  camera_2:
+    camera_id: "CAM_003"
+    position: [-64.3, 7.1, 9]
+    rotation: [-30, 90, 0]
+    view_angle: 105
+    resolution: [960, 540]
+    fps: 10
+
+  camera_3:
+    camera_id: "CAM_004"
+    position: [-62.4, 20.2, 9]
+    rotation: [-30, 270, 0]
+    view_angle: 105
+    resolution: [960, 540]
+    fps: 10
+
+  camera_4:
+    camera_id: "CAM_005"
+    position: [-20.0, 26.9, 9]      # East approach of intersection C (N TL blocked by banyan tree)
+    rotation: [-30, 200, 0]          # yaw=200° = WNW — covers E-W approach + intersection C north
+    view_angle: 105
+    resolution: [960, 540]
+    fps: 10
+
+  camera_5:
+    camera_id: "CAM_006"
+    position: [-31.6, 33.6, 9]
+    rotation: [-30, 270, 0]
+    view_angle: 105
+    resolution: [960, 540]
+    fps: 10
+
+camera_topology:
+  CAM_001__CAM_002: [0.5, 10]
+  CAM_002__CAM_001: [0.5, 10]
+  CAM_003__CAM_004: [0.5, 10]
+  CAM_004__CAM_003: [0.5, 10]
+  CAM_005__CAM_006: [0.5, 10]
+  CAM_006__CAM_005: [0.5, 10]
+  CAM_001__CAM_003: [3, 60]
+  CAM_002__CAM_003: [3, 60]
+  CAM_001__CAM_004: [3, 60]
+  CAM_002__CAM_004: [3, 60]
+  CAM_003__CAM_005: [2, 60]
+  CAM_004__CAM_005: [2, 60]
+  CAM_003__CAM_006: [2, 60]
+  CAM_004__CAM_006: [2, 60]
+  CAM_001__CAM_005: [5, 120]
+  CAM_002__CAM_006: [5, 120]
