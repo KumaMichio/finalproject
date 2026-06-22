@@ -977,3 +977,61 @@ Kết quả với Town10HD_Opt: 155/155 điểm đã là Driving lanes (filter k
 | `custom_tracking_system/config/camera_config_6cam.yaml` | **Mirror của camera_config.yaml** (sync thủ công) |
 | `custom_tracking_system/collect_carla_cam_det_v2.py` | **Sửa crash TM** + intersection-biased spawn + LaneType.Driving filter |
 | `data/carla_cam_det_v2/` | **Dataset mới** — 16,247 ảnh, 117,489 boxes, 6 camera |
+
+---
+
+## Phụ Lục — Cập Nhật 2026-06-22
+
+### Fine-tune OSNet trên VeRi-776 (osnet_veri776_v2)
+
+**Bug fix `train_veri.py` (evaluate()):** OSNet ở eval mode chỉ trả về feature embedding, không trả `(features, logits)` như train mode. Code cũ tính accuracy trực tiếp trên embedding (sai hoàn toàn) → `best_acc` khi resume chỉ 0.001%. Fix: chạy embedding qua `model.classifier()` trước khi argmax.
+
+```python
+# Trước (sai — accuracy tính trên feature thô):
+logits = output[1] if isinstance(output, (tuple, list)) else output
+
+# Sau (đúng — eval mode trả thẳng feature, phải tự đi qua classifier):
+feats  = output[1] if isinstance(output, (tuple, list)) else output
+logits = model.classifier(feats)
+```
+
+**Kết quả training (resume epoch 12 → 60/60, batch=32, lr cosine-anneal 3e-4→1e-6):**
+
+| Giai đoạn | val_acc (closed-set, 10% split nội bộ) |
+|-----------|------------------------------------------|
+| Trước fix (epoch ≤12) | ~0.1% (bug) |
+| Epoch 16 | 99.26% |
+| Epoch 49 (best) | 100.00% |
+| Epoch 60 (cuối) | 99.97% |
+
+⚠️ val_acc trên là classification accuracy closed-set (575 ID đã thấy lúc train), **không phải** mAP/CMC chuẩn ReID open-set.
+
+### Eval ReID chuẩn trên VeRi-776 test set (`eval_veri_reid.py`)
+
+Protocol market1501-style (loại gallery cùng ID + cùng camera với query), pid/camid parse từ tên file VeRi gốc. Query=1,678 ảnh, Gallery=11,579 ảnh.
+
+| Metric | Giá trị |
+|--------|---------|
+| mAP | **71.89%** |
+| CMC@1 (rank-1) | **94.16%** |
+| CMC@5 | 96.84% |
+| CMC@10 | 98.15% |
+| CMC@20 | 99.05% |
+
+Mức này nằm trong vùng tốt so với OSNet công bố trên VeRi-776 (mAP ~60–75%, rank-1 ~90–96% tùy kỹ thuật), xác nhận model fine-tune transfer sang ReID thực tế (open-set, cross-camera) ổn, không bị ảo do overfit closed-set.
+
+### Files tạo ra / cập nhật (2026-06-22)
+
+| File | Thay đổi |
+|------|---------|
+| `custom_tracking_system/train_veri.py` | **Fix bug `evaluate()`** — eval mode phải chạy embedding qua `model.classifier()` |
+| `custom_tracking_system/plot_veri_results.py` | **Mới** — parse `train_veri.log` → `results.csv` + biểu đồ loss/accuracy |
+| `custom_tracking_system/eval_veri_reid.py` | **Mới** — eval mAP/CMC chuẩn trên VeRi-776 query/gallery test set |
+| `custom_tracking_system/weights/osnet_veri776_v2.pth` | **Model mới** — OSNet x1.0 fine-tuned, best val_acc=99.97%, mAP=71.89% |
+| `docs/assets/osnet_veri776_v2/` | **Mới** — `results.csv`, `results.png`, `reid_eval_veri_test.json`, `cmc_curve.png` |
+
+### Nhiệm vụ còn lại
+
+1. **Tích hợp vào pipeline thật** — `main.py` hiện vẫn dùng `ReIDExtractor` (chỉ person, Market-1501), chưa chuyển sang `DualReIDExtractor` ([modules/reid.py](../custom_tracking_system/modules/reid.py)) để dùng vehicle model vừa fine-tune. Default path trong code cũng đang trỏ `osnet_veri776.pth` (không có `_v2`) — cần cập nhật khi chuyển.
+2. **Dọn checkpoint trung gian** — 60 file `osnet_veri776_v2.ckpt_ep*.pth` chiếm ~1.7GB trên đĩa local (đã gitignore, không ảnh hưởng git, chỉ tốn dung lượng máy).
+3. **Benchmark MOTA/IDF1 trên pipeline tracking đầy đủ** — mAP/CMC ReID tốt nhưng chưa đo tác động thực tế lên ID-switch/MOTA khi dùng vehicle ReID riêng so với baseline.

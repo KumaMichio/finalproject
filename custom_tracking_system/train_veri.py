@@ -154,7 +154,10 @@ def evaluate(model, loader, device):
     for imgs, labels in loader:
         imgs, labels = imgs.to(device), labels.to(device)
         output = model(imgs)
-        logits = output[1] if isinstance(output, (tuple, list)) else output
+        # In eval mode OSNet returns only the feature embedding (not logits),
+        # unlike train mode — run it through the classifier head explicitly.
+        feats  = output[1] if isinstance(output, (tuple, list)) else output
+        logits = model.classifier(feats)
         preds  = logits.argmax(dim=1)
         correct += (preds == labels).sum().item()
         total   += labels.size(0)
@@ -307,9 +310,9 @@ def main():
         # Save best as final output path
         if is_best:
             torch.save(ckpt, out_path)
-            print(f"  ★ Best model saved → {out_path}  (val_acc={best_acc*100:.2f}%)")
+            print(f"  [Best] Best model saved -> {out_path}  (val_acc={best_acc*100:.2f}%)")
 
-    print(f"\n[Done] Best val_acc={best_acc*100:.2f}%  weights → {out_path}")
+    print(f"\n[Done] Best val_acc={best_acc*100:.2f}%  weights -> {out_path}")
 
 
 if __name__ == '__main__':
