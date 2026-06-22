@@ -494,11 +494,15 @@ entry_road_id, entry_lane_id, exit_road_id, exit_lane_id, turn_angle_deg
 YOLO11s được sử dụng với:
 - **Confidence threshold**: 0,25 (low để ByteTrack xử lý low-score detections)
 - **IoU threshold**: 0,45 (NMS)
-- **Input resolution**: 640×640
+- **Input resolution**: 640×640 (checkpoint tổng quát) / 960×960 (checkpoint chuyên CARLA)
 - **FP16 inference**: Bật trên GTX 1050Ti để giảm VRAM
-- **Classes**: car, motorcycle, bus, truck, person (từ COCO pretrained, sẽ fine-tune trên CARLA data)
+- **Classes**: car, motorcycle, bus, truck, person
 
 Dữ liệu tự gán nhãn: 15.957 ảnh từ camera CARLA, auto-labeled bằng ITD model (confidence filter ≥ 0,4).
+
+Hệ thống dùng **2 checkpoint riêng biệt** cho 2 mục đích khác nhau (xem 5.4 và [docs/gpu_cloud_tasks.md](docs/gpu_cloud_tasks.md)):
+- `weights/yolo11s_vn.pt` — fine-tune trên dữ liệu CCTV Hà Nội thật, dùng cho production/real footage.
+- `weights/yolo11s_carla_v2.pt` — fine-tune thêm trên `carla_cam_det_v2` (camera TL-mounted CARLA), dùng riêng khi đánh giá/test trên video CARLA simulation (đo MOTA). Chọn checkpoint qua flag `--detector` của `main.py`.
 
 ## 4.5 Module Tracking và ReID
 
@@ -689,7 +693,7 @@ ECE = 0,104 có nghĩa confidence phân loại lệch trung bình ~10% so với 
 **Giới hạn:**
 - **U_turn recall 17%**: Hướng đi quan trọng nhưng không thể detect từ approach trajectory. Giải pháp: dự đoán trong junction (sau khi xe đã vào).
 - **Left recall 53%**: Cần thêm road topology features (entry_lane_id, junction connectivity) để phân biệt.
-- **Chưa có YOLO evaluation chính thức**: YOLO11s chưa được fine-tune và evaluate mAP trên CARLA data (đang pending do cần GPU cloud).
+- **YOLO11s fine-tune trên CARLA gây catastrophic forgetting nặng**: Fine-tune `yolo11s_carla_v2.pt` trên `carla_cam_det_v2` (30 epoch, backbone không freeze, 1 domain hẹp, chỉ 3/5 class) đạt mAP50=0,805 trên domain CARLA TL-mounted, nhưng đo lại trên val set đa domain (`visdrone_carla_vn`) thì mAP50 tổng rơi từ 0,507 (baseline) xuống 0,006 — mất khả năng nhận diện gần như hoàn toàn ở domain khác, kể cả với car/motorcycle/truck (chi tiết: `docs/assets/yolo11s_carla_v2/forgetting_check_vs_visdrone_carla_vn.txt`). Giải pháp tạm: giữ 2 checkpoint riêng (mục 4.4), không dùng `yolo11s_carla_v2.pt` cho production.
 - **ReID chưa có benchmark**: OSNet matching rate chưa được đo trên test set cross-camera riêng.
 - **Dữ liệu mô phỏng**: Có domain gap với CCTV thực tế — texture, góc nhìn, điều kiện ánh sáng khác.
 
@@ -717,7 +721,7 @@ Theo thứ tự ưu tiên:
 
 1. **Cải thiện u_turn recall**: Dự đoán trong junction (in-junction traversal prediction) thay vì chỉ từ approach — kỳ vọng u_turn recall ~70%.
 
-2. **YOLO11s fine-tune**: Hoàn thành QA 15.957 ảnh auto-label → fine-tune trên GPU cloud → đo mAP chính thức.
+2. **YOLO11s unified fine-tune chống forgetting**: Train lại một checkpoint duy nhất dùng được cho cả domain CARLA và domain thật — trộn `carla_cam_det_v2` với dữ liệu đa domain (`visdrone_carla_vn`), giảm learning rate/epoch, freeze thêm backbone — để tránh phải duy trì 2 checkpoint riêng như hiện tại.
 
 3. **ReID benchmark**: Xây dựng test set cross-camera để đo Rank-1 accuracy.
 

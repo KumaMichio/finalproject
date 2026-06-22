@@ -1,0 +1,5 @@
+path: C:/Users/Admin/finalproject/custom_tracking_system/data/carla_cam_det_v2
+train: images/train
+val:   images/val
+nc: 5
+names: ['person', 'car', 'motorcycle', 'bus', 'truck']
