@@ -37,6 +37,8 @@ Luồng cụ thể:
 
 Ghi chú cho báo cáo: "Production sẽ dùng OSNet ReID; trong demo simulator, GT vehicle ID được dùng để tránh dependency chưa hoàn thành."
 
+> **Cập nhật 2026-06-22**: đã bổ sung thêm 1 demo THỨ HAI chạy trực tiếp trên video CCTV thật, song song với demo CARLA (không thay thế) — xem mục 8.
+
 ---
 
 ## 3. Kiến trúc demo
@@ -203,3 +205,70 @@ Sau demo (báo cáo)
 | Goal Classifier 59.7% (không phải 90%+) | Bài toán khó (pixel-space, không có GPS); honest eval; CARLA baseline 70.3% |
 | u_turn recall 34.5% | Chỉ 29 mẫu test; class imbalance → đề xuất SMOTE |
 | MOTA=-23.6% trên CARLA (domain gap) | Đã eval + thử 4 cấu hình (conf 0.10–0.35, COCO vs VN): conf=0.35 VN là tốt nhất. COCO model tệ hơn VN. Fix thực sự: fine-tune `data/carla_cam_det/` trên GPU cloud |
+
+---
+
+## 8. Demo trên video CCTV thật (Phố Huế – Trần Khát Chân) — bổ sung 2026-06-22
+
+> Lý do: sản phẩm hướng tới ứng dụng CCTV thật, cần chứng minh pipeline chạy được ngoài simulator. `hanoi_district3.xodr` (mục 1-7) chỉ phủ 1 vùng nhỏ ~400×300m, KHÔNG trùng vị trí với bất kỳ video CCTV thật nào trong dataset — đã xác minh bằng toạ độ thật (Phố Huế–Trần Khát Chân, Giảng Võ–Láng Hạ... đều cách map cũ vài km). Giải pháp: dựng map mới đúng tại 1 giao lộ thật, dùng đúng pipeline OSM → SUMO netconvert → parse_xodr đã dùng để tạo hanoi_district3.
+
+### 8.1 Component mới
+
+| File | Vai trò |
+|---|---|
+| `Map/pho_hue_tkc.osm` / `.xodr` / `_junction_graph.json` | Map giao lộ Phố Huế–Trần Khát Chân thật (101 junctions, 742 roads) |
+| `custom_tracking_system/data/calib_pho_hue.json` | Calibration camera cho 1 video cụ thể (best-effort, xem §8.3) |
+| `Map/fit_camera_pose.py` | Tool khớp camera bằng overlay road-network lên frame video (tái dùng được cho video/giao lộ khác) |
+| `custom_tracking_system/scripts/demo_real_video_scenario.py` | Script demo chính — KHÔNG qua CARLA |
+
+### 8.2 Khác biệt so với demo CARLA (mục 1-7)
+
+- Detect + track THẬT (YOLO11s_vn + ByteTrack), không dùng GT actor ID.
+- Goal Classifier dùng weights real-world (`goal_classifier_real.pkl`), không phải bản CARLA.
+- KHÔNG có collision sensor → tai nạn phải đánh dấu TAY qua API có sẵn `POST /api/incidents/{id}/mark` (`demo/server.py:55`) trong lúc video đang chạy; script tự poll state file để nhận mark từ bên ngoài và tiếp tục chạy Goal Classifier + Route Predictor cho đúng track đó.
+- Map/route dùng `pho_hue_tkc`, không phải `hanoi_district3` (route_predictor.py đã thêm `graph_path` override để 2 map chạy song song, không xung đột).
+- `demo/map_view.html` + `demo/server.py` tái dùng nguyên — không sửa (cùng schema JSON `incident_state.json`).
+
+**Chạy:**
+```bash
+python custom_tracking_system/scripts/demo_real_video_scenario.py --loop
+python demo/server.py
+# mở http://localhost:5000, gọi POST /api/incidents/{track_id}/mark khi muốn demo tai nạn
+```
+
+### 8.3 Hạn chế cần nói rõ khi demo/báo cáo
+
+- **Calibration camera là best-effort**: khớp bằng cách chiếu road network thật (từ OSM) lên 1 frame video và chỉnh tham số camera (vị trí/pitch/yaw/fov) bằng mắt cho tới khi khớp với đường thật trong ảnh — KHÔNG phải đo đạc thực địa hay click 4 điểm chuẩn qua Street View (đã thử nhưng không dò được đúng góc camera). Xem `Map/pho_hue_tkc_calib_overlay.jpg` để soát lại. Sai số ước tính vài mét — đủ cho demo định tính, KHÔNG dùng cho production.
+- Calibration hiện chỉ gắn với 1 camera/video cụ thể (`12h.10.9.22.mp4`). Các video KHÁC cùng giao lộ Phố Huế–Trần Khát Chân dùng được calibration này (camera cố định một chỗ); video ở giao lộ KHÁC (Giảng Võ, Cửa Nam...) cần map + calibration riêng theo đúng quy trình ở §8.
+- Nhân tiện đã fix 1 bug có sẵn trong `route_predictor.py`: loại các đoạn đường <1.5m (artifact nội bộ junction do netconvert sinh ra) khỏi tìm kiếm nearest-road, tránh route bị "chết" ngay hop đầu khi vehicle ở gần junction phức tạp. Fix áp dụng cho cả map CARLA cũ — đã regression test, vẫn ra đúng 52 junctions/464 roads.
+- Đã verify end-to-end (script chạy, world-position hợp lý, mark tay, route 4-hop ra đúng trên map thật) nhưng **chưa rehearsal trực tiếp trước hội đồng** — áp dụng checklist Phase 4 (demo trực tiếp) đã thống nhất cho bản CARLA.
+
+---
+
+## 9. Route Predictor — confidence thật cho hop ≥1 — bổ sung 2026-06-22
+
+> Lý do: confidence hiển thị trên `map_view.html` cho hop 2-4 trước đây luôn là **100% giả** (hardcode `{'straight':1.0,...}` khi Goal Classifier chưa đủ frame, hoặc khi heading change <12° — xem `goal_classifier.py:131-137`), và bản thân Route Predictor luôn giả định "đi thẳng" cho mọi hop sau hop đầu. Đây gây hiểu lầm nghiêm trọng nếu hội đồng hỏi "model chắc chắn đến mức đó dựa vào đâu?".
+
+### 9.1 Bằng chứng đo được
+
+Phân tích `data/trajectories_hanoi_v2/episode_*_goals.csv` (script: `custom_tracking_system/scripts/eval/eval_route_predictor_priors.py`) — 36,997 goal events, 2,263 chuỗi xe CARLA đi qua ≥2 junction liên tiếp trong cùng 1 episode:
+
+| Đại lượng | Giá trị |
+|---|---|
+| Giả định "luôn đi thẳng" cho hop≥1 — accuracy thật | **37.04%** (n=34,698) |
+| Prior thực nghiệm (pooled hop≥1) | straight=0.370, left=0.366, right=0.179, u_turn=0.085 |
+| Markov bậc 1 (theo hướng hop trước) — accuracy | 39.01% — chỉ nhích nhẹ, không đáng dùng thay prior đơn giản |
+
+→ "straight" và "left" gần như ngang nhau ở hop≥1 — hệ thống **không có cơ sở** để tự tin hơn ~37% cho các hop sau hop đầu, vì không có tín hiệu hành vi quan sát được (xe chưa tiếp cận junction đó).
+
+### 9.2 Đã sửa trong `custom_tracking_system/route_predictor.py`
+
+- Hop đầu (junction thật đầu tiên gặp): vẫn dùng dự đoán Goal Classifier thật (`direction_probs`).
+- Mọi junction thật sau đó: dùng prior thực nghiệm trên (lưu tại `data/route_predictor_priors.json`, có fallback hardcode nếu file thiếu) — chọn hướng có xác suất cao nhất (`straight`, nhưng giờ báo đúng **37%** thay vì 100%.
+- **Fix thêm 1 bug liên quan**: hướng rẽ thật từng được gán theo *chỉ số loop* (`hop==0`) thay vì "junction thật đầu tiên gặp" — với map có nhiều đoạn connector ngắn (vd `pho_hue_tkc`), nếu đoạn đường gần nhất chưa tới junction thật, hướng rẽ thật từ Goal Classifier bị bỏ qua hoàn toàn. Đã sửa dùng cờ `direction_applied`, verify lại: hướng thật giờ áp dụng đúng vào junction thật đầu tiên kể cả khi cách vài đoạn connector.
+- Đã regression-test cả 2 map (hanoi_district3, pho_hue_tkc) — route vẫn ra hợp lý, không phá pipeline cũ.
+
+### 9.3 Còn lại
+
+- Markov bậc 1 không cải thiện đáng kể — nếu muốn tốt hơn 37-39%, cần thử điều kiện theo loại đường (đường lớn/nhỏ) hoặc road-topology feature, chưa làm.
+- Dataset CCTV thật chưa có chuỗi multi-junction liên tục (mỗi clip chỉ quan sát 1 giao lộ) nên chưa tính được prior tương tự cho real-world — đang dùng prior từ CARLA cho cả 2 map.

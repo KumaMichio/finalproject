@@ -15,6 +15,7 @@ from pyproj import Transformer
 # offset rieng cho moi map (doc tu <offset x=".." y=".."/> trong file .xodr)
 MAP_OFFSETS = {
     "hanoi_district3": (581165.61, 2320490.53),
+    "pho_hue_tkc": (588263.04, 2323135.83),
 }
 
 _UTM_EPSG = "EPSG:32648"  # UTM zone 48N (Ha Noi)

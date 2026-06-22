@@ -1,5 +1,81 @@
 # Things To Do
 
+## 0. Demo trên video CCTV thật (Phố Huế – Trần Khát Chân) ✅ HOÀN THÀNH (2026-06-22)
+
+**Chi tiết đầy đủ**: `docs/demo.md` mục 8.
+
+Đã dựng map thật (`Map/pho_hue_tkc.*`) + calibration camera best-effort + script demo mới
+(`custom_tracking_system/scripts/demo_real_video_scenario.py`) chạy detect+track+Goal
+Classifier+Route Predictor THẬT trên 1 video CCTV thật, không qua CARLA. Đã verify
+end-to-end (track world-position hợp lý, đánh dấu tay tai nạn qua API, route 4-hop ra
+đúng trên map thật).
+
+**Còn lại trước khi demo thật trước hội đồng:**
+- [ ] Rehearsal trực tiếp 2-3 lần (chưa làm) — theo checklist Phase 4 đã thống nhất
+- [ ] (Tuỳ chọn) Tăng độ chính xác calibration bằng đo đạc thực địa hoặc click điểm
+      chuẩn qua Street View, thay cho cách khớp bằng mắt hiện tại
+- [ ] (Tuỳ chọn) Thêm nút "Mark accident" trên `map_view.html` gọi thẳng API, thay vì
+      phải dùng curl/Postman thủ công
+- [ ] (Tuỳ chọn) Test thêm 1-2 video khác cùng giao lộ Phố Huế để xác nhận calibration
+      ổn định khi đổi video
+
+---
+
+## 0b. Route Predictor: confidence thật cho hop 2-4 + fix bug "lãng phí" hướng rẽ ✅ HOÀN THÀNH (2026-06-22)
+
+**Chi tiết đầy đủ**: `docs/demo.md` mục 9.
+
+Phát hiện qua phân tích `data/trajectories_hanoi_v2/episode_*_goals.csv` (36,997 goal events,
+2,263 chuỗi xe đi qua ≥2 junction): giả định cũ "luôn đi thẳng" cho hop≥1 chỉ đúng **37.04%**
+trên dữ liệu thật — không có cơ sở để báo confidence=100% như trước. Đã thay bằng prior thực
+nghiệm (`custom_tracking_system/data/route_predictor_priors.json`, script tạo:
+`scripts/eval/eval_route_predictor_priors.py`). Đồng thời fix 1 bug: hướng rẽ thật từ Goal
+Classifier áp dụng theo **chỉ số loop** (hop==0) thay vì "junction thật đầu tiên gặp" — với
+map nhiều connector ngắn (như pho_hue_tkc), hướng rẽ thật bị gán nhầm vào 1 đoạn không phải
+junction, coi như bị bỏ qua. Đã sửa dùng cờ `direction_applied` thay cho check `hop==0`.
+
+**Còn lại / hướng mở rộng (tuỳ chọn):**
+- [ ] Markov bậc 1 (dựa hướng hop trước) chỉ nhích từ 37.0% → 39.0% — không đáng để dùng
+      thay prior marginal đơn giản, nhưng nếu có thời gian có thể thử thêm road-type
+      (đường lớn/nhỏ) làm điều kiện, may ra tốt hơn Markov theo hướng rẽ thuần.
+- [ ] Áp dụng tương tự cho dữ liệu CCTV thật nếu sau này có chuỗi multi-junction thật
+      (hiện dataset real-world chỉ có snapshot 1 junction/clip, không đủ để tính).
+
+---
+
+## 0c. Goal Classifier real-world: domain gap CARLA vs real ✅ ĐÃ XỬ LÝ PHẦN ACTIONABLE (2026-06-22)
+
+**Phát hiện**: feature space CARLA (world-space, m/s) và real (pixel-space, px/s + bbox)
+**khác hoàn toàn nhau** (đọc trực tiếp `train_goal_classifier.py` vs `train_goal_classifier_real.py`)
+→ không thể "fine-tune" 1 model sang model khác như từng giả định. Domain gap 70.3% (CARLA)
+vs 59.7% (real) phản ánh đúng độ khó khác nhau của 2 bài toán, không phải thiếu sót có thể
+fix bằng transfer learning đơn giản.
+
+**Đã thử (so sánh công bằng trên cùng data, cùng train/test split)**:
+
+| Model | Accuracy | Balanced acc | F1 macro | ECE | u_turn recall |
+|---|---|---|---|---|---|
+| GB, horizon=1.0s (cũ) | 59.73% | 51.96% | 0.519 | 0.116 | 34.5% |
+| RandomForest, horizon=1.0s | 55.72% | 51.65% | 0.488 | 0.021 | 44.8% |
+| MLP, horizon=1.0s | 54.92% | 44.24% | 0.432 | 0.047 | 13.8% |
+| **GB, horizon=1.5s (MỚI — đã deploy production)** | **60.12%** | **54.18%** | **0.523** | 0.101 | 36.1% |
+
+**Phát hiện quan trọng + đã fix**: `goal_classifier.py:47` (inference) đã hardcode
+`_HORIZON = 1.5` với comment "best per-horizon result from training" từ trước — nhưng
+weights production thực tế lại được train với `--horizon 1.0` (default của script train).
+Đây là **mismatch thật giữa train-time và inference-time** đã tồn tại sẵn (không phải tôi
+gây ra). Đã train lại đúng `--horizon 1.5`, deploy vào `weights/goal_classifier_real.pkl`
+(bản cũ backup tại `weights/_backup_horizon1.0/`), verify lại load + chạy demo OK.
+
+**Chưa làm / còn mở** (không bắt buộc trước demo):
+- [ ] RandomForest có calibration tốt hơn nhiều (ECE 0.021) và u_turn recall cao nhất
+      (44.8%) — nếu ưu tiên "confidence đáng tin" hơn accuracy thô, có thể đổi sang RF.
+      Hiện vẫn giữ GB vì accuracy/f1 tổng thể cao hơn.
+- [ ] LSTM trên raw sequence (chưa thử — cần viết pipeline mới, không chỉ đổi `--model`).
+- [ ] Tạo data tổng hợp pixel-space từ CARLA qua camera ảo (ý tưởng lớn hơn, chưa làm).
+
+---
+
 ## 1. QA ảnh Auto-Label (YOLO)
 
 **Mục đích**: Kiểm tra chất lượng 15,957 ảnh đã được ITD model tự động gán nhãn trước khi dùng để fine-tune YOLO11s. Dữ liệu bẩn → model học pattern sai → accuracy kém.

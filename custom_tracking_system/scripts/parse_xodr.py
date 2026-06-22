@@ -1,13 +1,27 @@
-"""parse_xodr.py — extract junction graph from hanoi_district3.xodr"""
+"""parse_xodr.py — extract junction graph from a .xodr map.
+
+Usage:
+    python parse_xodr.py                                   # default: hanoi_district3
+    python parse_xodr.py --xodr Map/pho_hue_tkc.xodr --out Map/pho_hue_tkc_junction_graph.json
+"""
+import argparse
 import xml.etree.ElementTree as ET
 import json
 from pathlib import Path
 import math
 
-XODR = Path(__file__).resolve().parents[2] / 'Map' / 'hanoi_district3.xodr'
+_MAP_DIR = Path(__file__).resolve().parents[2] / 'Map'
+XODR = _MAP_DIR / 'hanoi_district3.xodr'
 
 def main():
-    tree = ET.parse(str(XODR))
+    ap = argparse.ArgumentParser()
+    ap.add_argument('--xodr', type=Path, default=XODR,
+                     help='Input .xodr file (default: Map/hanoi_district3.xodr)')
+    ap.add_argument('--out', type=Path, default=_MAP_DIR / 'junction_graph.json',
+                     help='Output junction graph .json (default: Map/junction_graph.json)')
+    args = ap.parse_args()
+
+    tree = ET.parse(str(args.xodr))
     root = tree.getroot()
 
     # Header
@@ -112,10 +126,9 @@ def main():
             print(f"  incoming={c['incoming_road']} -> connecting={c['connecting_road']} ({len(c['lane_links'])} lane links)")
 
     # Save
-    out_dir = Path(__file__).resolve().parents[2] / 'Map'
-    with open(out_dir / 'junction_graph.json', 'w') as f:
+    with open(args.out, 'w') as f:
         json.dump({'junctions': junction_map, 'roads': road_map}, f, indent=2)
-    print(f"\nSaved to Map/junction_graph.json")
+    print(f"\nSaved to {args.out}")
     print(f"  {len(junction_map)} junctions, {len(road_map)} roads")
 
 

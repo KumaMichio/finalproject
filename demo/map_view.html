@@ -55,9 +55,11 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-  // Map centered near hanoi_district3 origin (~21.0°N, 105.78°E)
-  const MAP_CENTER = [20.985, 105.783];
-  const MAP_ZOOM   = 15;
+  // Default view before first state arrives (will auto-recenter on first
+  // vehicle/accident position so this works for any map, not just one demo).
+  const MAP_CENTER = [21.0, 105.8];
+  const MAP_ZOOM   = 16;
+  let hasCentered  = false;
 
   const map = L.map('map', { preferCanvas: true }).setView(MAP_CENTER, MAP_ZOOM);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -157,6 +159,17 @@
 
     const at    = state.accident_track;
     const phase = state.phase || 'IDLE';
+
+    // Recenter once on whatever map this state belongs to (CARLA demo or a
+    // real-video demo each have a different lat/lon area) instead of a
+    // hardcoded center, so this same page works for either.
+    if (!hasCentered) {
+      const firstWithLatLon = (state.all_vehicles || []).find(v => v.lat) || (at && at.lat ? at : null);
+      if (firstWithLatLon) {
+        map.setView([firstWithLatLon.lat, firstWithLatLon.lon], MAP_ZOOM);
+        hasCentered = true;
+      }
+    }
 
     // Draw all vehicles
     (state.all_vehicles || []).forEach(v => {

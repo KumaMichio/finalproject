@@ -40,6 +40,28 @@ _TURN_TOLERANCE = {
     'u_turn':   70.0,
 }
 
+# Empirical prior for hop>=1 (no GoalClassifier signal exists yet for a
+# junction the vehicle hasn't approached), measured from 34,698 real
+# multi-junction transitions in CARLA episode data -- see
+# scripts/eval/eval_route_predictor_priors.py. An "always straight" rule
+# (the previous hardcoded behavior) is only right 37.0% of the time here;
+# this is the actual marginal distribution, used both to pick the
+# most-likely direction and to report an honest confidence instead of a
+# fabricated 1.0.
+_DEFAULT_HOP1PLUS_PRIOR = {
+    'straight': 0.3704, 'left': 0.3656, 'right': 0.1787, 'u_turn': 0.0854,
+}
+_HOP1PLUS_PRIOR_PATH = Path(__file__).resolve().parent / 'data' / 'route_predictor_priors.json'
+
+
+def _load_hop1plus_prior() -> dict:
+    try:
+        with open(_HOP1PLUS_PRIOR_PATH, encoding='utf-8') as f:
+            prior = json.load(f)['pooled_hop1plus_prior']
+        return {d: float(prior[d]) for d in _DEFAULT_HOP1PLUS_PRIOR}
+    except (FileNotFoundError, KeyError, json.JSONDecodeError):
+        return dict(_DEFAULT_HOP1PLUS_PRIOR)
+
 
 def _heading_diff(a: float, b: float) -> float:
     """Signed angle difference (a - b) in [-180, 180]."""
@@ -69,6 +91,12 @@ class RoutePredictor:
         self._roads:     dict = junction_graph['roads']
         self._georef     = georef
 
+        # Direction + confidence used for hop>=1, where no GoalClassifier
+        # signal exists yet (see _DEFAULT_HOP1PLUS_PRIOR above).
+        self._hop1plus_prior = _load_hop1plus_prior()
+        self._hop1plus_direction = max(self._hop1plus_prior, key=self._hop1plus_prior.get)
+        self._hop1plus_confidence = self._hop1plus_prior[self._hop1plus_direction]
+
         # Build numpy arrays for fast nearest-road lookup
         self._build_road_index()
         logger.info("RoutePredictor ready: %d junctions, %d roads",
@@ -76,8 +104,9 @@ class RoutePredictor:
 
     @classmethod
     def from_map(cls, map_name: str = 'hanoi_district3',
-                 georef=None) -> 'RoutePredictor':
-        graph_path = _MAP_DIR / 'junction_graph.json'
+                 georef=None, graph_path: Optional[Path] = None) -> 'RoutePredictor':
+        if graph_path is None:
+            graph_path = _MAP_DIR / 'junction_graph.json'
         if not graph_path.exists():
             raise FileNotFoundError(
                 f"junction_graph.json not found at {graph_path}. "
@@ -95,6 +124,12 @@ class RoutePredictor:
         """OpenDRIVE (x, y_north) → CARLA (x, y_south)."""
         return x, -y
 
+    # Roads shorter than this are netconvert internal-junction connector
+    # artifacts (e.g. 0.1m stubs with no predecessor/successor) -- excluded
+    # from nearest-road matching so a vehicle near a busy junction doesn't
+    # snap onto a dead-end stub and immediately dead-end the route.
+    _MIN_INDEXED_ROAD_LEN = 1.5
+
     def _build_road_index(self):
         road_ids   = []
         midpoints  = []
@@ -102,6 +137,8 @@ class RoutePredictor:
         lengths    = []
 
         for rid, r in self._roads.items():
+            if r['length'] < self._MIN_INDEXED_ROAD_LEN:
+                continue
             # Store midpoints in CARLA coords (negate y)
             mx = (r['start'][0] + r['end'][0]) / 2.0
             my = -((r['start'][1] + r['end'][1]) / 2.0)
@@ -176,19 +213,23 @@ class RoutePredictor:
         current_heading = heading_deg
         waypoints = []
 
+        # The GoalClassifier signal applies to the FIRST real junction
+        # (decision point) encountered -- not to loop iteration 0, which may
+        # land on a non-junction connector segment first (common with
+        # finely-split OSM/netconvert road networks). Track that separately
+        # so the real signal isn't silently discarded.
+        direction_applied = False
+
         for hop in range(n_hops):
             road = self._roads.get(current_road_id)
             if road is None:
                 break
 
-            # Decide which direction to apply
-            # Hop 0: use GoalClassifier prediction. Later hops: straight.
-            hop_direction = direction if hop == 0 else 'straight'
-
             # Find successor junction
             succ = road.get('successor', {})
             if succ.get('type') != 'junction':
-                # Road ends at another road (no junction), follow chain
+                # Road ends at another road (no junction) -- nothing to
+                # decide here, just follow the chain.
                 next_road_id = succ.get('id')
                 if next_road_id and next_road_id in self._roads:
                     nr = self._roads[next_road_id]
@@ -201,7 +242,7 @@ class RoutePredictor:
                         'x': ex, 'y': ey,
                         'lat': lat, 'lon': lon,
                         'heading_deg': new_hdg,
-                        'direction_used': hop_direction,
+                        'direction_used': direction if not direction_applied else self._hop1plus_direction,
                         'confidence': 1.0,
                     })
                     current_road_id = next_road_id
@@ -213,6 +254,18 @@ class RoutePredictor:
             junction = self._junctions.get(junction_id)
             if junction is None:
                 break
+
+            # Decide which direction to apply at this real decision point.
+            # First real junction: GoalClassifier prediction (real signal
+            # from the observed approach trajectory). Every junction after
+            # that: no such signal exists yet (vehicle hasn't approached it),
+            # so fall back to the empirical prior measured from real
+            # multi-hop sequences (see _DEFAULT_HOP1PLUS_PRIOR) rather than
+            # assuming 'straight' outright -- that assumption is only right
+            # 37% of the time on the data we measured it against.
+            hop_direction = direction if not direction_applied else self._hop1plus_direction
+            is_first_junction = not direction_applied
+            direction_applied = True
 
             # Select outgoing road from junction
             outgoing_road_id = self._pick_outgoing_road(
@@ -233,8 +286,8 @@ class RoutePredictor:
                 'lat': lat, 'lon': lon,
                 'heading_deg': new_hdg,
                 'direction_used': hop_direction,
-                'confidence': direction_probs.get(direction, 1.0)
-                              if (hop == 0 and direction_probs) else 1.0,
+                'confidence': (direction_probs.get(direction, 1.0) if (is_first_junction and direction_probs)
+                               else self._hop1plus_confidence),
             })
 
             current_road_id = outgoing_road_id

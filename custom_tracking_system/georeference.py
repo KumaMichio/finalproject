@@ -31,6 +31,13 @@ _MAP_CONFIGS = {
         'offset_y': 2320490.53,
         'flip_y': True,
     },
+    'pho_hue_tkc': {
+        'xodr': 'pho_hue_tkc.xodr',
+        'proj': '+proj=utm +zone=48 +ellps=WGS84 +datum=WGS84 +units=m +no_defs',
+        'offset_x': 588263.04,
+        'offset_y': 2323135.83,
+        'flip_y': True,
+    },
 }
 
 
