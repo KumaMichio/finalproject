@@ -16,7 +16,7 @@ import sys
 import time
 from pathlib import Path
 
-_reid_repo = Path(__file__).parent.parent / 'deep-person-reid'
+_reid_repo = Path(__file__).resolve().parents[3] / 'deep-person-reid'
 if _reid_repo.exists() and str(_reid_repo) not in sys.path:
     sys.path.insert(0, str(_reid_repo))
 
@@ -29,7 +29,7 @@ from PIL import Image
 from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
 
-from torchreid.reid.metrics.rank import evaluate_rank
+from torchreid.metrics.rank import evaluate_rank
 
 NAME_RE = re.compile(r'^(\d+)_c(\d+)_')
 

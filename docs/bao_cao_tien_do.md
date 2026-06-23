@@ -1032,6 +1032,11 @@ Mức này nằm trong vùng tốt so với OSNet công bố trên VeRi-776 (mAP
 
 ### Nhiệm vụ còn lại
 
-1. **Tích hợp vào pipeline thật** — `main.py` hiện vẫn dùng `ReIDExtractor` (chỉ person, Market-1501), chưa chuyển sang `DualReIDExtractor` ([modules/reid.py](../custom_tracking_system/modules/reid.py)) để dùng vehicle model vừa fine-tune. Default path trong code cũng đang trỏ `osnet_veri776.pth` (không có `_v2`) — cần cập nhật khi chuyển.
+1. ✅ ~~Tích hợp vào pipeline thật~~ — **Xong (2026-06-23)**: `main.py` (chế độ chạy
+   trực tiếp) đã chuyển từ `ReIDExtractor` (chỉ person) sang
+   `DualReIDExtractor(vehicle_weights='weights/osnet_veri776_v2.pth')`
+   ([modules/reid.py](../custom_tracking_system/modules/reid.py)), khớp đúng cách
+   `server/services/ai_processor.py` đã làm trước đó. Vehicle Re-ID hoạt động ở
+   cả 2 đường chạy.
 2. **Dọn checkpoint trung gian** — 60 file `osnet_veri776_v2.ckpt_ep*.pth` chiếm ~1.7GB trên đĩa local (đã gitignore, không ảnh hưởng git, chỉ tốn dung lượng máy).
 3. **Benchmark MOTA/IDF1 trên pipeline tracking đầy đủ** — mAP/CMC ReID tốt nhưng chưa đo tác động thực tế lên ID-switch/MOTA khi dùng vehicle ReID riêng so với baseline.

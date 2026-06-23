@@ -176,9 +176,20 @@
       if (!v.lat) return;
       const isAcc = v.is_accident || (at && at.track_id === v.track_id);
       const icon  = isAcc ? iconAccident : iconNormal;
-      L.marker([v.lat, v.lon], { icon })
+      const marker = L.marker([v.lat, v.lon], { icon })
        .bindTooltip(`#${v.track_id}`, { permanent: false, className: 'leaflet-tooltip' })
        .addTo(layerVehicles);
+      // Click a non-accident vehicle to manually mark it (no collision sensor
+      // on real-video demos, so this replaces the curl/Postman workaround).
+      if (!isAcc) {
+        marker.bindPopup(
+          `<b>Vehicle #${v.track_id}</b><br>` +
+          `<button onclick="markAccident(${v.track_id})" ` +
+          `style="margin-top:6px;padding:4px 10px;background:#f85149;color:#fff;` +
+          `border:none;border-radius:4px;cursor:pointer;font-size:0.8rem;">` +
+          `Mark as accident</button>`
+        );
+      }
     });
 
     // Draw accident vehicle marker if not in all_vehicles
@@ -227,6 +238,26 @@
       updateMap(state);
     } catch (e) {
       console.warn('fetch failed', e);
+    }
+  }
+
+  // Called from the "Mark as accident" button inside a vehicle popup.
+  // Replaces the manual curl/Postman call to POST /api/incidents/{id}/mark
+  // that real-video demos need (no collision sensor like the CARLA demo).
+  async function markAccident(trackId) {
+    const badge = document.getElementById('phase-badge');
+    try {
+      const resp = await fetch(`/api/incidents/${trackId}/mark`, { method: 'POST' });
+      const data = await resp.json();
+      if (!resp.ok) {
+        badge.textContent = `Mark failed: ${data.error || resp.status}`;
+        return;
+      }
+      map.closePopup();
+      fetchAndUpdate();   // refresh immediately instead of waiting for next poll
+    } catch (e) {
+      badge.textContent = 'Mark failed (network error)';
+      console.warn('markAccident failed', e);
     }
   }
 

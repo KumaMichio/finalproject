@@ -24,6 +24,8 @@ def get_stats(db: Session = Depends(get_db)):
     from services.ai_processor import get_ai_processor
     ai = get_ai_processor()
     fps = ai.fps if ai else 0
+    source = ai.source if ai else "carla"
+    map_enabled = bool(ai and ai.route_predictor is not None)
 
     return SystemStats(
         fps=round(fps, 1),
@@ -31,4 +33,6 @@ def get_stats(db: Session = Depends(get_db)):
         active_tracks=active_tracks,
         total_alerts_today=total_alerts_today,
         uptime_seconds=get_uptime(),
+        source=source,
+        map_enabled=map_enabled,
     )

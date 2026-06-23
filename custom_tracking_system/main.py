@@ -19,7 +19,7 @@ sys.path.append(str(project_root))
 
 from modules.detector import ObjectDetector
 from modules.tracker import ByteTrackWrapper
-from modules.reid import ReIDExtractor
+from modules.reid import DualReIDExtractor
 from modules.global_tracking import GlobalTracker
 from modules.trajectory_predictor import EnsembleTrajectoryPredictor
 from modules.goal_classifier import GoalClassifier
@@ -59,7 +59,10 @@ def _box_in_roi(box: list, zones: list) -> bool:
     cx = int((box[0] + box[2]) / 2)
     cy = int((box[1] + box[3]) / 2)
     for zone in zones:
-        poly = np.array(zone['polygon'], dtype=np.int32)
+        polygon = zone.get('polygon') or []
+        if len(polygon) < 3:
+            continue  # no polygon configured for this zone -- nothing to test against
+        poly = np.array(polygon, dtype=np.int32)
         if cv2.pointPolygonTest(poly, (float(cx), float(cy)), False) >= 0:
             return True
     return False
@@ -222,8 +225,12 @@ class TrackingSystem:
             }
 
             step("ReIDExtractor")
-            # osnet_x1_0 (Market-1501) — proper ReID model, not ImageNet ResNet50
-            self.modules['reid_extractor'] = ReIDExtractor(model_name='osnet_x1_0')
+            # DualReIDExtractor: osnet_x1_0/Market-1501 for persons + osnet_x1_0/VeRi-776
+            # fine-tune for vehicles (mAP=71.89%, Rank-1=94.16% on VeRi-776 test set).
+            # Falls back to the person model for vehicles if the weights file is missing.
+            vehicle_weights = project_root / 'weights' / 'osnet_veri776_v2.pth'
+            self.modules['reid_extractor'] = DualReIDExtractor(
+                vehicle_weights=str(vehicle_weights))
 
             step("GlobalTracker")
             self.modules['global_tracker'] = GlobalTracker(

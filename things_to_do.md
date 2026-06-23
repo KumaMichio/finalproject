@@ -14,8 +14,10 @@ end-to-end (track world-position hợp lý, đánh dấu tay tai nạn qua API, 
 - [ ] Rehearsal trực tiếp 2-3 lần (chưa làm) — theo checklist Phase 4 đã thống nhất
 - [ ] (Tuỳ chọn) Tăng độ chính xác calibration bằng đo đạc thực địa hoặc click điểm
       chuẩn qua Street View, thay cho cách khớp bằng mắt hiện tại
-- [ ] (Tuỳ chọn) Thêm nút "Mark accident" trên `map_view.html` gọi thẳng API, thay vì
-      phải dùng curl/Postman thủ công
+- [x] (Tuỳ chọn) Thêm nút "Mark accident" trên `map_view.html` gọi thẳng API, thay vì
+      phải dùng curl/Postman thủ công — **Xong (2026-06-23)**: click vào marker xe
+      (không phải xe tai nạn) mở popup có nút, gọi `POST /api/incidents/{id}/mark`
+      rồi tự refresh ngay, báo lỗi qua phase-badge nếu track không còn tồn tại.
 - [ ] (Tuỳ chọn) Test thêm 1-2 video khác cùng giao lộ Phố Huế để xác nhận calibration
       ổn định khi đổi video
 
@@ -145,11 +147,28 @@ python custom_tracking_system/scripts/train/train_goal_classifier.py ^
 
 ---
 
-## 4. OSNet ReID Fine-tune
+## 4. OSNet ReID Fine-tune ✅ HOÀN THÀNH (2026-06-23)
 
-**Script**: `custom_tracking_system/train_veri.py`  
-**Dataset**: `VeRi/` (đã có)  
-**Yêu cầu**: GPU cloud (Kaggle / Colab)
+**Script**: `custom_tracking_system/scripts/train/train_veri.py` (train) + `scripts/eval/eval_veri_reid.py` (eval chuẩn VeRi-776)
+**Model**: `custom_tracking_system/weights/osnet_veri776_v2.pth` (OSNet x1.0, 60 epoch, fine-tune từ ImageNet)
+**Dataset**: `VeRi/` — 37,782 ảnh train; test chuẩn 1,678 query / 11,579 gallery
+**Chạy local**: GPU RTX 4060, không cần GPU cloud (`--workers 0` bắt buộc trên máy này)
+
+**Kết quả (giao thức market1501-style, loại gallery cùng ID+camera với query):**
+
+| Metric | Giá trị |
+|---|---|
+| mAP | 71,89% |
+| Rank-1 | 94,16% |
+| Rank-5 | 96,84% |
+| Rank-10 | 98,15% |
+
+Đã wire vào production: `modules/reid.py` + `server/services/ai_processor.py` đổi default từ `osnet_veri776.pth` (epoch 12, chưa từng benchmark) sang `osnet_veri776_v2.pth`.
+
+**Còn lại:**
+- [x] `main.py` (chế độ chạy trực tiếp) vẫn dùng `ReIDExtractor` person-only, chưa đổi sang `DualReIDExtractor` — **Xong (2026-06-23)**: đổi sang `DualReIDExtractor(vehicle_weights='weights/osnet_veri776_v2.pth')`, khớp đúng cách `server/services/ai_processor.py` đã làm. Vehicle Re-ID giờ hoạt động cả khi chạy `main.py` trực tiếp.
+- [ ] Đây là benchmark offline (ảnh crop chuẩn VeRi-776) — chưa benchmark end-to-end cross-camera trong pipeline thật (ảnh crop từ video CCTV/CARLA, có nhiễu detection/tracking).
+- [ ] Dọn 60 checkpoint trung gian `weights/osnet_veri776_v2.ckpt_ep*.pth` (~1.8GB) nếu không cần resume/inspect từng epoch — đã gitignore nên không ảnh hưởng git, chỉ chiếm dung lượng đĩa.
 
 ---
 

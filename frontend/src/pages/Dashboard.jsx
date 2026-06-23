@@ -9,12 +9,26 @@ import { api } from '../services/api'
 
 export default function Dashboard() {
   const [cameras, setCameras] = useState([])
+  const [source, setSource] = useState('carla')
+  const [mapEnabled, setMapEnabled] = useState(false)
   const { incidents, acknowledge, unreadCount, connected } = useIncidents()
   const navigate = useNavigate()
 
   useEffect(() => {
     api.getCameras()
       .then(data => setCameras(Array.isArray(data) ? data : []))
+      .catch(() => {})
+
+    // source='carla' -> co the kich hoat kich ban dung san (ScenarioPanel);
+    // source='file' (video CCTV thuc) -> khong co CARLA de dung kich ban,
+    // an panel di thay vi hien nut bam luon bao loi.
+    // map_enabled -> RoutePredictor/GeoReference da duoc cau hinh (config co
+    // section 'route_prediction'), hien nut "Bản đồ" de xem du doan lo trinh.
+    api.getStats()
+      .then(data => {
+        setSource(data?.source ?? 'carla')
+        setMapEnabled(Boolean(data?.map_enabled))
+      })
       .catch(() => {})
 
     // Xoa lich su su co cu moi khi tai lai trang, de bat dau phien demo moi
@@ -30,6 +44,14 @@ export default function Dashboard() {
           <span className="text-xs text-gray-500">Hệ thống giám sát thông minh</span>
         </div>
         <div className="flex items-center gap-3">
+          {mapEnabled && (
+            <button
+              onClick={() => navigate('/map')}
+              className="flex items-center gap-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs px-3 py-1.5 rounded-full transition-colors"
+            >
+              🗺️ Bản đồ & lộ trình
+            </button>
+          )}
           {unreadCount > 0 && (
             <button
               onClick={() => navigate('/alerts')}
@@ -76,7 +98,7 @@ export default function Dashboard() {
               onAcknowledge={acknowledge}
             />
           </div>
-          <ScenarioPanel />
+          {source === 'carla' && <ScenarioPanel />}
         </div>
       </div>
 

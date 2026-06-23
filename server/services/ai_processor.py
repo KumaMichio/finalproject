@@ -13,9 +13,11 @@ Ket qua duoc day vao:
 import sys
 import time
 import json
+import math
 import asyncio
 import logging
 import threading
+from collections import deque
 from pathlib import Path
 from datetime import datetime
 
@@ -31,10 +33,21 @@ class AIProcessor:
     """Quan ly toan bo AI pipeline, chay trong background thread."""
 
     def __init__(self, config_path: str, carla_host: str = "localhost",
-                 carla_port: int = 2000):
+                 carla_port: int = 2000, source: str = "carla",
+                 video_paths: list[str] | None = None,
+                 camera_ids: list[str] | None = None,
+                 loop_video: bool = True):
         self.config_path = config_path
         self.carla_host = carla_host
         self.carla_port = carla_port
+
+        # source='carla': spawn camera trong CARLA (mac dinh, hanh vi cu).
+        # source='file': doc tu video file thuc qua VideoSource (khong can CARLA),
+        # cung pattern da chay on trong custom_tracking_system/main.py --source file.
+        self.source = source
+        self.video_paths = video_paths or []
+        self.camera_ids = camera_ids
+        self.loop_video = loop_video
 
         self._thread: threading.Thread | None = None
         self._running = False
@@ -61,6 +74,20 @@ class AIProcessor:
         # de camera tro lai trang thai giao thong binh thuong.
         self._scenario_cleanup_timer: threading.Timer | None = None
         self.SCENARIO_CLEANUP_DELAY = 30.0
+
+        # Goal Classifier / Route Predictor / map state — gan gia tri thuc o
+        # _initialize() (chay trong background thread), nhung khoi tao truoc
+        # o day de get_map_state()/mark_object() khong AttributeError neu duoc
+        # goi truoc khi _initialize() hoan tat.
+        self.goal_classifier = None
+        self.route_predictor = None
+        self.georef = None
+        self.calibration: dict = {}
+        self.marked_global_id: int | None = None
+        self._world_hist: dict = {}        # {global_id: deque[(t, x, y)]}
+        self._world_pos: dict = {}         # {global_id: {lat, lon, heading_deg, ...}}
+        self._goal_predictions: dict = {}  # {global_id: {direction, probabilities, confidence}}
+        self._marked_route: list = []
 
     def start(self):
         """Khoi dong AI pipeline trong background thread."""
@@ -94,24 +121,10 @@ class AIProcessor:
             self._cleanup()
 
     def _initialize(self):
-        """Khoi tao CARLA + cac module AI."""
-        logger.info("Initializing AI pipeline...")
+        """Khoi tao nguon video (CARLA hoac file) + cac module AI."""
+        logger.info("Initializing AI pipeline (source=%s)...", self.source)
 
-        # Import CARLA
-        import carla
-        self.client = carla.Client(self.carla_host, self.carla_port)
-        self.client.set_timeout(10.0)
-        self.world = self.client.get_world()
-
-        # Synchronous mode
-        settings = self.world.get_settings()
-        settings.synchronous_mode = True
-        settings.fixed_delta_seconds = 0.1
-        self.world.apply_settings(settings)
-
-        # Import AI modules
-        from modules.camera_controller import CameraController
-        from modules.traffic_generator import TrafficGenerator
+        # Import AI modules (dung chung ca 2 nhanh source)
         from modules.detector import ObjectDetector
         from modules.tracker import ByteTrackWrapper
         from modules.reid import DualReIDExtractor
@@ -121,17 +134,68 @@ class AIProcessor:
         from modules.alert_system import AlertSystem
         from modules.incident_detector import IncidentDetector
         from modules.evidence_package import EvidencePackage
-        from modules.scenario_controller import ScenarioController
         from utils.visualization import Visualizer
 
-        # Khoi tao modules
-        self.camera_controller = CameraController(
-            self.client, self.world, self.config_path)
-        self.camera_controller.setup_cameras()
+        if self.source == "carla":
+            # Import CARLA
+            import carla
+            self.client = carla.Client(self.carla_host, self.carla_port)
+            self.client.set_timeout(10.0)
+            self.world = self.client.get_world()
 
-        self.traffic_generator = TrafficGenerator(
-            self.world, num_vehicles=10, num_pedestrians=5)
-        self.traffic_generator.spawn_actors()
+            # Synchronous mode
+            settings = self.world.get_settings()
+            settings.synchronous_mode = True
+            settings.fixed_delta_seconds = 0.1
+            self.world.apply_settings(settings)
+
+            from modules.camera_controller import CameraController
+            from modules.traffic_generator import TrafficGenerator
+            from modules.scenario_controller import ScenarioController
+
+            self.camera_controller = CameraController(
+                self.client, self.world, self.config_path)
+            self.camera_controller.setup_cameras()
+            self.config = self.camera_controller.config
+            self.frame_source = self.camera_controller
+
+            self.traffic_generator = TrafficGenerator(
+                self.world, num_vehicles=10, num_pedestrians=5)
+            self.traffic_generator.spawn_actors()
+
+            self.scenario_controller = ScenarioController(
+                self.world, self.client,
+                cameras_config=self.config.get("cameras", {}))
+            self.camera_traffic_lights = self._find_nearby_traffic_lights()
+            self._cam_ids = list(self.camera_controller.cameras.keys())
+        else:
+            # source == 'file': video CCTV thuc qua VideoSource, khong can CARLA
+            # (cung pattern da chay on trong custom_tracking_system/main.py).
+            import yaml
+            from modules.video_source import MultiVideoSource, FileVideoSource
+
+            with open(self.config_path, "r", encoding="utf-8") as f:
+                self.config = yaml.safe_load(f)
+
+            cam_ids = self.camera_ids or [
+                f"CAM_{i + 1:03d}" for i in range(len(self.video_paths))
+            ]
+            if len(cam_ids) != len(self.video_paths):
+                raise ValueError(
+                    f"camera_ids ({len(cam_ids)}) phai khop so luong voi "
+                    f"video_paths ({len(self.video_paths)})"
+                )
+
+            self.frame_source = MultiVideoSource()
+            for cam_id, path in zip(cam_ids, self.video_paths):
+                self.frame_source.add_source(
+                    FileVideoSource(path, cam_id, loop=self.loop_video))
+
+            # Khong co CARLA world/scenario/traffic-light o che do video thuc.
+            self.world = None
+            self.scenario_controller = None
+            self.camera_traffic_lights = {}
+            self._cam_ids = cam_ids
 
         _yolo_s = _tracking_dir / "weights" / "yolo11s_vn.pt"
         _yolo_m = _tracking_dir / "weights" / "yolo11m_vn.pt"
@@ -139,7 +203,7 @@ class AIProcessor:
         self.detector = ObjectDetector(model_type=_yolo_weights, half=True)
 
         self.trackers = {}
-        for cam_id in self.camera_controller.cameras:
+        for cam_id in self._cam_ids:
             self.trackers[cam_id] = ByteTrackWrapper(
                 track_activation_threshold=0.25,
                 lost_track_buffer=30,
@@ -148,11 +212,11 @@ class AIProcessor:
                 class_map=self.detector.CLASSES,
             )
 
-        vehicle_weights = str(_tracking_dir / "weights" / "osnet_veri776.pth")
+        vehicle_weights = str(_tracking_dir / "weights" / "osnet_veri776_v2.pth")
         self.reid_extractor = DualReIDExtractor(vehicle_weights=vehicle_weights)
 
         # Đọc camera_topology từ config (cặp key dùng "__" làm phân cách vì YAML không hỗ trợ tuple key)
-        raw_topology = self.camera_controller.config.get("camera_topology", {})
+        raw_topology = self.config.get("camera_topology", {})
         camera_topology = {
             tuple(k.split("__")): tuple(v)
             for k, v in raw_topology.items()
@@ -170,18 +234,60 @@ class AIProcessor:
             gru_checkpoint=str(_tracking_dir / "weights" / "trajectory_gru.pth"))
 
         self.alert_system = AlertSystem(self.trajectory_predictor)
-        if "rois" in self.camera_controller.config:
-            self.alert_system.set_rois(self.camera_controller.config["rois"])
+        if "rois" in self.config:
+            self.alert_system.set_rois(self.config["rois"])
 
         self.incident_detector = IncidentDetector(
-            config=self.camera_controller.config.get("incident_detection", {})
+            config=self.config.get("incident_detection", {})
         )
-        self.camera_traffic_lights = self._find_nearby_traffic_lights()
         self.evidence = EvidencePackage(output_dir="evidence", buffer_seconds=30, fps=10)
 
-        self.scenario_controller = ScenarioController(
-            self.world, self.client,
-            cameras_config=self.camera_controller.config.get("cameras", {}))
+        # Goal Classifier — huong re (left/right/straight/u_turn). Generic,
+        # khong phu thuoc map/georef, hoat dong tu bbox history nen tai luon
+        # bat ke nguon nao (~4ms cho 30 xe, da benchmark).
+        from modules.goal_classifier import GoalClassifier
+        try:
+            self.goal_classifier = GoalClassifier(
+                str(_tracking_dir / "weights" / "goal_classifier_real.pkl"),
+                str(_tracking_dir / "weights" / "goal_scaler_real.pkl"),
+                str(_tracking_dir / "weights" / "goal_label_encoder_real.pkl"),
+                str(_tracking_dir / "weights" / "goal_feature_names_real.json"),
+            )
+        except FileNotFoundError as e:
+            logger.warning("GoalClassifier weights khong tim thay (%s) - bo qua", e)
+            self.goal_classifier = None
+
+        # Route Predictor + GeoReference — du doan huong di dai han + ve len
+        # map thuc (lat/lon). Chi kich hoat khi config co section
+        # 'route_prediction' tro dung 1 map da georeference (vd pho_hue_tkc).
+        # camera_config.yaml mac dinh (CARLA Town10HD_Opt) KHONG co section nay
+        # vi vi tri camera o do khong khop dia ly voi map nao (hanoi_district3
+        # la khu vuc gia lap rieng, khac he toa do) — map/route se tu tat.
+        route_cfg = self.config.get("route_prediction")
+        self.route_n_hops = 4
+        self.route_min_confidence = 0.40
+        if route_cfg:
+            try:
+                from georeference import GeoReference
+                from route_predictor import RoutePredictor
+
+                map_name = route_cfg["map_name"]
+                map_dir = _tracking_dir.parent / "Map"
+                graph_path = map_dir / route_cfg.get("graph_path", "junction_graph.json")
+                self.georef = GeoReference.from_map(map_name)
+                self.route_predictor = RoutePredictor.from_map(
+                    map_name, georef=self.georef, graph_path=graph_path)
+                self.route_n_hops = route_cfg.get("n_hops", 4)
+                self.route_min_confidence = route_cfg.get("min_confidence", 0.40)
+                logger.info("RoutePredictor enabled (map=%s)", map_name)
+            except Exception as e:
+                logger.warning("RoutePredictor init failed (%s) - map/route prediction se tat", e)
+                self.route_predictor = None
+                self.georef = None
+
+        # Giu lai calibration (da load o tren cho trajectory_predictor) de
+        # dung chung cho world-position/route prediction.
+        self.calibration = calibration
 
         self.visualizer = Visualizer()
 
@@ -196,7 +302,7 @@ class AIProcessor:
 
         db = SessionLocal()
         try:
-            for cam_name, cam_cfg in self.camera_controller.config["cameras"].items():
+            for cam_name, cam_cfg in self.config["cameras"].items():
                 cam_id = cam_cfg["camera_id"]
                 existing = db.query(Camera).filter(Camera.id == cam_id).first()
                 if not existing:
@@ -222,7 +328,7 @@ class AIProcessor:
     def _find_nearby_traffic_lights(self) -> dict:
         """Map camera_id -> list traffic light actors gan camera (CARLA world),
         dung de check RED_LIGHT_VIOLATION (incident_detection.red_light)."""
-        red_light_cfg = self.camera_controller.config.get("incident_detection", {}).get("red_light", {})
+        red_light_cfg = self.config.get("incident_detection", {}).get("red_light", {})
         radius = red_light_cfg.get("search_radius_m", 40)
 
         try:
@@ -232,7 +338,7 @@ class AIProcessor:
             return {}
 
         mapping = {}
-        for cam_cfg in self.camera_controller.config["cameras"].values():
+        for cam_cfg in self.config["cameras"].values():
             cam_id = cam_cfg["camera_id"]
             cx, cy, _cz = cam_cfg["position"]
             nearby = []
@@ -285,16 +391,21 @@ class AIProcessor:
                 fps_start = time.time()
                 self._push_stats_ws()
 
-            # Lay frames tu cameras
-            sync_frames = self.camera_controller.get_synchronized_frames()
+            # Lay frames tu cameras (CARLA hoac video file thuc — cung interface)
+            sync_frames = self.frame_source.get_synchronized_frames()
             if not sync_frames:
-                self._safe_tick()
+                if self.source == "carla":
+                    self._safe_tick()
                 continue
 
             # Lay va cham moi tu ScenarioController NGAY tu dau frame, danh
             # dau camera lien quan de ve banner "VA CHAM!" len stream trong
-            # vai giay (nguoi xem thay ro su kien dang xay ra).
-            new_collisions = self.scenario_controller.get_new_collisions()
+            # vai giay (nguoi xem thay ro su kien dang xay ra). Khong co
+            # ScenarioController o che do video thuc (source='file').
+            new_collisions = (
+                self.scenario_controller.get_new_collisions()
+                if self.scenario_controller else []
+            )
             if new_collisions:
                 expiry = time.time() + self.COLLISION_OVERLAY_SECONDS
                 for col in new_collisions:
@@ -361,6 +472,26 @@ class AIProcessor:
                                 self.alert_system.log_alert(alert)
                                 self._save_alert(db, alert)
 
+                        # 4b. World position (pixel->world qua calibration camera) -
+                        # dung cho object marking + ve vi tri/route len map thuc.
+                        calib = self.calibration.get(camera_id)
+                        if calib is not None:
+                            self._update_world_position(
+                                gid, camera_id, calib, box,
+                                g_track.get("class", "car"), now_ts)
+
+                        # 4c. Goal Classifier - huong re (left/right/straight/u_turn)
+                        if self.goal_classifier is not None:
+                            goal_res = self.goal_classifier.update_and_predict(
+                                gid, box, g_track.get("class", "car"), now_ts)
+                            if goal_res is not None:
+                                self._goal_predictions[gid] = goal_res
+
+                        # 4d. Route Predictor - chi tinh cho object da duoc "mark"
+                        # (tranh chi phi tinh route cho moi xe moi frame).
+                        if gid == self.marked_global_id:
+                            self._update_marked_route(gid)
+
                         # Luu tracking data vao DB (moi 10 frames de giam tai)
                         if self.frame_count % 10 == 0:
                             upsert_tracked_object(
@@ -413,6 +544,7 @@ class AIProcessor:
                 db.commit()
 
                 self._active_track_count = len(all_global_tracks)
+                self._prune_stale_tracking_state(all_global_tracks)
                 self._push_ws_updates(all_global_tracks)
 
             except Exception as e:
@@ -421,8 +553,9 @@ class AIProcessor:
             finally:
                 db.close()
 
-            # Tick CARLA
-            self._safe_tick()
+            # Tick CARLA (khong can voi video file — source tu doc frame ke tiep)
+            if self.source == "carla":
+                self._safe_tick()
 
     def _safe_tick(self):
         """world.tick() bao boc loi rpc 'set_actor_collisions'.
@@ -601,6 +734,10 @@ class AIProcessor:
         if self.status != "running":
             return {"ok": False, "message": "AI processor chua chay"}
 
+        if self.scenario_controller is None:
+            return {"ok": False,
+                    "message": "Kich ban demo chi kha dung o che do CARLA (--source carla)"}
+
         method_name = self.SCENARIOS.get(name)
         if method_name is None:
             return {"ok": False, "message": f"Kich ban khong hop le: {name}"}
@@ -648,16 +785,21 @@ class AIProcessor:
                 self._scenario_cleanup_timer.cancel()
             if hasattr(self, "evidence"):
                 self.evidence.flush()
-            if hasattr(self, "scenario_controller"):
+            # scenario_controller/world co the ton tai nhung = None o che do
+            # video file (source='file') — dung getattr(..., None) thay hasattr
+            # de tranh AttributeError tren None.cleanup()/None.get_settings().
+            if getattr(self, "scenario_controller", None):
                 self.scenario_controller.cleanup()
             if hasattr(self, "camera_controller"):
                 self.camera_controller.cleanup()
             if hasattr(self, "traffic_generator"):
                 self.traffic_generator.cleanup()
-            if hasattr(self, "world"):
+            if getattr(self, "world", None):
                 settings = self.world.get_settings()
                 settings.synchronous_mode = False
                 self.world.apply_settings(settings)
+            if self.source != "carla" and hasattr(self, "frame_source"):
+                self.frame_source.release_all()
         except Exception as e:
             logger.error(f"Cleanup error: {e}")
 
@@ -666,7 +808,162 @@ class AIProcessor:
             "status": self.status,
             "frame_count": self.frame_count,
             "fps": round(self.fps, 1),
+            "source": self.source,
+            "map_enabled": self.route_predictor is not None,
         }
+
+    # ------------------------------------------------------------------
+    # World position / Goal Classifier / Route Predictor (map view)
+    # ------------------------------------------------------------------
+
+    _MAX_RANGE_M = 150.0  # bo qua diem ground-plane qua xa camera (gan horizon ->
+                          # toa do the gioi bi "no" do phep chieu ground-plane, khong
+                          # phai loi detect thuc).
+
+    def _update_world_position(self, gid: int, camera_id: str, calib, box: list,
+                                obj_class: str, now_ts: float):
+        """Chieu pixel -> world (met) qua calibration camera, uoc luong
+        heading/speed tu lich su vi tri gan nhat, va lat/lon neu co georef.
+        Ket qua luu vao self._world_pos[gid] de get_map_state() doc."""
+        x1, y1, x2, y2 = box
+        cx, cy_bottom = (x1 + x2) / 2.0, y2  # ground-contact point, chinh xac
+                                              # hon center khi chieu len ground-plane
+        wx, wy = calib.pixel_to_world(cx, cy_bottom)
+
+        cam_cfg = next((c for c in self.config["cameras"].values()
+                         if c["camera_id"] == camera_id), None)
+        if cam_cfg is not None:
+            cam_x, cam_y, _ = cam_cfg["position"]
+            if math.hypot(wx - cam_x, wy - cam_y) > self._MAX_RANGE_M:
+                return  # pixel gan horizon -> diem the gioi khong dang tin, bo qua
+
+        hist = self._world_hist.setdefault(gid, deque(maxlen=5))
+        hist.append((now_ts, wx, wy))
+
+        heading_deg, speed_ms = 0.0, 0.0
+        if len(hist) >= 2:
+            t0, x0, y0 = hist[0]
+            t1, x1w, y1w = hist[-1]
+            if math.hypot(x1w - x0, y1w - y0) > 0.3:
+                heading_deg = math.degrees(math.atan2(y1w - y0, x1w - x0))
+            dt = t1 - t0
+            if dt > 1e-3:
+                speed_ms = math.hypot(x1w - x0, y1w - y0) / dt
+
+        lat = lon = None
+        if self.georef is not None:
+            lat, lon = self.georef.carla_to_latlon(wx, wy)
+
+        self._world_pos[gid] = {
+            "global_id": gid,
+            "camera_id": camera_id,
+            "class": obj_class,
+            "x": round(wx, 2), "y": round(wy, 2),
+            "lat": round(lat, 6) if lat is not None else None,
+            "lon": round(lon, 6) if lon is not None else None,
+            "heading_deg": round(heading_deg, 1),
+            "speed_ms": round(speed_ms, 2),
+        }
+
+    def _update_marked_route(self, gid: int):
+        """Du doan route nhieu hop cho object da duoc mark, dung huong re
+        moi nhat tu Goal Classifier (hoac 'straight' neu chua du tin)."""
+        if self.route_predictor is None:
+            return
+        pos = self._world_pos.get(gid)
+        if pos is None:
+            return
+
+        direction = "straight"
+        probs = {"straight": 1.0, "left": 0.0, "right": 0.0, "u_turn": 0.0}
+        confidence = 1.0
+        goal = self._goal_predictions.get(gid)
+        if goal and goal["confidence"] >= self.route_min_confidence:
+            direction = goal["direction"]
+            probs = goal["probabilities"]
+            confidence = goal["confidence"]
+
+        self._marked_route = self.route_predictor.predict(
+            pos["x"], pos["y"], pos["heading_deg"],
+            direction=direction, n_hops=self.route_n_hops, direction_probs=probs,
+        )
+        pos["direction"] = direction
+        pos["confidence"] = round(confidence, 3)
+        pos["probabilities"] = {k: round(v, 3) for k, v in probs.items()}
+
+    def _prune_stale_tracking_state(self, all_global_tracks: list):
+        """Xoa world-position/goal-prediction cua global_id khong con active
+        trong frame nay, tranh memory tang vo han qua thoi gian chay dai."""
+        active_ids = {t["global_id"] for t in all_global_tracks}
+        for store in (self._world_hist, self._world_pos, self._goal_predictions):
+            for gid in list(store.keys()):
+                if gid not in active_ids:
+                    store.pop(gid, None)
+
+    def get_map_state(self) -> dict:
+        """Trang thai cho map view: vi tri camera (lat/lon), tat ca track
+        dang active (lat/lon + huong re), va route du doan cho object da
+        duoc danh dau (neu co). enabled=False neu nguon hien tai khong co
+        georef hop le (vd CARLA Town10HD_Opt mac dinh)."""
+        if self.georef is None:
+            return {
+                "enabled": False,
+                "cameras": [], "tracks": [], "marked": None,
+                "message": ("Map/route prediction chua duoc cau hinh cho nguon nay - "
+                             "can section 'route_prediction' trong config camera, tro "
+                             "dung 1 map da georeference."),
+            }
+
+        cameras = []
+        for cam_cfg in self.config["cameras"].values():
+            cx, cy, _ = cam_cfg["position"]
+            lat, lon = self.georef.carla_to_latlon(cx, cy)
+            cameras.append({
+                "camera_id": cam_cfg["camera_id"],
+                "lat": round(lat, 6), "lon": round(lon, 6),
+            })
+
+        tracks = []
+        for gid, pos in self._world_pos.items():
+            item = dict(pos)
+            item["is_marked"] = (gid == self.marked_global_id)
+            tracks.append(item)
+
+        marked = None
+        if self.marked_global_id is not None:
+            pos = self._world_pos.get(self.marked_global_id)
+            if pos is not None:
+                marked = {
+                    "global_id": self.marked_global_id,
+                    "lat": pos["lat"], "lon": pos["lon"],
+                    "direction": pos.get("direction", "straight"),
+                    "confidence": pos.get("confidence", 0.0),
+                    "probabilities": pos.get("probabilities", {}),
+                    "route": self._marked_route,
+                }
+
+        return {"enabled": True, "cameras": cameras, "tracks": tracks, "marked": marked}
+
+    def mark_object(self, global_id: int) -> dict:
+        """Danh dau 1 object de theo doi + du doan route dai han (goi tu API,
+        vd khi nguoi van hanh click 1 xe tren map / dashboard)."""
+        if self.route_predictor is None:
+            return {"ok": False,
+                    "message": "Route prediction chua duoc cau hinh cho nguon nay"}
+        if global_id not in self._world_pos:
+            return {"ok": False,
+                    "message": f"Object #{global_id} khong ton tai hoac chua co vi tri the gioi"}
+        with self._lock:
+            self.marked_global_id = global_id
+            self._marked_route = []
+        return {"ok": True, "message": f"Da danh dau object #{global_id}",
+                "global_id": global_id}
+
+    def unmark_object(self) -> dict:
+        with self._lock:
+            self.marked_global_id = None
+            self._marked_route = []
+        return {"ok": True, "message": "Da bo danh dau"}
 
 
 # Singleton

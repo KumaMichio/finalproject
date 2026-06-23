@@ -74,6 +74,7 @@ Tôi xin gửi lời cảm ơn chân thành đến giảng viên hướng dẫn 
 | 14 | Hình 5.1 | Accuracy theo horizon (0.5s – 3.0s) |
 | 15 | Hình 5.2 | Confusion matrix Goal Classifier |
 | 16 | Hình 5.3 | Reliability diagram (calibration) |
+| 17 | Hình 5.4 | CMC curve OSNet ReID trên VeRi-776 test set |
 
 ---
 
@@ -92,7 +93,8 @@ Tôi xin gửi lời cảm ơn chân thành đến giảng viên hướng dẫn 
 | 9 | Bảng 5.1 | Kết quả Goal Classifier theo horizon |
 | 10 | Bảng 5.2 | Kết quả Goal Classifier theo loại phương tiện |
 | 11 | Bảng 5.3 | Recall từng nhãn tại horizon 1,5s |
-| 12 | Bảng 5.4 | Test cases kiểm thử hệ thống |
+| 12 | Bảng 5.4 | Kết quả OSNet Re-ID trên VeRi-776 test set |
+| 13 | Bảng 5.5 | Test cases kiểm thử hệ thống |
 
 ---
 
@@ -395,7 +397,7 @@ Operator    CARLABridge    YOLO11s    ByteTrack    OSNet     GlobalTracker
 | `TrackingSystem` | config_path, source, half, modules{} | initialize(), run(), shutdown() |
 | `ObjectDetector` | model (YOLO11s), conf_threshold=0.25, iou_threshold=0.45 | detect(frame) → List[Detection] |
 | `ByteTrackWrapper` | tracker, camera_id | update(detections, frame) → List[Track] |
-| `ReIDExtractor` | model (OSNet), gallery{} | extract(crop) → np.ndarray[512] |
+| `DualReIDExtractor` (kế thừa `ReIDExtractor`) | person_model + vehicle_model (OSNet), gallery{} | extract_feature(frame, box, class) → np.ndarray[512] |
 | `GlobalTracker` | tracks{}, match_threshold=0.7 | update(cam_tracks) → List[GlobalTrack] |
 | `GoalClassifier` | model (GBT), scaler, feature_names[26] | predict_proba(traj_window) → Dict |
 | `LearnedTrajectoryPredictor` | gru_model, Kalman (ensemble) | predict(obs_sequence) → MultiModalPred |
@@ -513,10 +515,11 @@ Hệ thống dùng **2 checkpoint riêng biệt** cho 2 mục đích khác nhau 
 - Min hits (frames trước khi confirm track): 3
 
 **OSNet ReID** cross-camera:
-- Pretrained: VeRi-776 (vehicle ReID)
+- Backbone: OSNet x1.0, fine-tune từ ImageNet-pretrained trên VeRi-776 (576 ID huấn luyện), 60 epoch, batch 16, lr 3e-4 (cosine decay) — script `scripts/train/train_veri.py`, checkpoint sản phẩm `weights/osnet_veri776_v2.pth`
 - Gallery: lưu 30 embeddings gần nhất mỗi track
 - Matching: cosine similarity với threshold 0,7
 - Kết quả: Global ID thống nhất xuyên camera
+- Đánh giá định lượng: xem Bảng 5.4 (mục 5.3) — mAP=71,89%, Rank-1=94,16% trên test set chuẩn VeRi-776
 
 ## 4.6 Goal Direction Classifier
 
@@ -580,7 +583,7 @@ NUM_MODES = 3
 NUM_NEIGHBORS = 3
 ```
 
-Training script: `custom_tracking_system/train_trajectory_predictor.py`  
+Training script: `custom_tracking_system/scripts/train/train_trajectory_predictor.py`  
 Dataset: trajectories_hanoi_v2 (training split)
 
 ## 4.8 Alert System và Incident Detector
@@ -665,9 +668,29 @@ Goal Classifier được đánh giá trên tập test độc lập (20% dữ li�
 
 ECE = 0,104 có nghĩa confidence phân loại lệch trung bình ~10% so với tần suất thực — chấp nhận được cho dashboard, cần cải thiện nếu dùng để trigger cảnh báo tự động.
 
-## 5.3 Test Cases hệ thống
+## 5.3 Kết quả OSNet Re-Identification
 
-**Bảng 5.4: Test cases kiểm thử hệ thống**
+OSNet (`weights/osnet_veri776_v2.pth`) được đánh giá bằng giao thức chuẩn của VeRi-776 (`scripts/eval/eval_veri_reid.py`): trích embedding cho toàn bộ tập query và gallery, loại bỏ các ảnh gallery cùng vehicle ID và cùng camera ID với query (ảnh gần-trùng-lặp, không có giá trị kiểm thử retrieval), tính khoảng cách cosine và đánh giá bằng `torchreid.metrics.rank.evaluate_rank` (market1501-style).
+
+**Bảng 5.4: Kết quả OSNet Re-ID trên VeRi-776 test set**
+
+| Metric | Giá trị |
+|--------|---------|
+| Số ảnh query | 1.678 |
+| Số ảnh gallery | 11.579 |
+| mAP | 71,89% |
+| Rank-1 (CMC@1) | 94,16% |
+| Rank-5 | 96,84% |
+| Rank-10 | 98,15% |
+| Rank-20 | 99,05% |
+
+**Hình 5.4** (CMC curve) cho thấy đường cong tăng nhanh và bão hòa gần 100% từ rank 20, cho thấy hầu hết truy vấn đúng đều xuất hiện trong top-20 kết quả gần nhất. Quá trình huấn luyện (60 epoch, train/val accuracy phân loại ID đạt ~99,9% ở epoch cuối) hội tụ ổn định, không có dấu hiệu overfit sớm hay phân kỳ loss.
+
+Đây là đánh giá retrieval offline (image-to-image trên ảnh crop chuẩn VeRi-776), phản ánh khả năng phân biệt vehicle ID của embedding model. Đánh giá end-to-end cross-camera matching trong pipeline thật (với nhiễu từ detection/tracking, ảnh crop từ video CCTV thay vì ảnh chuẩn hoá VeRi-776) chưa được thực hiện riêng — xem mục 6.2.
+
+## 5.4 Test Cases hệ thống
+
+**Bảng 5.5: Test cases kiểm thử hệ thống**
 
 | TC | Module | Đầu vào | Kết quả mong đợi | Kết quả thực tế |
 |----|--------|---------|-----------------|----------------|
@@ -681,8 +704,9 @@ ECE = 0,104 có nghĩa confidence phân loại lệch trung bình ~10% so với 
 | TC08 | OSNet ReID | Phương tiện qua 2 camera | Same global ID | Đạt cosine > 0.7 |
 | TC09 | Map load | hanoi_district3.xodr | CARLA load thành công | Đạt |
 | TC10 | Incident Detector | Red light crash scenario | Alert trong 1s | Đạt |
+| TC11 | OSNet ReID retrieval | VeRi-776 test (1.678 query / 11.579 gallery) | Rank-1 > 80% | Đạt (Rank-1=94,16%, mAP=71,89%) |
 
-## 5.4 Thảo luận kết quả
+## 5.5 Thảo luận kết quả
 
 **Điểm mạnh:**
 - Goal Classifier đạt 70,3% accuracy — đủ cho ứng dụng dashboard/thống kê lưu lượng theo hướng.
@@ -694,7 +718,7 @@ ECE = 0,104 có nghĩa confidence phân loại lệch trung bình ~10% so với 
 - **U_turn recall 17%**: Hướng đi quan trọng nhưng không thể detect từ approach trajectory. Giải pháp: dự đoán trong junction (sau khi xe đã vào).
 - **Left recall 53%**: Cần thêm road topology features (entry_lane_id, junction connectivity) để phân biệt.
 - **YOLO11s fine-tune trên CARLA gây catastrophic forgetting nặng**: Fine-tune `yolo11s_carla_v2.pt` trên `carla_cam_det_v2` (30 epoch, backbone không freeze, 1 domain hẹp, chỉ 3/5 class) đạt mAP50=0,805 trên domain CARLA TL-mounted, nhưng đo lại trên val set đa domain (`visdrone_carla_vn`) thì mAP50 tổng rơi từ 0,507 (baseline) xuống 0,006 — mất khả năng nhận diện gần như hoàn toàn ở domain khác, kể cả với car/motorcycle/truck (chi tiết: `docs/assets/yolo11s_carla_v2/forgetting_check_vs_visdrone_carla_vn.txt`). Giải pháp tạm: giữ 2 checkpoint riêng (mục 4.4), không dùng `yolo11s_carla_v2.pt` cho production.
-- **ReID chưa có benchmark**: OSNet matching rate chưa được đo trên test set cross-camera riêng.
+- **ReID đã có benchmark offline, chưa có benchmark end-to-end**: OSNet đạt mAP=71,89%/Rank-1=94,16% trên giao thức chuẩn VeRi-776 (mục 5.3), nhưng matching rate trong pipeline thật (cross-camera, ảnh crop từ video CCTV/CARLA thay vì ảnh chuẩn hoá) chưa được đo riêng — số liệu offline phản ánh chất lượng embedding, không phản ánh đầy đủ điều kiện vận hành thực tế (nhiễu detection, góc nhìn camera, độ phân giải thấp).
 - **Dữ liệu mô phỏng**: Có domain gap với CCTV thực tế — texture, góc nhìn, điều kiện ánh sáng khác.
 
 ---
@@ -713,7 +737,9 @@ ECE = 0,104 có nghĩa confidence phân loại lệch trung bình ~10% so với 
 
 4. **Trajectory Predictor**: Xây dựng mạng Seq2Seq GRU đa modal (3 modes, 5 horizons 0,5–3,0s) với auxiliary intent classification.
 
-5. **Pipeline hoàn chỉnh**: Tích hợp Detection → ByteTrack → OSNet ReID → Goal Classifier → GRU Predictor → Alert System thành một hệ thống coherent, chạy trên phần cứng GTX 1050Ti 4GB.
+5. **OSNet ReID**: Fine-tune OSNet x1.0 trên VeRi-776 (60 epoch), đạt mAP=71,89%, Rank-1=94,16% trên giao thức đánh giá chuẩn — đã deploy làm checkpoint sản xuất (`weights/osnet_veri776_v2.pth`).
+
+6. **Pipeline hoàn chỉnh**: Tích hợp Detection → ByteTrack → OSNet ReID → Goal Classifier → GRU Predictor → Alert System thành một hệ thống coherent, chạy trên phần cứng GTX 1050Ti 4GB.
 
 ## 6.2 Hướng phát triển
 
@@ -723,7 +749,7 @@ Theo thứ tự ưu tiên:
 
 2. **YOLO11s unified fine-tune chống forgetting**: Train lại một checkpoint duy nhất dùng được cho cả domain CARLA và domain thật — trộn `carla_cam_det_v2` với dữ liệu đa domain (`visdrone_carla_vn`), giảm learning rate/epoch, freeze thêm backbone — để tránh phải duy trì 2 checkpoint riêng như hiện tại.
 
-3. **ReID benchmark**: Xây dựng test set cross-camera để đo Rank-1 accuracy.
+3. **ReID benchmark end-to-end**: Offline retrieval benchmark trên VeRi-776 đã hoàn thành (mục 5.3); bước tiếp theo là đo matching accuracy trong pipeline thật — dựng test set cross-camera (2 camera CARLA cùng track GT actor_id, hoặc 2 video CCTV thật cùng giao lộ) để đo Rank-1 dưới điều kiện nhiễu thật, không bypass bằng GT ID như demo hiện tại.
 
 4. **LSTM/Transformer Goal Classifier**: Thay GradientBoosting bằng mô hình sequence-aware để tận dụng temporal pattern — kỳ vọng +5–8% accuracy.
 
@@ -788,7 +814,7 @@ pip install -r requirements.txt
 
 ### A.4 Thu thập dữ liệu
 ```bat
-python collect_trajectory_data.py ^
+python scripts/collect/collect_trajectory_data.py ^
   --map hanoi_district3 ^
   --episodes 120 --steps-per-episode 1800 ^
   --num-vehicles 20 --moto-ratio 0.70 ^
@@ -810,7 +836,7 @@ python main.py --config config/camera_config.yaml --source carla
 
 ### A.7 Đánh giá tracking
 ```bat
-python evaluate_tracking.py --pred-dir output/eval/ --gt-dir output/gt/
+python scripts/eval/evaluate_tracking.py --pred-dir output/eval/ --gt-dir output/gt/
 ```
 
 ## Phụ lục B: Cấu trúc thư mục project
@@ -841,7 +867,7 @@ finalproject/
 │   ├── config/
 │   │   └── camera_config.yaml
 │   ├── main.py
-│   └── collect_trajectory_data.py
+│   └── scripts/collect/collect_trajectory_data.py
 ├── Map/
 │   └── hanoi_district3.xodr   # Hanoi OpenDRIVE map
 ├── deep-person-reid/          # OSNet library

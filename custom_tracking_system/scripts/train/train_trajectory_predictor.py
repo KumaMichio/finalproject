@@ -23,7 +23,7 @@ import pandas as pd
 import torch
 from torch.utils.data import Dataset, DataLoader
 
-project_root = Path(__file__).parent
+project_root = Path(__file__).resolve().parents[2]
 sys.path.append(str(project_root))
 
 from modules.trajectory_gru import (

@@ -51,42 +51,41 @@ Charts lưu tại `docs/assets/yolo11s_carla_v2/` (`results.png`, `results.csv`,
 
 ---
 
-## 2. OSNet ReID Fine-tune — dataset đã sẵn sàng local, đang chờ chạy
+## ✅ 2. OSNet ReID Fine-tune — Đã hoàn thành (2026-06-23)
 
 **Mục đích**: Fine-tune OSNet trên VeRi-776 (vehicle ReID) để cải thiện cross-camera matching accuracy cho xe cộ Việt Nam.
 
-**Không cần Kaggle nữa** — dataset VeRi-776 đã upload sẵn vào máy local tại `custom_tracking_system/data/datasets/VeRi/` (37,782 ảnh train, verify khớp `train_label.xml`). Sẽ chạy bằng GPU local (RTX 4060) ngay sau khi job YOLO ở mục 1 giải phóng GPU.
-
-**KHÔNG cần** copy `weights/osnet_veri776.pth` — đó là file output của lần train trước (mặc định `--out`), không phải input. Script tự khởi tạo model từ **ImageNet-pretrained** (`torchreid.models.build_model(..., pretrained=True)`).
-
-**Cài torchreid** (đã cài sẵn trong `venv_tracking`, version 0.2.5):
+**Chạy local** (GPU RTX 4060, không cần Kaggle — dataset `custom_tracking_system/data/datasets/VeRi/`, 37,782 ảnh train):
 ```bash
-pip install git+https://github.com/KaiyangZhou/deep-person-reid.git
-```
-
-**Lệnh chạy** (đã verify đúng args thật từ `argparse` trong script):
-```bash
-python train_veri.py \
+python scripts/train/train_veri.py \
     --data data/datasets/VeRi \
     --out weights/osnet_veri776_v2.pth \
     --epochs 60 \
     --batch 16 \
     --workers 0
 ```
+60 epoch hoàn thành, train_acc/val_acc đạt ~100%/99.9% ở epoch cuối, loss giảm đều không có dấu hiệu phân kỳ (log đầy đủ: `docs/assets/osnet_veri776_v2/results.csv`). 60 checkpoint trung gian lưu tại `weights/osnet_veri776_v2.ckpt_ep01.pth` … `ep60.pth` (đã gitignore, chỉ giữ local).
 
-> ⚠️ **`--workers 0` là bắt buộc trên máy này**, không phải 4 hoặc default. Máy có 20GB RAM + 8GB pagefile, commit charge thường xuyên ở mức ~29.6/30GB. Mỗi dataloader worker trên Windows phải re-import toàn bộ torch+CUDA (multiprocessing spawn re-run cả script), nên `--workers ≥ 1` đã từng gây crash `OSError: [WinError 1455] The paging file is too small...` / `[WinError 1114] DLL initialization routine failed` ngay cả khi GPU còn nhiều VRAM trống. batch giảm từ 64 → 16 vì lúc chạy đồng thời với job YOLO chỉ còn ~2.4GB VRAM trống (xem [[feedback_autonomous_training_monitoring]]).
+**Đánh giá trên test set chuẩn VeRi-776** (`scripts/eval/eval_veri_reid.py`, giao thức market1501-style — loại gallery cùng ID+cùng camera với query trước khi rank):
+```bash
+python scripts/eval/eval_veri_reid.py --data data/datasets/VeRi --weights weights/osnet_veri776_v2.pth \
+    --out ../docs/assets/osnet_veri776_v2/reid_eval_veri_test.json
+```
 
-Args đầy đủ của script: `--data` (bắt buộc, path tới folder VeRi), `--out` (default `weights/osnet_veri776.pth`), `--epochs` (default 20), `--batch` (default 32), `--lr` (default 0.0003), `--workers` (default 4 — **đặt 0 trên máy này**), `--resume` (checkpoint để tiếp tục train nếu bị ngắt).
+| Metric | Giá trị |
+|---|---|
+| Query / Gallery | 1.678 / 11.579 ảnh |
+| mAP | **71,89%** |
+| Rank-1 | **94,16%** |
+| Rank-5 | 96,84% |
+| Rank-10 | 98,15% |
+| Rank-20 | 99,05% |
 
-**Output cần lấy về:**
-- `weights/osnet_veri776_v2.pth` — checkpoint đã fine-tune
-- Log training in ra Rank-1 accuracy / loss theo epoch (script tự in ra stdout, lưu lại log file)
+Kết quả lưu tại `docs/assets/osnet_veri776_v2/` (`reid_eval_veri_test.json`, `cmc_curve.png`, `results.csv`/`results.png` — training curve).
 
-**Số liệu cần ghi vào báo cáo:**
-- Rank-1 accuracy (val_acc do script tự tính, dùng làm proxy)
-- Loss theo epoch
-
-**Ước tính thời gian:** 2–3 giờ trên GPU RTX 4060 (60 epoch, ~38K ảnh, batch 16, workers 0 — chậm hơn ước tính gốc do single-process data loading).
+> ✅ **Đã wire vào production**: `custom_tracking_system/modules/reid.py` (default `vehicle_weights`) và `server/services/ai_processor.py` đã chuyển từ checkpoint cũ `osnet_veri776.pth` (epoch 12, chưa từng benchmark) sang `osnet_veri776_v2.pth`. `main.py` (chế độ chạy trực tiếp / OpenCV) **đã đổi sang `DualReIDExtractor`** (2026-06-23), cùng cách dùng như `ai_processor.py` — vehicle Re-ID giờ hoạt động ở cả 2 đường chạy.
+>
+> **Lưu ý cho báo cáo**: đây là benchmark retrieval offline trên ảnh crop chuẩn hoá VeRi-776, đo chất lượng embedding model. Chưa đo matching accuracy end-to-end trong pipeline thật (ảnh crop từ video CCTV/CARLA, có nhiễu detection/tracking) — xem `bao_cao_cuoi_cung.md` mục 5.3 và 6.2.
 
 ---
 
@@ -106,12 +105,15 @@ Per-class mAP50: motorcycle=97.5%, car=98.1%, bus=89.3%, person=82.8%, truck=79.
 > ⚠️ Val set dùng auto-labels (không phải ground truth tay) → số liệu cao hơn thực tế.
 > Charts lưu tại `docs/assets/yolo11s_vn/`.
 
-## Checklist chạy local (OSNet — còn lại)
+## Checklist chạy local (OSNet) — ✅ hoàn thành 2026-06-23
 
 - [x] Dataset `custom_tracking_system/data/datasets/VeRi/` đã có sẵn local
 - [x] torchreid đã cài trong `venv_tracking`
-- [ ] Chờ GPU rảnh (job YOLO mục 1 dùng GPU xong)
-- [ ] Chạy với `--workers 0` (xem cảnh báo virtual-memory ở trên), theo dõi log để bắt sớm nếu treo
+- [x] Train 60 epoch với `--workers 0` — không treo, hoàn thành trong thời gian ước tính
+- [x] Eval VeRi-776 test chuẩn (`scripts/eval/eval_veri_reid.py`) — mAP=71.89%, Rank-1=94.16%
+- [x] Wire vào production (`modules/reid.py`, `server/services/ai_processor.py` → `osnet_veri776_v2.pth`)
+- [x] `main.py` (direct-run mode) đổi sang `DualReIDExtractor` (2026-06-23) — vehicle Re-ID hoạt động ở cả 2 đường chạy
+- [ ] Benchmark end-to-end cross-camera trong pipeline thật (không chỉ offline VeRi-776 retrieval) — chưa làm
 
 ---
 
@@ -122,6 +124,8 @@ Cập nhật các chỗ sau trong [bao_cao_cuoi_cung.md](../bao_cao_cuoi_cung.md
 | Vị trí trong báo cáo | Cần điền | Trạng thái |
 |----------------------|---------|---|
 | 4.4 / 5.4 | mAP50, mAP50-95, Precision, Recall của YOLO + cảnh báo catastrophic forgetting | ✅ đã cập nhật |
-| Chương 5, mục 5.x | Rank-1 accuracy OSNet cross-camera | ⏳ chờ train OSNet |
+| 4.5 / 5.3 | mAP, Rank-1 accuracy OSNet ReID trên VeRi-776 | ✅ đã cập nhật |
 | Danh mục hình | Thêm: training loss curve, confusion matrix, PR curve YOLO | ✅ đã lưu vào `docs/assets/yolo11s_carla_v2/` |
+| Danh mục hình | Thêm: Hình 5.4 CMC curve OSNet | ✅ đã cập nhật |
+| Danh mục bảng | Thêm: Bảng 5.4 kết quả OSNet, đổi Test Cases thành Bảng 5.5 | ✅ đã cập nhật |
 | Bảng so sánh | Thêm cột "YOLO11s carla_v2 fine-tuned" vs "YOLO11s_vn" — lưu ý 2 model phục vụ 2 mục đích khác nhau, không phải bản thay thế | ✅ đã cập nhật |

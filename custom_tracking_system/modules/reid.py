@@ -343,19 +343,22 @@ class DualReIDExtractor(ReIDExtractor):
       • vehicle_model — OSNet fine-tuned on VeRi-776     (vehicles)
 
     Usage:
-        reid = DualReIDExtractor(vehicle_weights='weights/osnet_veri776.pth')
+        reid = DualReIDExtractor(vehicle_weights='weights/osnet_veri776_v2.pth')
         feature = reid.extract_feature(frame, box, object_class='car')
 
     The vehicle model is loaded lazily — if the weights file does not exist
     the extractor silently falls back to the person model for all classes.
     The person model path stays the same as ReIDExtractor.
 
-    Steps to activate:
-        1. Run: python train_veri.py --data ../../VeRi --out weights/osnet_veri776.pth
-        2. Replace ReIDExtractor with DualReIDExtractor in main.py / ai_processor.py.
+    weights/osnet_veri776_v2.pth (60 epoch, fine-tuned from ImageNet) is the
+    current production checkpoint — evaluated on the standard VeRi-776
+    query/gallery test protocol (eval_veri_reid.py): mAP=71.89%, Rank-1=94.16%
+    (see docs/assets/osnet_veri776_v2/reid_eval_veri_test.json). The older
+    weights/osnet_veri776.pth (epoch 12, never benchmarked) is kept only as a
+    fallback reference.
     """
 
-    def __init__(self, vehicle_weights: str = 'weights/osnet_veri776.pth',
+    def __init__(self, vehicle_weights: str = 'weights/osnet_veri776_v2.pth',
                  person_model_name: str = 'osnet_x1_0',
                  device: str = None):
         """

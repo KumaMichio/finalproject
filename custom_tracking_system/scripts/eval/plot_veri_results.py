@@ -7,8 +7,8 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-LOG_PATH = Path(__file__).parent / 'train_veri.log'
-OUT_DIR = Path(__file__).parent.parent / 'docs' / 'assets' / 'osnet_veri776_v2'
+LOG_PATH = Path(__file__).resolve().parents[2] / 'train_veri.log'
+OUT_DIR = Path(__file__).resolve().parents[3] / 'docs' / 'assets' / 'osnet_veri776_v2'
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 EPOCH_RE = re.compile(

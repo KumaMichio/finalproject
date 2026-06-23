@@ -46,4 +46,7 @@ export const api = {
   streamUrl:     (camId)  => `http://${window.location.hostname}:8000/stream/${camId}`,
   getScenarios:  ()       => get('/scenarios'),
   triggerScenario: (name) => post(`/scenarios/${name}`),
+  getMapState:   ()       => get('/map/state'),
+  markObject:    (id)     => post(`/map/mark/${id}`),
+  unmarkObject:  ()       => post('/map/unmark'),
 }

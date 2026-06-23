@@ -14,6 +14,7 @@ best_xl_ITD_v1.2.pt
 custom_tracking_system/weights/yolo11m_vn.pt
 custom_tracking_system/weights/yolo11s_vn.pt
 custom_tracking_system/weights/osnet_veri776.pth
+custom_tracking_system/weights/osnet_veri776_v2.pth
 custom_tracking_system/weights/goal_classifier.pkl
 custom_tracking_system/weights/goal_classifier_real.pkl
 # Stock YOLO weights (auto-download được từ ultralytics)

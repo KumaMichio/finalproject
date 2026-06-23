@@ -4,6 +4,7 @@ import Dashboard from './pages/Dashboard'
 import IncidentDetail from './pages/IncidentDetail'
 import AlertManagement from './pages/AlertManagement'
 import ObjectHistory from './pages/ObjectHistory'
+import MapView from './pages/MapView'
 
 export default function App() {
   return (
@@ -12,6 +13,7 @@ export default function App() {
       <Route path="/incident/:id"         element={<IncidentDetail />} />
       <Route path="/alerts"               element={<AlertManagement />} />
       <Route path="/object/:global_id"    element={<ObjectHistory />} />
+      <Route path="/map"                  element={<MapView />} />
     </Routes>
   )
 }

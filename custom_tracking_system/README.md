@@ -115,7 +115,7 @@ từ trajectory approach, thiết kế cho CCTV đời thực Hà Nội.
 ### Thu thập dữ liệu
 
 ```bat
-python custom_tracking_system/collect_trajectory_data.py ^
+python custom_tracking_system/scripts/collect/collect_trajectory_data.py ^
     --map hanoi_district3 --episodes 120 --steps-per-episode 1800 ^
     --num-vehicles 20 --moto-ratio 0.70 ^
     --out custom_tracking_system/data/trajectories_hanoi_v2

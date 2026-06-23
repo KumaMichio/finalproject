@@ -331,7 +331,7 @@ nếu file đó tồn tại. Mục này mô tả cách tạo `weights/yolo11m_vn
 | Dataset | Mục đích | Script |
 |---------|----------|--------|
 | **VisDrone2019-DET** | Ảnh thực, góc camera trên cao giống CCTV — merge 10 lớp gốc → 5 lớp VN | `prepare_visdrone_dataset.py` |
-| **CARLA Synthetic** | Camera CCTV ảo đặt ở góc phố/gắn tường tòa nhà gần giao lộ, nhãn bbox tự động từ ground-truth 3D | `collect_carla_detection_data.py` |
+| **CARLA Synthetic** | Camera CCTV ảo đặt ở góc phố/gắn tường tòa nhà gần giao lộ, nhãn bbox tự động từ ground-truth 3D | `scripts/collect/collect_carla_detection_data.py` |
 
 #### 3.1.1 Sử dụng YOLO11m pretrained (không cần train)
 
@@ -364,7 +364,7 @@ Output: `data/visdrone_vn/images/{train,val}`, `data/visdrone_vn/labels/{train,v
 
 #### 3.1.3 Tạo synthetic dataset từ CARLA
 
-`collect_carla_detection_data.py` (env `carla-sim`, CarlaUE4.exe đang chạy)
+`scripts/collect/collect_carla_detection_data.py` (env `carla-sim`, CarlaUE4.exe đang chạy)
 spawn traffic + nhiều camera RGB/depth đặt theo kiểu CCTV thật — gần các
 junction trong bản đồ, cách tâm 8–15m (≈ góc tòa nhà), cao 5–8m, nghiêng
 xuống 10–35°. Mỗi frame, bounding box 3D của mọi vehicle/walker được chiếu
@@ -374,10 +374,10 @@ label YOLO 5 lớp VN.
 ```cmd
 cd custom_tracking_system
 :: smoke test trước (verify camera placement + bbox projection)
-python collect_carla_detection_data.py --frames 50 --out data/carla_det_test
+python scripts/collect/collect_carla_detection_data.py --frames 50 --out data/carla_det_test
 
 :: thu thập thật
-python collect_carla_detection_data.py --frames 5000 --num-cameras 6 --out data/carla_det
+python scripts/collect/collect_carla_detection_data.py --frames 5000 --num-cameras 6 --out data/carla_det
 ```
 
 Output: `data/carla_det/images/{train,val}`, `data/carla_det/labels/{train,val}`,

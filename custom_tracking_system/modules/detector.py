@@ -64,7 +64,12 @@ class ObjectDetector:
         self.model_type = model_type
         self.conf_threshold = conf_threshold
         self.device = device or ('0' if torch.cuda.is_available() else 'cpu')
-        self.half = half
+        # FP16 only helps on CUDA (saves VRAM + uses tensor cores). On CPU most
+        # kernels have no native fp16 path and .half() is flat-out slower than
+        # fp32, so silently ignore the flag when no GPU is available instead of
+        # forcing a slowdown on every CPU-only caller (ai_processor.py, main.py
+        # both pass half=True unconditionally).
+        self.half = half and self.device != 'cpu'
         self.model = None
         if class_map is not None:
             self.CLASSES = class_map

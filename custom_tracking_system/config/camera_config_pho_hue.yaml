@@ -1,0 +1,28 @@
+# camera_config_pho_hue.yaml — camera CCTV THUC tai giao lo Pho Hue - Tran Khat
+# Chan (Ha Noi), dung cho `server/app.py --source file --config <file nay>`.
+#
+# Khac voi camera_config.yaml (mac dinh, 6 camera ao trong CARLA Town10HD_Opt,
+# KHONG khop dia ly voi map nao) — file nay tro dung 1 camera CCTV thuc da
+# duoc georeference, nen co the kich hoat Route Predictor + ve len map thuc.
+#
+# Calibration (position/rotation/fov) la best-effort, fit bang mat qua
+# Map/fit_camera_pose.py (xem custom_tracking_system/data/calib_pho_hue.json
+# va Map/pho_hue_tkc_calib_overlay.jpg) — khong phai do dac thuc dia, sai so
+# vai met, du dung cho demo dinh tinh, chua dat chuan production.
+
+cameras:
+  camera_0:
+    camera_id: "CAM_PHO_HUE_REAL"
+    position: [221.0, -190.0, 7.0]
+    rotation: [-12.0, -90.0, 0.0]   # [pitch, yaw, roll] do, cung he toa do voi Map/pho_hue_tkc.xodr
+    view_angle: 65.0
+    resolution: [1600, 1200]
+    fps: 10
+
+# Kich hoat Route Predictor + GeoReference (xem AIProcessor._initialize()).
+# graph_path tinh tuong doi tu thu muc Map/.
+route_prediction:
+  map_name: "pho_hue_tkc"
+  graph_path: "pho_hue_tkc_junction_graph.json"
+  n_hops: 4
+  min_confidence: 0.40

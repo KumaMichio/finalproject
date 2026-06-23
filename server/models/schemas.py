@@ -146,6 +146,8 @@ class SystemStats(BaseModel):
     active_tracks: int = 0
     total_alerts_today: int = 0
     uptime_seconds: float = 0
+    source: str = "carla"   # 'carla' | 'file' — FE dung de an ScenarioPanel khi != 'carla'
+    map_enabled: bool = False  # True khi RoutePredictor/GeoReference da duoc cau hinh
 
 # ---- WebSocket messages ----
 

@@ -18,7 +18,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 # torchreid cloned as sibling directory — no pip install needed
-_reid_repo = Path(__file__).parent.parent / 'deep-person-reid'
+_reid_repo = Path(__file__).resolve().parents[3] / 'deep-person-reid'
 if _reid_repo.exists() and str(_reid_repo) not in sys.path:
     sys.path.insert(0, str(_reid_repo))
 
