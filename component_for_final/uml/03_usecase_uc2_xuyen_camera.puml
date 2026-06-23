@@ -1,0 +1,16 @@
+@startuml usecase_uc2
+' Hình 2.3 - Use case phân rã UC2
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+title Hình 2.3 - Use case phân rã: UC2 - Theo dõi xuyên camera
+
+rectangle "UC2 - Theo dõi xuyên camera (Global ID)" {
+  usecase "UC2.1 - Cập nhật gallery\nđặc trưng theo camera" as UC21
+  usecase "UC2.2 - So khớp định danh\ngiữa các camera (cosine +\nSpatio-Temporal Filter)" as UC22
+  usecase "UC2.3 - Gán/duy trì\nGlobal ID" as UC23
+}
+
+UC21 --> UC22
+UC23 ..> UC22 : <<include>>
+@enduml

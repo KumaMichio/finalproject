@@ -1,0 +1,20 @@
+@startuml usecase_uc1
+' Hình 2.2 - Use case phân rã UC1
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam actorStyle awesome
+title Hình 2.2 - Use case phân rã: UC1 - Phát hiện & theo dõi trong từng camera
+
+actor "Nguồn camera/video" as Camera
+
+rectangle "UC1 - Phát hiện & theo dõi trong từng camera" {
+  usecase "UC1.1 - Phát hiện đối tượng\n(YOLO11)" as UC11
+  usecase "UC1.2 - Theo dõi đối tượng\ntrong 1 camera (ByteTrack)" as UC12
+  usecase "UC1.3 - Trích đặc trưng\nđịnh danh - ReID (OSNet)" as UC13
+}
+
+Camera --> UC11
+UC12 ..> UC11 : <<include>>
+UC13 ..> UC12 : <<include>>
+@enduml

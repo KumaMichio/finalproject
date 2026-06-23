@@ -1,0 +1,43 @@
+@startuml package_diagram
+' Package diagram - kiến trúc phân tầng
+skinparam shadowing false
+skinparam packageStyle rectangle
+title Package Diagram - Kiến trúc phân tầng của hệ thống
+
+package "Presentation Layer (frontend - React/Vite)" as PL {
+  [Dashboard.jsx]
+  [MapView.jsx]
+  [AlertManagement.jsx]
+  [CameraGrid / CameraFeed]
+  [IncidentPanel / ScenarioPanel]
+}
+
+package "Service Layer (server - FastAPI)" as SL {
+  [routers/* (REST + WebSocket + MJPEG)]
+  [services/ai_processor.py]
+  [services/* (camera/alert/tracking/stream)]
+  [models/database.py (SQLAlchemy)]
+}
+
+package "AI / ML Layer (custom_tracking_system)" as ML {
+  [modules/detector, tracker, reid]
+  [modules/global_tracking]
+  [modules/trajectory_predictor, trajectory_gru]
+  [modules/goal_classifier]
+  [route_predictor, georeference]
+  [modules/incident_detector, alert_system, evidence_package]
+  [modules/video_source, calibration]
+}
+
+package "Data / External" as DX {
+  database "SQLite\n(tracking_system.db)" as SQLITE
+  [Map/junction_graph.json\n+ *.xodr / OSM]
+  [weights/*.pt, *.pth, *.pkl]
+  [CARLA Simulator / RTSP camera]
+}
+
+PL --> SL : REST / WebSocket / MJPEG
+SL --> ML : gọi pipeline (background thread)
+SL --> SQLITE
+ML --> DX
+@enduml

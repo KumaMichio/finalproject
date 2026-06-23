@@ -1,0 +1,21 @@
+@startuml usecase_uc3
+' Hình 2.4 - Use case phân rã UC3
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam actorStyle awesome
+title Hình 2.4 - Use case phân rã: UC3 - Phát hiện & đánh dấu sự cố
+
+actor "Người vận hành" as Operator
+
+rectangle "UC3 - Phát hiện & đánh dấu sự cố" {
+  usecase "UC3.1 - Phát hiện sự cố\ntự động (rule-based, 14 loại)" as UC31
+  usecase "UC3.2 - Đánh dấu thủ công\nđối tượng nghi vấn" as UC32
+  usecase "UC3.3 - Đóng gói bằng chứng\n(evidence package)" as UC33
+}
+
+Operator --> UC32
+UC32 ..> UC31 : <<extend>>
+UC33 ..> UC31 : <<include>>
+UC33 ..> UC32 : <<include>>
+@enduml

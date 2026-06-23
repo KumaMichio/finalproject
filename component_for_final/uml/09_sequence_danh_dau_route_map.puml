@@ -1,0 +1,34 @@
+@startuml sequence_danh_dau_route_map
+' Sequence diagram - Đánh dấu đối tượng -> dự đoán hành trình -> vẽ lên bản đồ
+skinparam shadowing false
+title Sequence Diagram - Đánh dấu đối tượng -> dự đoán hành trình dài hạn -> vẽ lên bản đồ (UC3.2 -> UC4)
+
+actor "Người vận hành" as Op
+participant "MapView.jsx\n(Leaflet)" as UI
+participant "Backend API\n(FastAPI)" as API
+participant "AIProcessor" as AIP
+participant "GoalClassifier" as GC
+participant "RoutePredictor" as RP
+participant "Georeference" as GR
+participant "Junction Graph\n(junction_graph.json)" as JG
+
+Op -> UI : click xe + "Đánh dấu theo dõi"
+UI -> API : POST /api/incidents/{id}/mark (markObject)
+API -> AIP : đánh dấu global_id cần truy vết
+
+loop khi đối tượng tới ngã tư
+  AIP -> GC : predict(history_window)
+  GC --> AIP : {straight, left, right, u_turn} + xác suất
+  AIP -> RP : predict(x, y, heading, direction, n_hops=4)
+  RP -> JG : duyệt đồ thị giao lộ (multi-hop)
+  JG --> RP : chuỗi đoạn đường + độ tin cậy giảm dần
+  RP -> GR : chuyển (x,y) -> (lat, lon)
+  GR --> RP : toạ độ thực
+  RP --> AIP : route[ {hop, lat, lon, prob} ]
+end
+
+UI -> API : GET /api/map/state (poll 1s)
+API --> UI : {cameras, tracks, marked: {route, probabilities}}
+UI -> UI : vẽ marker đỏ + polyline route + thanh xác suất
+UI --> Op : hiển thị hành trình dự đoán trên bản đồ thực
+@enduml
