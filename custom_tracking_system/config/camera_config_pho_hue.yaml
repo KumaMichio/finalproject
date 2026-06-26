@@ -26,3 +26,77 @@ route_prediction:
   graph_path: "pho_hue_tkc_junction_graph.json"
   n_hops: 4
   min_confidence: 0.40
+
+# Tam tat 5 loai incident nay cho camera nay (2026-06-25) — gan nhan tay tren
+# vai tram canh bao thuc te (xem docs/plan_tinh_chinh_nguong_incident.md) cho
+# thay 100% la false positive, ca SUDDEN_STOP/SUDDEN_ACCEL (nhieu toc do tuc
+# thoi) lan VEHICLE_PROXIMITY/PREDICTED_COLLISION (da lam muot EWMA)/OVERSPEED
+# (nguong tuyet doi theo loai xe) — nguong px/s, pixel hien tai chua duoc
+# hieu chinh dung cho khoang cach/zoom cua camera nay (1600x1200). Khong co
+# true positive nao trong mau da xem nen khong the hieu chinh nguong bang
+# thong ke (xem Chuong 5 muc 5.5.4/5.5.6, Chuong 6). Bo qua disabled_types
+# nay khi co du lieu thuc co positive thuc su de hieu chinh lai.
+incident_detection:
+  disabled_types:
+    - SUDDEN_STOP
+    - SUDDEN_ACCEL
+    - VEHICLE_PROXIMITY
+    - PREDICTED_COLLISION
+    - OVERSPEED
+
+  # Toa do tam 2 bong den (pixel, video 1600x1200) — do tay tu video
+  # 12h.10.9.22.mp4 bang scripts/eval/test_traffic_light_feasibility.py
+  # (2026-06-26). Da xac nhan: bong "Green" sang ro idx 0-72, chuyen sang
+  # "Red" tai idx 84, ca 2 toi (None) idx >= 96 — xem
+  # docs/assets/traffic_light_feasibility/. Chi co 2 bong (khong co Yellow)
+  # — co the la den nguoi-di-bo, khong phai den xe 3 mau day du.
+  traffic_light:
+    points:
+      CAM_PHO_HUE_REAL:
+        Red: [1545, 440]
+        Green: [1545, 490]
+
+  # Lan duong (best-effort, khop truc quan tu 1 khung hinh mau idx84 cua
+  # 12h.10.9.22.mp4, giong tinh than calibration camera o tren — KHONG do
+  # dac thuc dia, sai so theo perspective gan dung). Quan sat: lan o to ben
+  # trai/giua, lan xe may ben phai, cung huong di xa camera (ve cau vuot).
+  lane_discipline:
+    zones:
+      CAM_PHO_HUE_REAL:
+        - name: "lan_o_to"
+          polygon: [[120, 1150], [680, 1150], [600, 380], [400, 380]]
+          allowed_classes: ["car", "truck", "bus"]
+        - name: "lan_xe_may"
+          polygon: [[700, 1150], [1080, 1150], [760, 380], [600, 380]]
+          allowed_classes: ["motorcycle"]
+
+# Vach cam dung/do (vach nguoi di bo, do tay tu khung hinh mau idx84 —
+# xem docs/assets/traffic_light_feasibility/crosswalk_grid.jpg). Tai dung
+# bang ROI chung (server/routers/rois.py), alert_types "no_stop" duoc
+# IncidentDetector._check_illegal_stop() doc.
+rois:
+  CAM_PHO_HUE_REAL:
+    zones:
+      - name: "vach_nguoi_di_bo"
+        polygon: [[0, 610], [400, 610], [400, 800], [0, 800]]
+        alert_types: ["no_stop"]
+      # Vach dung cho RED_LIGHT_VIOLATION — toa do CU (1280,460)-(1560,600) da
+      # xac nhan SAI (de len 1 xe do ven duong, 0 vach son). Toa do MOI nay
+      # (2026-06-27) do tu video 17h30.10.9.22.mp4 — clip khac, duong thoang
+      # hon clip 12h.10.9.22.mp4 dung de calibrate ban dau (clip do bi xe xep
+      # hang che het khu vuc nay). Anh nen median 60 khung hinh cho thay ro
+      # 1 vach son trang ngang duong tai y~335-340 (px), keo dai tu x~550 den
+      # qua x~1050, kem 4 mui ten chi huong gan do — xac nhan doan duong nay
+      # THUC SU co son ke (sua lai ket luan cu trong Chuong 5/6 ve
+      # lan_o_to/lan_xe_may). Vi tri nay nam ngay phia tren (xa camera hon)
+      # dau xa (y=380) cua hai zone lan_o_to/lan_xe_may — hop ly cho vach
+      # dung. Cung camera vat ly (CAM_PHO_HUE_REAL) nen toa do pixel ap dung
+      # duoc cho moi video cua camera nay, ke ca 12h.10.9.22.mp4 dung lam
+      # demo. Polygon la mot bang ngang (40px day) bao quanh vach, chua chinh
+      # xac 100% (van la doc bang mat tu anh nen, chua do dac), nhung da co
+      # co so vat ly ro hon nhieu so vi tri cu — BAT LAI RED_LIGHT_VIOLATION
+      # de thu, can doi chieu ket qua canh bao thuc te truoc khi tin hoan toan
+      # (giong cach da lam o Chuong 5 muc 5.5.7).
+      - name: "vach_dung_den_do"
+        polygon: [[550, 320], [1050, 320], [1050, 365], [550, 365]]
+        alert_types: ["red_light"]
