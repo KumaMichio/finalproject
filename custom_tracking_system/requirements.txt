@@ -34,8 +34,15 @@ motmetrics>=1.4
 
 # Utilities
 tqdm==4.62.0
-pillow==8.4.0
+pillow>=12.2.0  # bumped from 8.4.0 -- scikit-image>=0.22 (numpy 2.x ABI fix below) requires it
 requests==2.26.0
+
+# License-plate OCR feasibility experiment (scripts/eval/test_plate_ocr_feasibility.py).
+# NOT wired into the live pipeline (main.py / ai_processor.py) -- see docs/chuong6
+# limitations: motorcycle plates were 0% legible on real CCTV crops, so this was not
+# integrated as a cross-camera Re-ID signal. Kept only so the experiment is reproducible.
+easyocr
+scikit-image>=0.22  # easyocr depends on scikit-image; >=0.22 needed for numpy==2.2.6 ABI compat
 
 # Development
 jupyter==1.0.0

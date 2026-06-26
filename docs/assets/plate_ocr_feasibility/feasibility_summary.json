@@ -1,0 +1,1595 @@
+{
+  "summary": {
+    "car": {
+      "n": 25,
+      "any_ocr_text": 4,
+      "plausible_plate": 0,
+      "any_ocr_pct": 16.0,
+      "plausible_pct": 0.0
+    },
+    "motorcycle": {
+      "n": 99,
+      "any_ocr_text": 0,
+      "plausible_plate": 0,
+      "any_ocr_pct": 0.0,
+      "plausible_pct": 0.0
+    }
+  },
+  "examples": [
+    {
+      "id": "video_001_f0",
+      "class": "car",
+      "box": [
+        188,
+        708,
+        522,
+        1033
+      ],
+      "raw_ocr": [
+        [
+          "306",
+          1.0
+        ],
+        [
+          "42794",
+          0.54
+        ]
+      ],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_002_f0",
+      "class": "car",
+      "box": [
+        700,
+        625,
+        935,
+        857
+      ],
+      "raw_ocr": [
+        [
+          "Jor",
+          0.12
+        ],
+        [
+          "06152]",
+          0.31
+        ]
+      ],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_003_f0",
+      "class": "car",
+      "box": [
+        1296,
+        476,
+        1491,
+        626
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_004_f0",
+      "class": "motorcycle",
+      "box": [
+        858,
+        784,
+        967,
+        1047
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_005_f0",
+      "class": "motorcycle",
+      "box": [
+        1243,
+        941,
+        1392,
+        1200
+      ],
+      "raw_ocr": [
+        [
+          "79-02",
+          0.15
+        ],
+        [
+          "Co",
+          0.12
+        ]
+      ],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_006_f0",
+      "class": "motorcycle",
+      "box": [
+        1342,
+        668,
+        1451,
+        892
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_007_f0",
+      "class": "motorcycle",
+      "box": [
+        718,
+        436,
+        794,
+        580
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_008_f0",
+      "class": "motorcycle",
+      "box": [
+        832,
+        423,
+        901,
+        558
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_009_f0",
+      "class": "motorcycle",
+      "box": [
+        291,
+        1033,
+        451,
+        1199
+      ],
+      "raw_ocr": [
+        [
+          "'dMzaidoM",
+          0.09
+        ]
+      ],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_010_f0",
+      "class": "motorcycle",
+      "box": [
+        1159,
+        802,
+        1276,
+        1079
+      ],
+      "raw_ocr": [
+        [
+          "4-5",
+          0.04
+        ],
+        [
+          "BLJ",
+          0.23
+        ]
+      ],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_011_f0",
+      "class": "motorcycle",
+      "box": [
+        0,
+        1021,
+        135,
+        1200
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_012_f0",
+      "class": "motorcycle",
+      "box": [
+        1173,
+        604,
+        1251,
+        800
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_013_f0",
+      "class": "car",
+      "box": [
+        535,
+        266,
+        654,
+        367
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_014_f0",
+      "class": "car",
+      "box": [
+        607,
+        333,
+        741,
+        436
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_015_f0",
+      "class": "motorcycle",
+      "box": [
+        1076,
+        424,
+        1139,
+        553
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_016_f0",
+      "class": "motorcycle",
+      "box": [
+        955,
+        1012,
+        1100,
+        1199
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_017_f0",
+      "class": "motorcycle",
+      "box": [
+        1050,
+        218,
+        1118,
+        282
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_018_f0",
+      "class": "motorcycle",
+      "box": [
+        1097,
+        514,
+        1177,
+        674
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_019_f0",
+      "class": "motorcycle",
+      "box": [
+        1217,
+        741,
+        1327,
+        977
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_020_f0",
+      "class": "motorcycle",
+      "box": [
+        927,
+        208,
+        980,
+        265
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_021_f0",
+      "class": "motorcycle",
+      "box": [
+        1070,
+        346,
+        1127,
+        455
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_022_f0",
+      "class": "motorcycle",
+      "box": [
+        658,
+        191,
+        702,
+        250
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_023_f0",
+      "class": "motorcycle",
+      "box": [
+        1124,
+        475,
+        1201,
+        625
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_024_f0",
+      "class": "motorcycle",
+      "box": [
+        1447,
+        901,
+        1588,
+        1181
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_025_f0",
+      "class": "motorcycle",
+      "box": [
+        800,
+        204,
+        857,
+        261
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_026_f0",
+      "class": "motorcycle",
+      "box": [
+        804,
+        298,
+        849,
+        384
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_027_f0",
+      "class": "motorcycle",
+      "box": [
+        74,
+        194,
+        117,
+        268
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_028_f0",
+      "class": "motorcycle",
+      "box": [
+        596,
+        193,
+        640,
+        250
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_029_f0",
+      "class": "car",
+      "box": [
+        731,
+        274,
+        820,
+        361
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_030_f0",
+      "class": "motorcycle",
+      "box": [
+        887,
+        282,
+        930,
+        364
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_031_f0",
+      "class": "car",
+      "box": [
+        663,
+        300,
+        760,
+        392
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_032_f0",
+      "class": "motorcycle",
+      "box": [
+        1470,
+        1076,
+        1599,
+        1199
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_033_f0",
+      "class": "motorcycle",
+      "box": [
+        1339,
+        1114,
+        1499,
+        1200
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_034_f0",
+      "class": "motorcycle",
+      "box": [
+        1458,
+        360,
+        1542,
+        441
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_035_f0",
+      "class": "motorcycle",
+      "box": [
+        1374,
+        311,
+        1458,
+        381
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_036_f0",
+      "class": "car",
+      "box": [
+        951,
+        136,
+        1016,
+        177
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_037_f0",
+      "class": "motorcycle",
+      "box": [
+        1417,
+        337,
+        1505,
+        407
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_038_f0",
+      "class": "motorcycle",
+      "box": [
+        1352,
+        292,
+        1408,
+        361
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_039_f0",
+      "class": "motorcycle",
+      "box": [
+        836,
+        272,
+        877,
+        355
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_040_f1",
+      "class": "car",
+      "box": [
+        225,
+        669,
+        530,
+        970
+      ],
+      "raw_ocr": [
+        [
+          "306",
+          0.72
+        ],
+        [
+          "027 94",
+          0.57
+        ]
+      ],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_041_f1",
+      "class": "car",
+      "box": [
+        700,
+        587,
+        917,
+        804
+      ],
+      "raw_ocr": [
+        [
+          "Jor",
+          0.18
+        ],
+        [
+          "061150",
+          0.18
+        ]
+      ],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_042_f1",
+      "class": "car",
+      "box": [
+        1296,
+        475,
+        1491,
+        627
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_043_f1",
+      "class": "motorcycle",
+      "box": [
+        0,
+        947,
+        176,
+        1199
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_044_f1",
+      "class": "motorcycle",
+      "box": [
+        1314,
+        638,
+        1416,
+        851
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_045_f1",
+      "class": "motorcycle",
+      "box": [
+        935,
+        936,
+        1065,
+        1199
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_046_f1",
+      "class": "motorcycle",
+      "box": [
+        845,
+        732,
+        942,
+        970
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_047_f1",
+      "class": "motorcycle",
+      "box": [
+        1150,
+        781,
+        1275,
+        1040
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_048_f1",
+      "class": "motorcycle",
+      "box": [
+        820,
+        411,
+        886,
+        543
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_049_f1",
+      "class": "motorcycle",
+      "box": [
+        681,
+        416,
+        757,
+        554
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_050_f1",
+      "class": "motorcycle",
+      "box": [
+        323,
+        967,
+        489,
+        1199
+      ],
+      "raw_ocr": [
+        [
+          "OMzQIDOM",
+          0.06
+        ]
+      ],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_051_f1",
+      "class": "car",
+      "box": [
+        535,
+        266,
+        654,
+        367
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_052_f1",
+      "class": "motorcycle",
+      "box": [
+        1223,
+        911,
+        1388,
+        1198
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_053_f1",
+      "class": "motorcycle",
+      "box": [
+        1158,
+        571,
+        1234,
+        755
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_054_f1",
+      "class": "car",
+      "box": [
+        607,
+        333,
+        742,
+        434
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_055_f1",
+      "class": "motorcycle",
+      "box": [
+        1416,
+        866,
+        1545,
+        1128
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_056_f1",
+      "class": "motorcycle",
+      "box": [
+        970,
+        209,
+        1026,
+        267
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_057_f1",
+      "class": "motorcycle",
+      "box": [
+        1064,
+        335,
+        1119,
+        436
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_058_f1",
+      "class": "motorcycle",
+      "box": [
+        690,
+        193,
+        737,
+        252
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_059_f1",
+      "class": "motorcycle",
+      "box": [
+        636,
+        195,
+        680,
+        253
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_060_f1",
+      "class": "car",
+      "box": [
+        731,
+        273,
+        819,
+        361
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_061_f1",
+      "class": "motorcycle",
+      "box": [
+        1124,
+        233,
+        1199,
+        289
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_062_f1",
+      "class": "motorcycle",
+      "box": [
+        804,
+        298,
+        849,
+        384
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_063_f1",
+      "class": "motorcycle",
+      "box": [
+        1084,
+        493,
+        1162,
+        645
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_064_f1",
+      "class": "motorcycle",
+      "box": [
+        842,
+        205,
+        897,
+        262
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_065_f1",
+      "class": "motorcycle",
+      "box": [
+        55,
+        201,
+        98,
+        275
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_066_f1",
+      "class": "motorcycle",
+      "box": [
+        887,
+        280,
+        931,
+        365
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_067_f1",
+      "class": "car",
+      "box": [
+        664,
+        300,
+        761,
+        392
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_068_f1",
+      "class": "motorcycle",
+      "box": [
+        1182,
+        713,
+        1284,
+        930
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_069_f1",
+      "class": "motorcycle",
+      "box": [
+        1098,
+        453,
+        1175,
+        595
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_070_f1",
+      "class": "motorcycle",
+      "box": [
+        1072,
+        407,
+        1136,
+        530
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_071_f1",
+      "class": "motorcycle",
+      "box": [
+        1440,
+        1040,
+        1591,
+        1199
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_072_f1",
+      "class": "motorcycle",
+      "box": [
+        1264,
+        1065,
+        1460,
+        1199
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_073_f1",
+      "class": "motorcycle",
+      "box": [
+        1458,
+        360,
+        1542,
+        441
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_074_f1",
+      "class": "motorcycle",
+      "box": [
+        1374,
+        311,
+        1458,
+        381
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_075_f1",
+      "class": "car",
+      "box": [
+        950,
+        135,
+        1015,
+        177
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_076_f1",
+      "class": "motorcycle",
+      "box": [
+        1417,
+        337,
+        1505,
+        408
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_077_f1",
+      "class": "motorcycle",
+      "box": [
+        410,
+        171,
+        452,
+        235
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_078_f1",
+      "class": "motorcycle",
+      "box": [
+        835,
+        272,
+        876,
+        353
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_079_f1",
+      "class": "motorcycle",
+      "box": [
+        1352,
+        291,
+        1408,
+        361
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_080_f1",
+      "class": "motorcycle",
+      "box": [
+        556,
+        192,
+        608,
+        250
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_081_f1",
+      "class": "motorcycle",
+      "box": [
+        1489,
+        378,
+        1571,
+        458
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_082_f2",
+      "class": "car",
+      "box": [
+        253,
+        635,
+        538,
+        914
+      ],
+      "raw_ocr": [
+        [
+          "306",
+          0.99
+        ],
+        [
+          "027.9u",
+          0.53
+        ]
+      ],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_083_f2",
+      "class": "car",
+      "box": [
+        1295,
+        475,
+        1492,
+        625
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_084_f2",
+      "class": "car",
+      "box": [
+        701,
+        556,
+        902,
+        754
+      ],
+      "raw_ocr": [
+        [
+          "Do",
+          0.13
+        ],
+        [
+          "CulS",
+          0.17
+        ]
+      ],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_085_f2",
+      "class": "motorcycle",
+      "box": [
+        372,
+        900,
+        518,
+        1200
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_086_f2",
+      "class": "motorcycle",
+      "box": [
+        915,
+        862,
+        1032,
+        1144
+      ],
+      "raw_ocr": [
+        [
+          "KoM",
+          0.04
+        ]
+      ],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_087_f2",
+      "class": "motorcycle",
+      "box": [
+        1281,
+        613,
+        1388,
+        815
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_088_f2",
+      "class": "motorcycle",
+      "box": [
+        48,
+        887,
+        220,
+        1199
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_089_f2",
+      "class": "motorcycle",
+      "box": [
+        829,
+        676,
+        922,
+        901
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_090_f2",
+      "class": "motorcycle",
+      "box": [
+        807,
+        399,
+        875,
+        525
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_091_f2",
+      "class": "motorcycle",
+      "box": [
+        1142,
+        747,
+        1255,
+        996
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_092_f2",
+      "class": "motorcycle",
+      "box": [
+        646,
+        400,
+        720,
+        531
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_093_f2",
+      "class": "motorcycle",
+      "box": [
+        1382,
+        829,
+        1510,
+        1077
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_094_f2",
+      "class": "car",
+      "box": [
+        535,
+        265,
+        654,
+        367
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_095_f2",
+      "class": "car",
+      "box": [
+        608,
+        333,
+        742,
+        434
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_096_f2",
+      "class": "motorcycle",
+      "box": [
+        1143,
+        540,
+        1216,
+        712
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_097_f2",
+      "class": "motorcycle",
+      "box": [
+        1413,
+        997,
+        1555,
+        1199
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_098_f2",
+      "class": "motorcycle",
+      "box": [
+        1069,
+        464,
+        1147,
+        617
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_099_f2",
+      "class": "motorcycle",
+      "box": [
+        1013,
+        210,
+        1073,
+        270
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_100_f2",
+      "class": "motorcycle",
+      "box": [
+        1224,
+        885,
+        1357,
+        1150
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_101_f2",
+      "class": "motorcycle",
+      "box": [
+        881,
+        206,
+        938,
+        265
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_102_f2",
+      "class": "motorcycle",
+      "box": [
+        1058,
+        324,
+        1110,
+        422
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_103_f2",
+      "class": "motorcycle",
+      "box": [
+        1090,
+        1070,
+        1257,
+        1199
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_104_f2",
+      "class": "motorcycle",
+      "box": [
+        728,
+        197,
+        775,
+        255
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_105_f2",
+      "class": "motorcycle",
+      "box": [
+        804,
+        298,
+        848,
+        384
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_106_f2",
+      "class": "motorcycle",
+      "box": [
+        677,
+        193,
+        724,
+        257
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_107_f2",
+      "class": "motorcycle",
+      "box": [
+        0,
+        1090,
+        123,
+        1199
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_108_f2",
+      "class": "car",
+      "box": [
+        731,
+        273,
+        819,
+        361
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_109_f2",
+      "class": "motorcycle",
+      "box": [
+        33,
+        207,
+        77,
+        281
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_110_f2",
+      "class": "motorcycle",
+      "box": [
+        887,
+        280,
+        931,
+        366
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_111_f2",
+      "class": "car",
+      "box": [
+        663,
+        300,
+        760,
+        393
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_112_f2",
+      "class": "motorcycle",
+      "box": [
+        505,
+        191,
+        550,
+        244
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_113_f2",
+      "class": "motorcycle",
+      "box": [
+        1066,
+        395,
+        1141,
+        514
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_114_f2",
+      "class": "motorcycle",
+      "box": [
+        1141,
+        680,
+        1234,
+        856
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_115_f2",
+      "class": "motorcycle",
+      "box": [
+        1459,
+        360,
+        1543,
+        441
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_116_f2",
+      "class": "motorcycle",
+      "box": [
+        1374,
+        310,
+        1458,
+        381
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_117_f2",
+      "class": "car",
+      "box": [
+        408,
+        172,
+        461,
+        236
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_118_f2",
+      "class": "motorcycle",
+      "box": [
+        1417,
+        336,
+        1507,
+        408
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_119_f2",
+      "class": "car",
+      "box": [
+        951,
+        134,
+        1015,
+        177
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_120_f2",
+      "class": "motorcycle",
+      "box": [
+        1228,
+        1036,
+        1398,
+        1199
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_121_f2",
+      "class": "motorcycle",
+      "box": [
+        587,
+        189,
+        634,
+        246
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_122_f2",
+      "class": "motorcycle",
+      "box": [
+        1352,
+        291,
+        1409,
+        361
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_123_f2",
+      "class": "motorcycle",
+      "box": [
+        1489,
+        382,
+        1569,
+        457
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    },
+    {
+      "id": "video_124_f2",
+      "class": "motorcycle",
+      "box": [
+        1074,
+        434,
+        1149,
+        557
+      ],
+      "raw_ocr": [],
+      "plausible_plate": null
+    }
+  ]
+}
