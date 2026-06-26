@@ -1,0 +1,52 @@
+{
+  "0.5s": {
+    "ade_m": 2.519702911376953,
+    "n": 185904
+  },
+  "1.0s": {
+    "ade_m": 4.311514377593994,
+    "n": 185904
+  },
+  "1.5s": {
+    "ade_m": 6.350016117095947,
+    "n": 185904
+  },
+  "2.0s": {
+    "ade_m": 8.323400497436523,
+    "n": 185904
+  },
+  "3.0s": {
+    "ade_m": 12.668658256530762,
+    "n": 185904
+  },
+  "fde_m": 12.668658256530762,
+  "ade_m_avg_all_horizons": 6.834658432006836,
+  "n_samples": 185904,
+  "holdout_episodes": [
+    "episode_0096.csv",
+    "episode_0097.csv",
+    "episode_0098.csv",
+    "episode_0099.csv",
+    "episode_0100.csv",
+    "episode_0101.csv",
+    "episode_0102.csv",
+    "episode_0103.csv",
+    "episode_0104.csv",
+    "episode_0105.csv",
+    "episode_0106.csv",
+    "episode_0107.csv",
+    "episode_0108.csv",
+    "episode_0109.csv",
+    "episode_0110.csv",
+    "episode_0111.csv",
+    "episode_0112.csv",
+    "episode_0113.csv",
+    "episode_0114.csv",
+    "episode_0115.csv",
+    "episode_0116.csv",
+    "episode_0117.csv",
+    "episode_0118.csv",
+    "episode_0119.csv"
+  ],
+  "note": "Internal evaluation on simulated (CARLA) world-space trajectories, not real-camera pixel-space data."
+}
