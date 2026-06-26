@@ -1,0 +1,3026 @@
+{
+  "summary": {
+    "car": {
+      "n": 75,
+      "baseline_plausible_pct": 0.0,
+      "candidate_plausible_pct": 0.0
+    },
+    "motorcycle": {
+      "n": 291,
+      "baseline_plausible_pct": 0.0,
+      "candidate_plausible_pct": 0.0
+    }
+  },
+  "examples": [
+    {
+      "id": "video_001_f0",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [
+        [
+          "12794",
+          0.98
+        ]
+      ],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_002_f0",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_003_f0",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_004_f0",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_005_f0",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_006_f0",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_007_f0",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_008_f0",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_009_f0",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_010_f0",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [
+        [
+          "5",
+          0.87
+        ],
+        [
+          "LJ",
+          0.52
+        ]
+      ],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_011_f0",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_012_f0",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_013_f0",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_014_f0",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": false
+    },
+    {
+      "id": "video_015_f0",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_016_f0",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": false
+    },
+    {
+      "id": "video_017_f0",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_018_f0",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_019_f0",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_020_f0",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_021_f0",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_022_f0",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": false
+    },
+    {
+      "id": "video_023_f0",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_024_f0",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_025_f0",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_026_f0",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_027_f0",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_028_f0",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_029_f0",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_030_f0",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_031_f0",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_032_f0",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_033_f0",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_034_f0",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": false
+    },
+    {
+      "id": "video_035_f0",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_036_f0",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_037_f0",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_038_f0",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_039_f0",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_040_f1",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [
+        [
+          "42794",
+          0.62
+        ]
+      ],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_041_f1",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_042_f1",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_043_f1",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_044_f1",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_045_f1",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_046_f1",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_047_f1",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_048_f1",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_049_f1",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_050_f1",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": false
+    },
+    {
+      "id": "video_051_f1",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_052_f1",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_053_f1",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_054_f1",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_055_f1",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_056_f1",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_057_f1",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_058_f1",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": false
+    },
+    {
+      "id": "video_059_f1",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_060_f1",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_061_f1",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_062_f1",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_063_f1",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_064_f1",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_065_f1",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_066_f1",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_067_f1",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_068_f1",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_069_f1",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_070_f1",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_071_f1",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_072_f1",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_073_f1",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": false
+    },
+    {
+      "id": "video_074_f1",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_075_f1",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_076_f1",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_077_f1",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_078_f1",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_079_f1",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_080_f1",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": false
+    },
+    {
+      "id": "video_081_f1",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": false
+    },
+    {
+      "id": "video_082_f2",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [
+        [
+          "UL90",
+          0.37
+        ]
+      ],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_083_f2",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_084_f2",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_085_f2",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [
+        [
+          "US1",
+          0.49
+        ]
+      ],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_086_f2",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_087_f2",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_088_f2",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [
+        [
+          "UL",
+          0.44
+        ]
+      ],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_089_f2",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_090_f2",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_091_f2",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_092_f2",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_093_f2",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_094_f2",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_095_f2",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_096_f2",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_097_f2",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_098_f2",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_099_f2",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_100_f2",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_101_f2",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_102_f2",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_103_f2",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_104_f2",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_105_f2",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_106_f2",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_107_f2",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_108_f2",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_109_f2",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_110_f2",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_111_f2",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_112_f2",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": false
+    },
+    {
+      "id": "video_113_f2",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_114_f2",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_115_f2",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": false
+    },
+    {
+      "id": "video_116_f2",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_117_f2",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_118_f2",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_119_f2",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_120_f2",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_121_f2",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_122_f2",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_123_f2",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": false
+    },
+    {
+      "id": "video_124_f2",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": false
+    },
+    {
+      "id": "video_125_f3",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_126_f3",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_127_f3",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_128_f3",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_129_f3",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_130_f3",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_131_f3",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_132_f3",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_133_f3",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_134_f3",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_135_f3",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_136_f3",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_137_f3",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_138_f3",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_139_f3",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_140_f3",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_141_f3",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_142_f3",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_143_f3",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_144_f3",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_145_f3",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_146_f3",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_147_f3",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_148_f3",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_149_f3",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_150_f3",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_151_f3",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_152_f3",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_153_f3",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_154_f3",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_155_f3",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_156_f3",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_157_f3",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_158_f3",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_159_f3",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_160_f3",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_161_f3",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_162_f3",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_163_f3",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": false
+    },
+    {
+      "id": "video_164_f3",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_165_f3",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [
+        [
+          "64250",
+          0.9
+        ]
+      ],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_166_f3",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_167_f3",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_168_f3",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_169_f3",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_170_f3",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_171_f3",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": false
+    },
+    {
+      "id": "video_172_f3",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_173_f4",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [
+        [
+          "30",
+          0.91
+        ],
+        [
+          "1279",
+          0.65
+        ]
+      ],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_174_f4",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_175_f4",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_176_f4",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_177_f4",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_178_f4",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_179_f4",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_180_f4",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_181_f4",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_182_f4",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_183_f4",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [
+        [
+          "7602",
+          0.35
+        ]
+      ],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_184_f4",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [
+        [
+          "I",
+          0.55
+        ]
+      ],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_185_f4",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_186_f4",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [
+        [
+          "E",
+          0.32
+        ]
+      ],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_187_f4",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_188_f4",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_189_f4",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_190_f4",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_191_f4",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_192_f4",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": false
+    },
+    {
+      "id": "video_193_f4",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_194_f4",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": false
+    },
+    {
+      "id": "video_195_f4",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_196_f4",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_197_f4",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_198_f4",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_199_f4",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_200_f4",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_201_f4",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_202_f4",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_203_f4",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_204_f4",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_205_f4",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": false
+    },
+    {
+      "id": "video_206_f4",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": false
+    },
+    {
+      "id": "video_207_f4",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_208_f4",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": false
+    },
+    {
+      "id": "video_209_f4",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": false
+    },
+    {
+      "id": "video_210_f4",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_211_f4",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_212_f4",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_213_f4",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_214_f4",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": false
+    },
+    {
+      "id": "video_215_f4",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_216_f4",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_217_f4",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_218_f4",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_219_f4",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_220_f4",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": false
+    },
+    {
+      "id": "video_221_f4",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_222_f4",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": false
+    },
+    {
+      "id": "video_223_f4",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_224_f4",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_225_f5",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [
+        [
+          "02794",
+          0.42
+        ]
+      ],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_226_f5",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_227_f5",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_228_f5",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_229_f5",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_230_f5",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_231_f5",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": false
+    },
+    {
+      "id": "video_232_f5",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_233_f5",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_234_f5",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_235_f5",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_236_f5",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_237_f5",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_238_f5",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_239_f5",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_240_f5",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_241_f5",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_242_f5",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_243_f5",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_244_f5",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": false
+    },
+    {
+      "id": "video_245_f5",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": false
+    },
+    {
+      "id": "video_246_f5",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_247_f5",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_248_f5",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_249_f5",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_250_f5",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_251_f5",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": false
+    },
+    {
+      "id": "video_252_f5",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_253_f5",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_254_f5",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_255_f5",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_256_f5",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_257_f5",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_258_f5",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_259_f5",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_260_f5",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_261_f5",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_262_f5",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_263_f5",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": false
+    },
+    {
+      "id": "video_264_f5",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_265_f5",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_266_f5",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_267_f5",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_268_f5",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_269_f5",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_270_f5",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": false
+    },
+    {
+      "id": "video_271_f5",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_272_f6",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_273_f6",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_274_f6",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_275_f6",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_276_f6",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": false
+    },
+    {
+      "id": "video_277_f6",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": false
+    },
+    {
+      "id": "video_278_f6",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_279_f6",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_280_f6",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_281_f6",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_282_f6",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_283_f6",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_284_f6",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_285_f6",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_286_f6",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_287_f6",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_288_f6",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_289_f6",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_290_f6",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_291_f6",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_292_f6",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": false
+    },
+    {
+      "id": "video_293_f6",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": false
+    },
+    {
+      "id": "video_294_f6",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_295_f6",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_296_f6",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_297_f6",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_298_f6",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_299_f6",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_300_f6",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_301_f6",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_302_f6",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_303_f6",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_304_f6",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_305_f6",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_306_f6",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [
+        [
+          "U",
+          0.98
+        ]
+      ],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_307_f6",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_308_f6",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_309_f6",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_310_f6",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_311_f6",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": false
+    },
+    {
+      "id": "video_312_f6",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_313_f6",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_314_f6",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_315_f6",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_316_f7",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_317_f7",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": false
+    },
+    {
+      "id": "video_318_f7",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_319_f7",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_320_f7",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_321_f7",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [
+        [
+          "779402",
+          0.33
+        ],
+        [
+          "D05",
+          0.34
+        ]
+      ],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_322_f7",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_323_f7",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_324_f7",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_325_f7",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_326_f7",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_327_f7",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_328_f7",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_329_f7",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_330_f7",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_331_f7",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_332_f7",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_333_f7",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_334_f7",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_335_f7",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_336_f7",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_337_f7",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_338_f7",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_339_f7",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_340_f7",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_341_f7",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_342_f7",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_343_f7",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_344_f7",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_345_f7",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_346_f7",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_347_f7",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_348_f7",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_349_f7",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_350_f7",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_351_f7",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_352_f7",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_353_f7",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_354_f7",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_355_f7",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_356_f7",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": false
+    },
+    {
+      "id": "video_357_f7",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": false
+    },
+    {
+      "id": "video_358_f7",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": false
+    },
+    {
+      "id": "video_359_f7",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_360_f7",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_361_f7",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_362_f7",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_363_f7",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_364_f7",
+      "class": "car",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_365_f7",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": true
+    },
+    {
+      "id": "video_366_f7",
+      "class": "motorcycle",
+      "baseline_plausible": false,
+      "candidate_raw_ocr": [],
+      "candidate_result": null,
+      "used_localized_crop": false
+    }
+  ]
+}

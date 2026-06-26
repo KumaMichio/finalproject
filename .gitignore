@@ -10,6 +10,17 @@ custom_tracking_system/models/hub/
 # ITD model (yolo11x, 109MB > giới hạn 100MB GitHub; license CC BY-NC, nhận
 # theo request — KHÔNG redistribute lên repo). Dùng offline làm auto-labeler.
 best_xl_ITD_v1.2.pt
+# Plate detector/OCR tham khảo (trungdinh22/License-Plate-Recognition, không
+# có file LICENSE rõ ràng) — chỉ dùng OFFLINE làm pseudo-labeler cho
+# scripts/eval/pseudo_label_plates.py (xem plan cải thiện biển số), không
+# redistribute, không dùng trực tiếp trong sản phẩm cuối.
+custom_tracking_system/weights/lp_detector_ref.pt
+custom_tracking_system/weights/lp_ocr_ref.pt
+# Vendored code chính thức ultralytics/yolov5 (MIT) — chỉ cần để torch.hub
+# load đúng 2 file trên (kiến trúc YOLOv5 legacy, không tương thích package
+# `ultralytics`/YOLO11 project đang dùng). Re-clone khi cần:
+#   git clone https://github.com/ultralytics/yolov5 custom_tracking_system/third_party/yolov5
+custom_tracking_system/third_party/yolov5/
 # Large weights — vượt giới hạn 100MB GitHub, backup Google Drive
 custom_tracking_system/weights/yolo11m_vn.pt
 custom_tracking_system/weights/yolo11s_vn.pt
