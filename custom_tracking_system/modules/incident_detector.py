@@ -45,6 +45,22 @@ class IncidentDetector:
         self.crowd_area_px      = cfg.get('crowd_area_px', 200)     # px radius
         self.cooldown_s         = cfg.get('cooldown_s', 4)          # giây chống duplicate
 
+        # Track phải "sống" tối thiểu bao lâu trước khi SUDDEN_STOP/SUDDEN_ACCEL
+        # được xét — mẫu tốc độ ngay sau khi track mới xuất hiện (hoặc ByteTrack
+        # vừa đổi local track_id cho cùng 1 xe, dù global_id giữ nguyên qua
+        # Re-ID) thường nhiễu (vị trí đầu lệch do detection/occlusion vừa phục
+        # hồi) — nếu mẫu đó rơi đúng vào cửa sổ so sánh "before/after" thì sinh
+        # cảnh báo giả. Cùng tinh thần với _MIN_FRAMES của goal_classifier.py.
+        self.min_track_age_s    = cfg.get('min_track_age_s', 3.0)   # giây
+
+        # SUDDEN_STOP/SUDDEN_ACCEL phải đúng điều kiện ở >= sustain_frames
+        # khung hình LIÊN TỤC trước khi báo, không chỉ 1 lần kiểm tra — nhiễu
+        # vận tốc theo pixel (jitter của detection box, đặc biệt xe máy nhỏ/
+        # xa camera) thường không tương quan giữa các khung hình liên tiếp,
+        # còn hành vi dừng/tăng tốc thật thì có. Xem
+        # docs/plan_tinh_chinh_nguong_incident.md (Chương 5 mục 5.5.4/5.5.6).
+        self.sustain_frames     = cfg.get('sustain_frames', 2)
+
         # --- Wrong-way driving ---
         wrong_way_cfg = cfg.get('wrong_way', {}) or {}
         self.wrong_way_lanes        = wrong_way_cfg.get('lanes', {}) or {}
@@ -59,16 +75,35 @@ class IncidentDetector:
         red_light_cfg = cfg.get('red_light', {}) or {}
         self.red_light_min_speed = red_light_cfg.get('min_speed', 10)  # px/s
 
+        # --- Lan dao/lan sai (lane discipline) ---
+        # {camera_id: [{'name', 'polygon', 'allowed_classes'?, 'allowed_direction'?}]}
+        lane_cfg = cfg.get('lane_discipline', {}) or {}
+        self.lane_zones = lane_cfg.get('zones', {}) or {}
+        self.lane_min_speed = lane_cfg.get('min_speed', 8)        # px/s — bo qua xe dang dung yen
+        self.lane_window = lane_cfg.get('window', 8)              # khung hinh, cho allowed_direction
+        angle_thr = lane_cfg.get('angle_threshold_deg', 100)
+        self.lane_cos_threshold = float(np.cos(np.radians(angle_thr)))
+        self.lane_sustain_frames = lane_cfg.get('sustain_frames', self.sustain_frames)
+
+        # --- Dung/do tren vach cam (no_stop zones, tai dung bang ROI chung) ---
+        no_stop_cfg = cfg.get('illegal_stop', {}) or {}
+        self.illegal_stop_frames = no_stop_cfg.get('stop_frames', self.stop_frames)
+        self.illegal_stop_speed_thresh = no_stop_cfg.get('speed_threshold', 1.0)  # px/s
+
         # --- Loai incident bi tat (qua nhieu, khong can cho demo) ---
         self.disabled_types = set(cfg.get('disabled_types', []) or [])
 
         # --- State per object ---
         # Lịch sử tốc độ: {global_id: deque[(timestamp, speed)]}
         self.speed_history   = defaultdict(lambda: deque(maxlen=20))
+        self._first_seen      = {}   # {global_id: datetime cua mau speed dau tien}
         self.stop_counter    = defaultdict(int)
+        self.illegal_stop_counter = defaultdict(int)  # rieng voi stop_counter — STOPPED_VEHICLE
         self.loiter_anchor   = {}
         self.loiter_counter  = defaultdict(int)
         self.wrong_way_counter = defaultdict(int)
+        # {(rule_name, global_id): so khung hinh lien tuc dung dieu kien}
+        self._sustain_counter = defaultdict(int)
 
         # Cross-camera: {global_id: camera_id} — lần xuất hiện trước
         self.last_camera     = {}
@@ -112,6 +147,7 @@ class IncidentDetector:
             speeds = track.get('speeds', [])
             if speeds:
                 self.speed_history[gid].append((now, speeds[-1]))
+                self._first_seen.setdefault(gid, now)
 
         # Chạy từng detector phản ứng (reactive)
         incidents += self._check_sudden_stop(global_tracks, camera_id, now)
@@ -126,6 +162,8 @@ class IncidentDetector:
         incidents += self._check_wrong_way(global_tracks, camera_id, now)
         incidents += self._check_red_light_violation(
             global_tracks, camera_id, now, traffic_light_state, rois)
+        incidents += self._check_lane_discipline(global_tracks, camera_id, now)
+        incidents += self._check_illegal_stop(global_tracks, camera_id, now, rois)
 
         # Proactive checks dùng predicted positions (chỉ khi có predictions)
         if predictions:
@@ -163,20 +201,36 @@ class IncidentDetector:
             history = list(self.speed_history[gid])
             if len(history) < 5:
                 continue
+            if (now - self._first_seen.get(gid, now)).total_seconds() < self.min_track_age_s:
+                continue
 
             speeds = [h[1] for h in history]
             speed_before = np.mean(speeds[:3])
-            speed_after  = speeds[-1]
+            # Trung binh 2 mau gan nhat, khong dung 1 mau tho duy nhat —
+            # speed = d_pixel/dt giua 2 khung hinh lien tiep rat nhay voi
+            # jitter cua detection box (xe may nho/xa), 1 mau thap ngau
+            # nhien la du de bao gia "phanh dung dot ngot" du xe van dang
+            # chay binh thuong. speed_before da duoc lam muot (mean 3 mau);
+            # lam muot tuong tu cho speed_after de tranh bat doi xung nhieu.
+            speed_after  = np.mean(speeds[-2:])
 
-            if (speed_before > self.min_moving_speed and
-                    speed_after < speed_before * self.sudden_stop_ratio):
-                incidents.append(self._make(
-                    type='SUDDEN_STOP', severity='WARNING',
-                    gid=gid, cam=camera_id,
-                    msg=f"Xe #{gid} phanh dừng đột ngột giữa đường",
-                    details={'speed_before': round(speed_before, 1),
-                             'speed_after': round(speed_after, 1)}
-                ))
+            key = ('SUDDEN_STOP', gid)
+            condition_met = (speed_before > self.min_moving_speed and
+                              speed_after < speed_before * self.sudden_stop_ratio)
+            if not condition_met:
+                self._sustain_counter[key] = 0
+                continue
+            self._sustain_counter[key] += 1
+            if self._sustain_counter[key] < self.sustain_frames:
+                continue
+
+            incidents.append(self._make(
+                type='SUDDEN_STOP', severity='WARNING',
+                gid=gid, cam=camera_id,
+                msg=f"Xe #{gid} phanh dừng đột ngột giữa đường",
+                details={'speed_before': round(speed_before, 1),
+                         'speed_after': round(speed_after, 1)}
+            ))
         return incidents
 
     def _check_sudden_accel(self, tracks, camera_id, now):
@@ -187,22 +241,34 @@ class IncidentDetector:
             history = list(self.speed_history[gid])
             if len(history) < 6:
                 continue
+            if (now - self._first_seen.get(gid, now)).total_seconds() < self.min_track_age_s:
+                continue
 
             speeds = [h[1] for h in history]
-            # Trước đó đang chậm, bây giờ bất ngờ nhanh
+            # Trước đó đang chậm, bây giờ bất ngờ nhanh. speed_now lam muot
+            # 2 mau gan nhat (cung ly do nhu _check_sudden_stop) thay vi 1
+            # mau tho duy nhat, tranh bao gia do jitter cua detection box.
             speed_prev = np.mean(speeds[-4:-2])
-            speed_now  = speeds[-1]
+            speed_now  = np.mean(speeds[-2:])
 
-            if (speed_prev < self.min_moving_speed and
-                    speed_now > speed_prev * self.sudden_accel_ratio and
-                    speed_now > self.min_moving_speed * 2):
-                incidents.append(self._make(
-                    type='SUDDEN_ACCEL', severity='CRITICAL',
-                    gid=gid, cam=camera_id,
-                    msg=f"Xe #{gid} bất ngờ tăng tốc rời khỏi hiện trường, có dấu hiệu bỏ trốn",
-                    details={'speed_prev': round(speed_prev, 1),
-                             'speed_now': round(speed_now, 1)}
-                ))
+            key = ('SUDDEN_ACCEL', gid)
+            condition_met = (speed_prev < self.min_moving_speed and
+                              speed_now > speed_prev * self.sudden_accel_ratio and
+                              speed_now > self.min_moving_speed * 2)
+            if not condition_met:
+                self._sustain_counter[key] = 0
+                continue
+            self._sustain_counter[key] += 1
+            if self._sustain_counter[key] < self.sustain_frames:
+                continue
+
+            incidents.append(self._make(
+                type='SUDDEN_ACCEL', severity='CRITICAL',
+                gid=gid, cam=camera_id,
+                msg=f"Xe #{gid} bất ngờ tăng tốc rời khỏi hiện trường, có dấu hiệu bỏ trốn",
+                details={'speed_prev': round(speed_prev, 1),
+                         'speed_now': round(speed_now, 1)}
+            ))
         return incidents
 
     def _check_overspeed(self, tracks, camera_id, now):
@@ -455,6 +521,113 @@ class IncidentDetector:
                     break
         return incidents
 
+    def _check_lane_discipline(self, tracks, camera_id, now):
+        """Lan lan / di sai lan quy dinh — kiem tra tam khung bao co nam
+        trong 1 zone lan (incident_detection.lane_discipline.zones) khong,
+        roi kiem 2 dieu kien doc lap cua zone do (zone co the khai bao 1
+        hoac ca 2):
+          - allowed_classes: track['class'] phai thuoc danh sach nay, neu
+            khong -> sai loai xe cho lan do (vd o to di vao lan xe may).
+          - allowed_direction: huong di chuyen gan day phai gan voi huong
+            cho phep cua lan (cung cong thuc dot-product nhu _check_wrong_way)
+            -> lan sang lan nguoc chieu neu lech qua nguong.
+        Yeu cau dung dieu kien lien tuc >= lane_sustain_frames khung hinh
+        (tranh bao gia khi xe doi lan/vuot binh thuong, chi luot qua zone
+        khac trong vai khung hinh)."""
+        incidents = []
+        zones = self.lane_zones.get(camera_id, [])
+        if not zones:
+            return incidents
+
+        for track in tracks:
+            if track['class'] not in ('car', 'truck', 'bus', 'motorcycle'):
+                continue
+            gid = track['global_id']
+            speed = self._current_speed(gid) or 0
+            if speed < self.lane_min_speed:
+                self._sustain_counter[('LANE_VIOLATION', gid)] = 0
+                continue
+
+            center = self._box_center(track['box'])
+            zone = next((z for z in zones
+                         if len(z.get('polygon', [])) >= 3
+                         and self._point_in_polygon(center, z['polygon'])), None)
+            if zone is None:
+                self._sustain_counter[('LANE_VIOLATION', gid)] = 0
+                continue
+
+            reason = None
+            allowed_classes = zone.get('allowed_classes')
+            if allowed_classes and track['class'] not in allowed_classes:
+                reason = (f"sai loai xe cho lan \"{zone.get('name', '?')}\" "
+                          f"(chi cho phep: {', '.join(allowed_classes)})")
+
+            allowed_direction = zone.get('allowed_direction')
+            if reason is None and allowed_direction:
+                positions = track.get('positions', [])
+                if len(positions) >= self.lane_window:
+                    p0 = np.array(positions[-self.lane_window])
+                    p1 = np.array(positions[-1])
+                    disp = p1 - p0
+                    dist = float(np.linalg.norm(disp))
+                    if dist >= self.wrong_way_min_disp:
+                        direction = disp / dist
+                        allowed = np.array(allowed_direction, dtype=float)
+                        allowed = allowed / np.linalg.norm(allowed)
+                        if float(np.dot(direction, allowed)) < self.lane_cos_threshold:
+                            reason = f"lan sang lan nguoc chieu tai \"{zone.get('name', '?')}\""
+
+            key = ('LANE_VIOLATION', gid)
+            if reason is None:
+                self._sustain_counter[key] = 0
+                continue
+            self._sustain_counter[key] += 1
+            if self._sustain_counter[key] < self.lane_sustain_frames:
+                continue
+
+            incidents.append(self._make(
+                type='LANE_VIOLATION', severity='WARNING',
+                gid=gid, cam=camera_id,
+                msg=f"Xe #{gid} {reason}",
+                details={'zone': zone.get('name'), 'speed': round(speed, 1)}
+            ))
+        return incidents
+
+    def _check_illegal_stop(self, tracks, camera_id, now, rois):
+        """Dung/do tren vach cam (vach dung, vach nguoi di bo...) — tai dung
+        bang ROI chung (alert_types chua 'no_stop'), ket hop dem so khung
+        hinh lien tuc dung yen giong _check_stopped_on_road, nhung chi bao
+        khi xe dang nam trong 1 zone no_stop cu the (khac STOPPED_VEHICLE —
+        khong quan tam vi tri, chi quan tam dung giua duong noi chung)."""
+        incidents = []
+        cam_rois = (rois or {}).get(camera_id, [])
+        zones = [r['polygon'] for r in cam_rois
+                 if 'no_stop' in (r.get('alert_types') or []) and len(r.get('polygon', [])) >= 3]
+        if not zones:
+            return incidents
+
+        for track in tracks:
+            if track['class'] not in ('car', 'truck', 'bus', 'motorcycle'):
+                continue
+            gid = track['global_id']
+            speed = self._current_speed(gid) or 0
+            center = self._box_center(track['box'])
+            in_zone = any(self._point_in_polygon(center, polygon) for polygon in zones)
+
+            if not in_zone or speed >= self.illegal_stop_speed_thresh:
+                self.illegal_stop_counter[gid] = 0
+                continue
+
+            self.illegal_stop_counter[gid] += 1
+            if self.illegal_stop_counter[gid] == self.illegal_stop_frames:
+                incidents.append(self._make(
+                    type='ILLEGAL_STOP_ZONE', severity='WARNING',
+                    gid=gid, cam=camera_id,
+                    msg=f"Xe #{gid} dừng/đỗ trên vạch cấm tại {camera_id}",
+                    details={'stop_frames': self.illegal_stop_frames}
+                ))
+        return incidents
+
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
@@ -619,8 +792,13 @@ class IncidentDetector:
     def reset_object(self, gid: int):
         """Xoá trạng thái của 1 object (khi object mất khỏi hệ thống)."""
         self.speed_history.pop(gid, None)
+        self._first_seen.pop(gid, None)
         self.stop_counter.pop(gid, None)
         self.loiter_anchor.pop(gid, None)
         self.loiter_counter.pop(gid, None)
         self.last_camera.pop(gid, None)
         self.wrong_way_counter.pop(gid, None)
+        self.illegal_stop_counter.pop(gid, None)
+        self._sustain_counter.pop(('SUDDEN_STOP', gid), None)
+        self._sustain_counter.pop(('SUDDEN_ACCEL', gid), None)
+        self._sustain_counter.pop(('LANE_VIOLATION', gid), None)

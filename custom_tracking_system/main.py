@@ -74,7 +74,8 @@ class TrackingSystem:
                  video_paths: list = None, rtsp_urls: list = None,
                  webcam_indices: list = None, camera_ids: list = None,
                  loop_video: bool = False, eval_output: str = None,
-                 detector_override: str = None, conf_override: float = None):
+                 detector_override: str = None, conf_override: float = None,
+                 incident_snapshot_dir: str = None, track_buffer_override: int = None):
         self.config_path = config_path
         self.half = half        # FP16 inference — saves ~800 MB VRAM alongside CARLA
         self.source = source    # 'carla'/'bridge' (CARLA) or 'rtsp'/'file'/'webcam' (real cameras)
@@ -88,6 +89,8 @@ class TrackingSystem:
         self.eval_output = eval_output   # directory to write pred_<CAM_ID>.txt for evaluate_tracking.py
         self.detector_override = detector_override   # override auto-selected VN checkpoint
         self.conf_override = conf_override           # override conf threshold (e.g. 0.10 for CARLA)
+        self.incident_snapshot_dir = incident_snapshot_dir  # opt-in, see modules/incident_snapshot.py
+        self.track_buffer_override = track_buffer_override  # opt-in, A/B test ByteTrack lost_track_buffer
         self.carla_client = None
         self.world = None
         # camera_controller (carla) / CARLABridgeClient (bridge) / MultiVideoSource (rtsp/file/webcam)
@@ -95,6 +98,8 @@ class TrackingSystem:
         self.modules = {}
         self._eval_calibrations = None  # {camera_id: CameraCalibration}, set if --eval-output + --source carla
         self._gc_in_roi: dict = {}      # {global_id: bool} — ROI state last frame, for history-clear on exit
+        self._seen_track_ids: dict = {}  # {camera_id: set(local_track_id)} — ReID throttle, mirrors ai_processor.py
+        self.REID_INTERVAL = 3           # re-run ReID every Nth frame for already-seen tracks
 
     # ------------------------------------------------------------------
     # CARLA setup
@@ -129,6 +134,8 @@ class TrackingSystem:
             logger.info("Initializing: %s", name)
 
         try:
+            cam_frame_rates = None  # set below per-branch; file/rtsp/webcam dung fps thuc
+
             if self.source == 'carla':
                 from modules.camera_controller import CameraController
                 from modules.traffic_generator import TrafficGenerator
@@ -140,6 +147,8 @@ class TrackingSystem:
                 cam_ids = list(self.modules['camera_controller'].cameras.keys())
                 self.frame_source = self.modules['camera_controller']
                 rois_config = self.modules['camera_controller'].config['rois']
+                incident_cfg = self.modules['camera_controller'].config.get(
+                    'incident_detection', {})
 
                 step("TrafficGenerator")
                 self.modules['traffic_generator'] = TrafficGenerator(
@@ -153,6 +162,7 @@ class TrackingSystem:
                     cfg = yaml.safe_load(f)
                 cam_ids = [c['camera_id'] for c in cfg['cameras'].values()]
                 rois_config = cfg['rois']
+                incident_cfg = cfg.get('incident_detection', {})
             else:
                 # 'rtsp' / 'file' / 'webcam' — real camera sources via VideoSource
                 step(f"VideoSource ({self.source})")
@@ -188,6 +198,20 @@ class TrackingSystem:
                 with open(self.config_path, 'r', encoding='utf-8') as f:
                     cfg = yaml.safe_load(f)
                 rois_config = cfg.get('rois', {})
+                incident_cfg = cfg.get('incident_detection', {})
+
+                # FPS thuc cua tung nguon (vd video file 3 FPS) — dung de cau
+                # hinh ByteTrack dung, KHONG dung _CARLA_FPS hardcode (track_buffer
+                # duoc ByteTrack quy doi theo frame_rate: max_time_lost =
+                # frame_rate/30 * track_buffer — fps sai lam sai han khoang
+                # thoi gian giu track khi mat detect tam thoi).
+                cam_frame_rates = {
+                    cam_id: self.frame_source._sources[cam_id].fps
+                    for cam_id in cam_ids
+                }
+
+            if cam_frame_rates is None:   # carla / bridge — fps mo phong co dinh
+                cam_frame_rates = {cam_id: _CARLA_FPS for cam_id in cam_ids}
 
             step("ObjectDetector")
             if self.detector_override:
@@ -216,9 +240,9 @@ class TrackingSystem:
             self.modules['trackers'] = {
                 cam_id: ByteTrackWrapper(
                     track_activation_threshold=0.25,
-                    lost_track_buffer=30,
+                    lost_track_buffer=self.track_buffer_override or 30,
                     minimum_matching_threshold=0.8,
-                    frame_rate=_CARLA_FPS,   # 10 fps, not 30
+                    frame_rate=max(1, round(cam_frame_rates[cam_id])),
                     class_map=self.modules['detector'].CLASSES,
                 )
                 for cam_id in cam_ids
@@ -269,7 +293,37 @@ class TrackingSystem:
             self.modules['alert_system'].set_rois(rois_config)
 
             step("IncidentDetector")
-            self.modules['incident_detector'] = IncidentDetector()
+            self.modules['incident_detector'] = IncidentDetector(config=incident_cfg)
+
+            tl_points = (incident_cfg.get('traffic_light', {}) or {}).get('points', {})
+            if tl_points:
+                step("TrafficLightColorClassifier")
+                from modules.traffic_light_classifier import TrafficLightColorClassifier
+                self.modules['traffic_light_classifier'] = TrafficLightColorClassifier(tl_points)
+
+            # Canh bao 1 lan khi khoi dong neu camera_id dang chay (cam_ids,
+            # tu --camera-ids hoac mac dinh CAM_001/CAM_002...) khong khop
+            # voi camera_id khai bao trong cac muc cau hinh theo-camera (rois,
+            # lane_discipline.zones, traffic_light.points, calibration) —
+            # neu lech, cac luat/tinh nang lien quan se TAT AM THAM khong co
+            # loi gi khac de phat hien (da gap dung loi nay luc tu test —
+            # xem Chuong 5 muc 5.5.6). Calibration check o day, ROI/lane/
+            # traffic_light check sau khi cac module do duoc tao.
+            configured_cam_keys = set()
+            for d in (rois_config, (incident_cfg.get('lane_discipline', {}) or {}).get('zones', {}),
+                      tl_points):
+                if isinstance(d, dict):
+                    configured_cam_keys.update(d.keys())
+            if configured_cam_keys:
+                missing = [c for c in cam_ids if c not in configured_cam_keys]
+                if missing:
+                    logger.warning(
+                        "Camera(s) %s khong co trong cau hinh rois/lane_discipline/"
+                        "traffic_light (cau hinh co cho: %s) -> cac luat/tinh nang "
+                        "lien quan se TAT AM THAM cho camera nay. Kiem tra --camera-ids "
+                        "co khop dung camera_id khai bao trong --config khong.",
+                        missing, sorted(configured_cam_keys),
+                    )
 
             step("EvidencePackage")
             self.modules['evidence'] = EvidencePackage(
@@ -277,6 +331,12 @@ class TrackingSystem:
 
             step("Visualizer")
             self.modules['visualizer'] = Visualizer()
+
+            if self.incident_snapshot_dir:
+                step("IncidentSnapshotLogger")
+                from modules.incident_snapshot import IncidentSnapshotLogger
+                self.modules['incident_snapshot'] = IncidentSnapshotLogger(
+                    self.incident_snapshot_dir, self.modules['visualizer'])
 
             step("MetricsCollector")
             self.modules['metrics'] = MetricsCollector()
@@ -343,6 +403,7 @@ class TrackingSystem:
 
                 cam_ids = list(sync_frames.keys())
                 frames  = [sync_frames[c]['frame'] for c in cam_ids]
+                cam_timestamps = [sync_frames[c]['timestamp'] for c in cam_ids]
 
                 # Ground-truth export (--source carla + --eval-output only)
                 if self._eval_calibrations is not None:
@@ -363,22 +424,42 @@ class TrackingSystem:
                 batch_detections = self.modules['detector'].detect_batch(frames)
 
                 # ----------------------------------------------------------
-                # Phase 2 — Per-camera CPU processing
-                # Single timestamp for the whole frame so all cameras are
-                # consistent when TrajectoryPredictor computes velocity.
+                # Phase 2 — Per-camera CPU processing.
+                # Timestamp lay tu chinh frame nguon (cam_ts) thay vi
+                # time.time() dung chung 1 moc cho ca batch — voi
+                # FileVideoSource, doc file khong bi rang buoc real-time nen
+                # wall-clock luc xu ly khong phan anh dung thoi gian troi
+                # trong video (CPU cham -> dt bi nguoc, speed=d/dt nhieu loan,
+                # sinh canh bao SUDDEN_STOP/SUDDEN_ACCEL gia). Xem
+                # video_source.py FileVideoSource va modules/tracker.py.
                 # ----------------------------------------------------------
                 all_global_tracks = []
-                now_ts = time.time()
 
-                for camera_id, frame, detections in zip(cam_ids, frames, batch_detections):
+                for camera_id, frame, detections, now_ts in zip(
+                        cam_ids, frames, batch_detections, cam_timestamps):
 
                     # Single-camera tracking (Kalman + Hungarian via ByteTrack)
                     local_tracks = self.modules['trackers'][camera_id].update(
-                        detections, frame)
+                        detections, frame, timestamp=now_ts)
 
-                    # Cross-camera Re-ID → assign Global ID
+                    # Cross-camera Re-ID → assign Global ID. Throttle ReID:
+                    # chi chay extract_feature() cho track moi hoac moi
+                    # REID_INTERVAL frame — tin local track_id con lien tuc
+                    # thay vi so khop lai gallery moi khung hinh (truoc day
+                    # khong truyen reid_track_ids nen GlobalTracker luon re-
+                    # match moi frame, 1 frame xau la du de "doi ten" Global ID
+                    # cua mot track dang on dinh). Mirror dung pattern da dung
+                    # trong server/services/ai_processor.py.
+                    seen = self._seen_track_ids.setdefault(camera_id, set())
+                    reid_track_ids = set()
+                    for lt in local_tracks:
+                        tid = lt['track_id']
+                        if tid not in seen or frame_count % self.REID_INTERVAL == 0:
+                            reid_track_ids.add(tid)
+                        seen.add(tid)
+
                     global_tracks = self.modules['global_tracker'].process_camera_tracks(
-                        camera_id, frame, local_tracks)
+                        camera_id, frame, local_tracks, reid_track_ids=reid_track_ids)
 
                     all_global_tracks.extend(global_tracks)
 
@@ -418,11 +499,19 @@ class TrackingSystem:
                                 g['global_id'], camera_id, pred_list, g['box']):
                             self.modules['alert_system'].log_alert(alert)
 
+                    # Mau den giao thong hien tai (None neu camera khong co
+                    # toa do diem do trong config — xem modules/traffic_light_classifier.py)
+                    traffic_light_state = None
+                    if 'traffic_light_classifier' in self.modules:
+                        traffic_light_state = self.modules['traffic_light_classifier'].classify(
+                            frame, camera_id)
+
                     # Incident detection — reactive + proactive (predicted collision/ROI)
                     incidents = self.modules['incident_detector'].update(
                         global_tracks, camera_id,
                         predictions=predictions,
                         rois=self.modules['alert_system'].rois,
+                        traffic_light_state=traffic_light_state,
                     )
 
                     for incident in incidents:
@@ -431,6 +520,15 @@ class TrackingSystem:
                             incident['severity'], incident['type'],
                             incident['global_id'], incident['message'],
                         )
+                        if 'incident_snapshot' in self.modules:
+                            # Mọi severity (không chỉ CRITICAL) — dùng để gán
+                            # nhãn tay true/false-positive khi tinh chỉnh
+                            # ngưỡng, xem docs/plan_tinh_chinh_nguong_incident.md.
+                            self.modules['incident_snapshot'].log(
+                                incident=incident,
+                                frame=frame,
+                                global_tracks=global_tracks,
+                            )
                         if incident['severity'] == 'CRITICAL':
                             # Capture evidence from ALL cameras, not just the triggering one
                             self.modules['evidence'].capture(
@@ -588,6 +686,15 @@ def main():
     parser.add_argument('--conf', type=float, default=None,
                         help='Override detector confidence threshold (default: 0.35). '
                              'Lower (e.g. 0.10) helps on synthetic CARLA renders.')
+    parser.add_argument('--incident-snapshot-dir', default=None,
+                        help='Opt-in, NOT for production: save 1 annotated JPEG + 1 JSON '
+                             '(type/severity/details, label left blank) per incident of ANY '
+                             'severity to this directory, for hand-labeling true/false '
+                             'positives when tuning IncidentDetector thresholds. See '
+                             'docs/plan_tinh_chinh_nguong_incident.md.')
+    parser.add_argument('--track-buffer', type=int, default=None,
+                        help='Override ByteTrack lost_track_buffer (default: 30 frames). '
+                             'A/B test cho do nhay ID-switch khi track tam mat detect.')
     args = parser.parse_args()
 
     logging.getLogger().setLevel(getattr(logging, args.log_level))
@@ -600,7 +707,9 @@ def main():
                              webcam_indices=args.webcam_index, camera_ids=camera_ids,
                              loop_video=args.loop_video, eval_output=args.eval_output,
                              detector_override=args.detector,
-                             conf_override=args.conf)
+                             conf_override=args.conf,
+                             incident_snapshot_dir=args.incident_snapshot_dir,
+                             track_buffer_override=args.track_buffer)
 
     if system.source == 'carla':
         if not system.initialize_carla():

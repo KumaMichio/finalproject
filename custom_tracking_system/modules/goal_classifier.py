@@ -179,11 +179,18 @@ class GoalClassifier:
         if dt_total < 0.1:
             return None
 
-        # Velocities (px/s) via finite differences
+        # Velocities (px/s) via finite differences. np.gradient(..., t_arr)
+        # divides internally by the local spacing of t_arr — if two
+        # consecutive samples share (near-)identical timestamps, that
+        # spacing is ~0 and the result is +-inf, which later crashes
+        # sklearn's StandardScaler ("Input X contains infinity"). Guard by
+        # reconstructing a strictly-increasing time axis from the
+        # already-clamped dt_arr instead of passing the raw t_arr through.
         dt_arr = np.diff(t_arr)
         dt_arr = np.where(dt_arr < 1e-6, 1e-6, dt_arr)
-        vx_arr = np.gradient(cx_arr, t_arr)
-        vy_arr = np.gradient(cy_arr, t_arr)
+        t_safe = np.concatenate([[t_arr[0]], t_arr[0] + np.cumsum(dt_arr)])
+        vx_arr = np.gradient(cx_arr, t_safe)
+        vy_arr = np.gradient(cy_arr, t_safe)
         speed  = np.sqrt(vx_arr**2 + vy_arr**2)
 
         # Heading (degrees, 0=right, 90=down in pixel space)
@@ -234,10 +241,11 @@ class GoalClassifier:
         recent_mask = t_arr >= t_cutoff - 0.5
         sp_recent = speed[recent_mask] if recent_mask.any() else speed[-3:]
 
-        # Lateral acceleration
+        # Lateral acceleration. Same zero-spacing hazard as the velocity
+        # gradient above — use t_safe, not the raw t_arr.
         if len(vx_arr) >= 3:
-            ax     = np.gradient(vx_arr, t_arr)
-            ay     = np.gradient(vy_arr, t_arr)
+            ax     = np.gradient(vx_arr, t_safe)
+            ay     = np.gradient(vy_arr, t_safe)
             cross  = np.abs(vx_arr * ay - vy_arr * ax)
             v_mag  = np.sqrt(vx_arr**2 + vy_arr**2)
             safe_mag = np.where(v_mag > 0.5, v_mag, 1.0)

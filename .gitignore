@@ -4,6 +4,13 @@
 VeRi/
 custom_tracking_system/weights/*.ckpt_ep*.pth
 custom_tracking_system/models/hub/
+# Snapshot+JSON cho moi canh bao (kiem chung tay 5.5.7) — qua nhieu (~1.8GB,
+# 5000+ file), chi can cho review mot lan, khong phai artifact lau dai.
+custom_tracking_system/docs/assets/incident_review/
+custom_tracking_system/docs/assets/incident_review_v2/
+custom_tracking_system/docs/assets/incident_review_v3/
+# Tool jar tai ngoai (plantuml.com), khong phai code/artifact cua de tai.
+component_for_final/uml/plantuml.jar
 
 # Model weight files — chặn checkpoint trung gian, giữ final model
 *.ckpt_ep*.pth
