@@ -67,6 +67,13 @@ class VideoSource(ABC):
     def camera_id(self) -> str:
         pass
 
+    @property
+    def fps(self) -> float:
+        """FPS thuc cua nguon, dung de cau hinh tracker (track_buffer scaling
+        theo frame_rate). Mac dinh 10 cho nguon khong tu biet fps thuc (RTSP/
+        webcam) — FileVideoSource override bang fps doc tu chinh video."""
+        return 10.0
+
 
 class MultiVideoSource:
     """Quan ly nhieu VideoSource, tra ve frames dong bo."""
@@ -240,6 +247,17 @@ class FileVideoSource(VideoSource):
             logger.error(f"FileVideoSource [{camera_id}] cannot open: {filepath}")
 
         self._fps = self._cap.get(cv2.CAP_PROP_FPS) or 10
+        # Dong ho theo NOI DUNG video (frame_idx / fps), khong dung wall-clock.
+        # Ly do: doc file qua cap.read() khong bi rang buoc real-time — neu dung
+        # time.time() lam timestamp, dt giua 2 frame xu ly lien tiep phan anh
+        # "may xu ly cham bao nhieu" (vai giay tren CPU yeu) thay vi "video troi
+        # bao nhieu giay" (luon dung 1/fps). Speed = d_pixel / dt khi do bi nhieu
+        # hoan toan theo do tre CPU -> sinh canh bao SUDDEN_STOP/SUDDEN_ACCEL gia
+        # ngau nhien (xem incident_detector.py). _t0 neo theo wall-clock tai luc
+        # mo file de nhieu camera (nhieu video) mo gan-dong-thoi van so sanh
+        # timestamp xuyen-camera duoc (cross-camera Re-ID spatio-temporal filter).
+        self._t0 = time.time()
+        self._frame_idx = 0
         logger.info(f"FileVideoSource [{camera_id}] opened {filepath} ({self._fps:.0f} FPS)")
 
     def get_frame(self) -> Optional[dict]:
@@ -254,14 +272,19 @@ class FileVideoSource(VideoSource):
                 ret, frame = self._cap.read()
                 if not ret:
                     return None
+                self._frame_idx = 0
+                self._t0 = time.time()
             else:
                 return None
+
+        timestamp = self._t0 + self._frame_idx / self._fps
+        self._frame_idx += 1
 
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         return {
             'camera_id': self._camera_id,
             'frame': frame_rgb,
-            'timestamp': time.time(),
+            'timestamp': timestamp,
         }
 
     def is_alive(self) -> bool:
@@ -273,6 +296,10 @@ class FileVideoSource(VideoSource):
     @property
     def camera_id(self) -> str:
         return self._camera_id
+
+    @property
+    def fps(self) -> float:
+        return self._fps
 
 
 # ---------------------------------------------------------------------------

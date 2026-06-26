@@ -70,7 +70,8 @@ class ByteTrackWrapper:
                 device='cpu', half=False,
             )
 
-    def update(self, detections: list, frame: np.ndarray) -> list:
+    def update(self, detections: list, frame: np.ndarray,
+               timestamp: float | None = None) -> list:
         """
         Update tracker with new detections.
 
@@ -78,6 +79,13 @@ class ByteTrackWrapper:
             detections: list of {'box': [x1,y1,x2,y2], 'confidence': float,
                                   'class': str, 'class_id': int}
             frame: current camera frame (H×W×3 BGR numpy array)
+            timestamp: epoch seconds cua frame nay (tu VideoSource). Neu None,
+                dung datetime.now() (wall-clock) — chi dung khi caller khong co
+                timestamp nguon (vd code cu chua cap nhat). Truyen dung gia tri
+                nay quan trong voi FileVideoSource: dt giua 2 frame phai phan
+                anh thoi gian troi trong VIDEO, khong phai thoi gian CPU xu ly
+                frame truoc do mat bao lau — neu khong, speed=d/dt bi nhieu
+                theo do tre xu ly, sinh canh bao SUDDEN_STOP/SUDDEN_ACCEL gia.
 
         Returns:
             list of {'track_id': int, 'box': [x1,y1,x2,y2], 'class': str,
@@ -94,7 +102,7 @@ class ByteTrackWrapper:
 
         raw = self.tracker.update(dets_arr, frame)
 
-        now = datetime.now()
+        now = datetime.fromtimestamp(timestamp) if timestamp is not None else datetime.now()
         output = []
 
         if raw is None or len(raw) == 0:
