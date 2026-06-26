@@ -1,83 +1,147 @@
 {
-  "phase": "ROUTE_PREDICTED",
-  "timestamp": 1781836647.803477,
-  "accident_track": {
-    "track_id": 42,
-    "x": 490.0,
-    "y": -455.0,
-    "lat": 20.98732643091341,
-    "lon": 105.78560316703222,
-    "heading_deg": -20.0,
-    "direction": "right",
-    "confidence": 0.55,
-    "probabilities": {
-      "straight": 0.3,
-      "right": 0.55,
-      "left": 0.12,
-      "u_turn": 0.03
-    }
-  },
-  "predicted_route": [
-    {
-      "hop": 1,
-      "road_id": "896",
-      "x": 517.405,
-      "y": -433.15,
-      "lat": 20.987127804149846,
-      "lon": 105.78586577728392,
-      "heading_deg": 24.524885462779757,
-      "direction_used": "right",
-      "confidence": 0.55
-    },
-    {
-      "hop": 2,
-      "road_id": "557",
-      "x": 706.88,
-      "y": -360.33,
-      "lat": 20.986461469878915,
-      "lon": 105.78768512159503,
-      "heading_deg": 21.141569682532246,
-      "direction_used": "straight",
-      "confidence": 1.0
-    },
-    {
-      "hop": 3,
-      "road_id": "889",
-      "x": 715.133,
-      "y": -358.239,
-      "lat": 20.98644221092836,
-      "lon": 105.78776441795853,
-      "heading_deg": -5.423618488708373,
-      "direction_used": "straight",
-      "confidence": 1.0
-    },
-    {
-      "hop": 4,
-      "road_id": "620",
-      "x": 517.57,
-      "y": -433.536,
-      "lat": 20.987131284262027,
-      "lon": 105.7858673828662,
-      "heading_deg": -158.85827827797206,
-      "direction_used": "straight",
-      "confidence": 1.0
-    }
-  ],
+  "phase": "MONITORING",
+  "timestamp": 1782303260.2864754,
+  "accident_track": null,
+  "predicted_route": [],
   "all_vehicles": [
     {
-      "track_id": 42,
-      "x": 490.0,
-      "y": -455.0,
-      "lat": 20.98732643091341,
-      "lon": 105.78560316703222,
-      "is_accident": true
+      "track_id": 3,
+      "x": 235.44,
+      "y": -219.77,
+      "lat": 21.008784,
+      "lon": 105.851556,
+      "speed_ms": 0.01,
+      "heading_deg": 0.0,
+      "is_accident": false
     },
     {
-      "track_id": 10,
-      "x": 400.0,
-      "y": -420.0,
-      "lat": 20.98701420380013,
-      "lon": 105.7847356926419,
+      "track_id": 38,
+      "x": 267.89,
+      "y": -274.44,
+      "lat": 21.009277,
+      "lon": 105.851871,
+      "speed_ms": 0.0,
+      "heading_deg": 0.0,
+      "is_accident": false
+    },
+    {
+      "track_id": 42,
+      "x": 285.77,
+      "y": -314.51,
+      "lat": 21.009638,
+      "lon": 105.852045,
+      "speed_ms": 1.45,
+      "heading_deg": -62.8,
+      "is_accident": false
+    },
+    {
+      "track_id": 729,
+      "x": 217.15,
+      "y": -199.12,
+      "lat": 21.008599,
+      "lon": 105.851379,
+      "speed_ms": 0.0,
+      "heading_deg": 0.0,
+      "is_accident": false
+    },
+    {
+      "track_id": 767,
+      "x": 225.62,
+      "y": -199.13,
+      "lat": 21.008598,
+      "lon": 105.851461,
+      "speed_ms": 0.0,
+      "heading_deg": 0.0,
+      "is_accident": false
+    },
+    {
+      "track_id": 770,
+      "x": 216.18,
+      "y": -199.17,
+      "lat": 21.008599,
+      "lon": 105.85137,
+      "speed_ms": 0.0,
+      "heading_deg": 0.0,
+      "is_accident": false
+    },
+    {
+      "track_id": 854,
+      "x": 221.14,
+      "y": -199.12,
+      "lat": 21.008598,
+      "lon": 105.851418,
+      "speed_ms": 0.01,
+      "heading_deg": 0.0,
+      "is_accident": false
+    },
+    {
+      "track_id": 1230,
+      "x": 214.67,
+      "y": -199.13,
+      "lat": 21.008599,
+      "lon": 105.851355,
+      "speed_ms": 0.0,
+      "heading_deg": 0.0,
+      "is_accident": false
+    },
+    {
+      "track_id": 1271,
+      "x": 220.14,
+      "y": -119.48,
+      "lat": 21.007879,
+      "lon": 105.851404,
+      "speed_ms": 5.23,
+      "heading_deg": -99.3,
+      "is_accident": false
+    },
+    {
+      "track_id": 1027,
+      "x": 212.49,
+      "y": -129.27,
+      "lat": 21.007968,
+      "lon": 105.851331,
+      "speed_ms": 0.29,
+      "heading_deg": -85.2,
+      "is_accident": false
+    },
+    {
+      "track_id": 1351,
+      "x": 217.1,
+      "y": -113.87,
+      "lat": 21.007828,
+      "lon": 105.851374,
+      "speed_ms": 5.56,
+      "heading_deg": -96.2,
+      "is_accident": false
+    },
+    {
+      "track_id": 1567,
+      "x": 227.54,
+      "y": -212.63,
+      "lat": 21.00872,
+      "lon": 105.85148,
+      "speed_ms": 5.04,
+      "heading_deg": -101.6,
+      "is_accident": false
+    },
+    {
+      "track_id": 1602,
+      "x": 206.3,
+      "y": -86.52,
+      "lat": 21.007582,
+      "lon": 105.851269,
+      "speed_ms": 5.63,
+      "heading_deg": 100.2,
+      "is_accident": false
+    },
+    {
+      "track_id": 1604,
+      "x": 231.88,
+      "y": -53.57,
+      "lat": 21.007283,
+      "lon": 105.851513,
+      "speed_ms": 3.04,
+      "heading_deg": -94.6,
       "is_accident": false
     }
   ]

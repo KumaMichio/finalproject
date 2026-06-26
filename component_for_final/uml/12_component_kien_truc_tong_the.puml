@@ -39,7 +39,12 @@ node "Frontend (React + Leaflet)" as FE {
 
 CARLA --> VS
 REAL --> VS
-VS --> DET --> TRK --> RID --> GTR --> TRAJ --> ROUTE
+VS --> DET
+DET --> TRK
+TRK --> RID
+RID --> GTR
+GTR --> TRAJ
+TRAJ --> ROUTE
 GTR --> INC
 ROUTE ..> OSM : junction graph
 AI --> AIP
