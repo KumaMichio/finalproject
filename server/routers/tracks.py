@@ -2,7 +2,10 @@
 /api/tracks — Tracked objects + trajectory endpoints.
 """
 
+from pathlib import Path
+
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from models.database import get_db
@@ -31,6 +34,16 @@ def get_track(global_id: int, db: Session = Depends(get_db)):
     if not obj:
         raise HTTPException(404, f"Object {global_id} not found")
     return obj
+
+
+@router.get("/{global_id}/snapshot")
+def get_snapshot(global_id: int, db: Session = Depends(get_db)):
+    obj = tracking_service.get_tracked_object(db, global_id)
+    if not obj:
+        raise HTTPException(404, f"Object {global_id} not found")
+    if not obj.marked_snapshot_path or not Path(obj.marked_snapshot_path).exists():
+        raise HTTPException(404, f"No snapshot saved for object {global_id}")
+    return FileResponse(obj.marked_snapshot_path, media_type="image/jpeg")
 
 
 @router.get("/{global_id}/trajectory", response_model=list[TrackingHistoryResponse])

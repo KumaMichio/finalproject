@@ -77,6 +77,8 @@ class TrackedObject(Base):
     last_seen = Column(DateTime, nullable=False, default=datetime.utcnow)
     total_cameras = Column(Integer, default=1)
     status = Column(Text, default="active")             # active / lost / archived
+    marked_snapshot_path = Column(Text, nullable=True)  # anh crop luc danh dau
+    marked_at = Column(DateTime, nullable=True)
 
     history = relationship("TrackingHistory", back_populates="tracked_object")
 

@@ -89,6 +89,8 @@ class TrackedObjectResponse(BaseModel):
     last_seen: datetime
     total_cameras: int
     status: str
+    marked_snapshot_path: str | None = None
+    marked_at: datetime | None = None
 
     class Config:
         from_attributes = True

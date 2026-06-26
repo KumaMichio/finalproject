@@ -54,6 +54,20 @@ def upsert_tracked_object(db: Session, global_id: int, object_class: str,
     return obj
 
 
+def set_marked_snapshot(db: Session, global_id: int, snapshot_path: str,
+                         marked_at: datetime) -> Optional[TrackedObject]:
+    """Ghi lai duong dan anh crop chup luc danh dau object (xem
+    AIProcessor.mark_object() / per-track loop trong ai_processor.py)."""
+    obj = get_tracked_object(db, global_id)
+    if obj is None:
+        return None
+    obj.marked_snapshot_path = snapshot_path
+    obj.marked_at = marked_at
+    db.commit()
+    db.refresh(obj)
+    return obj
+
+
 # ---- Tracking History ----
 
 def add_history(db: Session, global_id: int, camera_id: str,

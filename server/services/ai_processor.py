@@ -17,6 +17,7 @@ import math
 import asyncio
 import logging
 import threading
+import cv2
 from collections import deque
 from pathlib import Path
 from datetime import datetime
@@ -84,6 +85,7 @@ class AIProcessor:
         self.georef = None
         self.calibration: dict = {}
         self.marked_global_id: int | None = None
+        self._marked_snapshot_saved: bool = False
         self._world_hist: dict = {}        # {global_id: deque[(t, x, y)]}
         self._world_pos: dict = {}         # {global_id: {lat, lon, heading_deg, ...}}
         self._goal_predictions: dict = {}  # {global_id: {direction, probabilities, confidence}}
@@ -237,10 +239,19 @@ class AIProcessor:
         if "rois" in self.config:
             self.alert_system.set_rois(self.config["rois"])
 
-        self.incident_detector = IncidentDetector(
-            config=self.config.get("incident_detection", {})
-        )
+        incident_cfg = self.config.get("incident_detection", {})
+        self.incident_detector = IncidentDetector(config=incident_cfg)
         self.evidence = EvidencePackage(output_dir="evidence", buffer_seconds=30, fps=10)
+
+        # Mau den giao thong tu camera thuc (source != 'carla') — xem
+        # modules/traffic_light_classifier.py. Khong tao gi neu config
+        # khong co toa do diem do (camera_config*.yaml: incident_detection.
+        # traffic_light.points).
+        self.traffic_light_classifier = None
+        tl_points = (incident_cfg.get("traffic_light", {}) or {}).get("points", {})
+        if tl_points:
+            from modules.traffic_light_classifier import TrafficLightColorClassifier
+            self.traffic_light_classifier = TrafficLightColorClassifier(tl_points)
 
         # Goal Classifier — huong re (left/right/straight/u_turn). Generic,
         # khong phu thuoc map/georef, hoat dong tu bbox history nen tai luon
@@ -288,6 +299,23 @@ class AIProcessor:
         # Giu lai calibration (da load o tren cho trajectory_predictor) de
         # dung chung cho world-position/route prediction.
         self.calibration = calibration
+
+        # CalibrationStore keys tu cam_cfg['camera_id'] khai bao trong YAML,
+        # hoan toan doc lap voi self._cam_ids (vd mac dinh CAM_001, CAM_002...
+        # neu --camera-ids khong duoc truyen). Neu lech, calibration.get(camera_id)
+        # o vong xu ly chinh luon tra None va ÂM THẦM tat world-position/map/
+        # route prediction cho camera do, khong co loi/canh bao nao khac de
+        # phat hien — canh bao ngay luc khoi dong de tranh debug mu.
+        if self.calibration:
+            uncalibrated = [c for c in self._cam_ids if c not in self.calibration]
+            if uncalibrated:
+                logger.warning(
+                    "Camera(s) %s khong co calibration tuong ung (calibration "
+                    "co cho: %s) -> world-position/map/route prediction se TAT "
+                    "AM THAM cho camera nay. Kiem tra --camera-ids co khop dung "
+                    "'camera_id' khai bao trong --config khong.",
+                    uncalibrated, list(self.calibration.keys()),
+                )
 
         self.visualizer = Visualizer()
 
@@ -352,9 +380,19 @@ class AIProcessor:
                          cam_id, len(nearby), radius)
         return mapping
 
-    def _get_traffic_light_state(self, camera_id: str):
+    def _get_traffic_light_state(self, camera_id: str, frame=None):
         """Tra ve 'Red'/'Yellow'/'Green'/None cho camera (uu tien Red neu co
-        >=1 traffic light gan camera dang Red)."""
+        >=1 traffic light gan camera dang Red).
+
+        source='carla': doc truc tiep tu CARLA actor (tl.get_state()).
+        Nguon khac (file/rtsp/webcam): khong co actor de doc, dung
+        TrafficLightColorClassifier (modules/traffic_light_classifier.py) —
+        can `frame` hien tai cua camera_id va config co toa do diem do."""
+        if self.source != "carla":
+            if self.traffic_light_classifier is None or frame is None:
+                return None
+            return self.traffic_light_classifier.classify(frame, camera_id)
+
         lights = self.camera_traffic_lights.get(camera_id, [])
         if not lights:
             return None
@@ -372,7 +410,7 @@ class AIProcessor:
     def _main_loop(self):
         """Vong lap xu ly chinh."""
         from services.stream_service import frame_buffer
-        from services.tracking_service import upsert_tracked_object, add_history
+        from services.tracking_service import upsert_tracked_object, add_history, set_marked_snapshot
         from services.alert_service import create_alert
         from models.database import SessionLocal
 
@@ -421,12 +459,19 @@ class AIProcessor:
                 # 1. Batch detection — 1 GPU forward pass cho tat ca camera
                 cam_ids = list(sync_frames.keys())
                 frames = [sync_frames[c]["frame"] for c in cam_ids]
+                cam_timestamps = [sync_frames[c]["timestamp"] for c in cam_ids]
                 batch_detections = self.detector.detect_batch(frames)
 
-                for camera_id, frame, detections in zip(cam_ids, frames, batch_detections):
+                for camera_id, frame, detections, cam_ts in zip(
+                        cam_ids, frames, batch_detections, cam_timestamps):
 
-                    # 2. Single-camera tracking (ByteTrackWrapper cần thêm frame)
-                    local_tracks = self.trackers[camera_id].update(detections, frame)
+                    # 2. Single-camera tracking (ByteTrackWrapper cần thêm frame).
+                    # timestamp = dong ho cua frame nguon (video-content-time cho
+                    # FileVideoSource, wall-clock cho CARLA/RTSP) — KHONG dung
+                    # time.time() o day, neu khong speed se bi nhieu theo do tre
+                    # xu ly CPU (xem video_source.py FileVideoSource).
+                    local_tracks = self.trackers[camera_id].update(
+                        detections, frame, timestamp=cam_ts)
 
                     # 3. Cross-camera global tracking — throttle ReID: chi chay
                     # extract_feature() cho track moi hoac moi REID_INTERVAL frame
@@ -443,8 +488,10 @@ class AIProcessor:
                     )
                     all_global_tracks.extend(global_tracks)
 
-                    # 4. Update trajectory + check alerts
-                    now_ts = time.time()
+                    # 4. Update trajectory + check alerts — dung cung cam_ts
+                    # (dong ho cua frame nguon) de nhat quan voi tracker o tren,
+                    # khong dung time.time() (xem ly do o comment phia tren).
+                    now_ts = cam_ts
                     predictions_map = {}  # {global_id: dict} cho incident detector
                     predictions_for_viz = {}  # {global_id: [[x,y],...]} cho visualizer
                     for g_track in global_tracks:
@@ -492,6 +539,27 @@ class AIProcessor:
                         if gid == self.marked_global_id:
                             self._update_marked_route(gid)
 
+                            # Luu anh crop luc danh dau - chi 1 lan/lan mark
+                            # (mark_object() reset co nay), de co the "truy
+                            # quet lai" object sau (xem ghi chu mark_object()).
+                            if not self._marked_snapshot_saved:
+                                h, w = frame.shape[:2]
+                                x1, y1, x2, y2 = box
+                                x1 = max(0, int(x1) - 20)
+                                y1 = max(0, int(y1) - 20)
+                                x2 = min(w, int(x2) + 20)
+                                y2 = min(h, int(y2) + 20)
+                                crop = frame[y1:y2, x1:x2]
+                                if crop.size > 0:
+                                    out_dir = Path("evidence") / "marked"
+                                    out_dir.mkdir(parents=True, exist_ok=True)
+                                    snap_path = str(out_dir / f"marked_{gid}.jpg")
+                                    cv2.imwrite(snap_path, crop)
+                                    set_marked_snapshot(
+                                        db, gid, snap_path, datetime.fromtimestamp(now_ts)
+                                    )
+                                    self._marked_snapshot_saved = True
+
                         # Luu tracking data vao DB (moi 10 frames de giam tai)
                         if self.frame_count % 10 == 0:
                             upsert_tracked_object(
@@ -506,7 +574,7 @@ class AIProcessor:
                         global_tracks, camera_id,
                         predictions=predictions_map or None,
                         rois=self.alert_system.rois or None,
-                        traffic_light_state=self._get_traffic_light_state(camera_id),
+                        traffic_light_state=self._get_traffic_light_state(camera_id, frame),
                     )
                     for incident in incidents:
                         self._save_incident(db, incident)
@@ -956,6 +1024,7 @@ class AIProcessor:
         with self._lock:
             self.marked_global_id = global_id
             self._marked_route = []
+            self._marked_snapshot_saved = False
         return {"ok": True, "message": f"Da danh dau object #{global_id}",
                 "global_id": global_id}
 
