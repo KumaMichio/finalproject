@@ -1,0 +1,24 @@
+# camera_config_uc2_test.yaml — config toi thieu de test UC2 (theo doi xuyen
+# camera) tren 2 camera CCTV thuc DONG BO THOI GIAN: Giang Vo-Lang Ha (V3) va
+# Lang Ha-Thai Ha (V2), cung tren pho Lang Ha, cach nhau ~800m-1km, lech dong
+# ho ~21s (xac nhan bang mat qua timestamp in tren video).
+# Khong co rois/incident_detection rieng cho dia diem nay -- de trong, dung
+# main.py mac dinh.
+rois: {}
+# Tat het 5 luat da xac nhan 100% false positive (xem Chuong 5 muc 5.5.7) +
+# cac luat con lai khong lien quan test UC2 nay -- chi can tracking/global_id,
+# khong can incident detection, tranh EvidencePackage ghi evidence day dia.
+incident_detection:
+  disabled_types:
+    - SUDDEN_STOP
+    - SUDDEN_ACCEL
+    - VEHICLE_PROXIMITY
+    - PREDICTED_COLLISION
+    - OVERSPEED
+    - PEDESTRIAN_DANGER
+    - STOPPED_VEHICLE
+    - LOITERING
+    - CROWD_DENSITY
+    - CAMERA_TRANSITION
+    - WRONG_WAY
+    - PREDICTED_ROI_ENTRY
