@@ -58,6 +58,21 @@ máy — khác hẳn với đặc thù giao thông Việt Nam, nơi xe máy chi�
 (re-identification) mà không đi tiếp đến bài toán dự đoán hướng đi tương lai
 của phương tiện trên một bản đồ đường thực tế.
 
+Gần với đúng bối cảnh giao thông Việt Nam hơn, Chau et al. [1] giải quyết bài
+toán dự đoán quỹ đạo phương tiện trực tiếp trên video CCTV tại Hà Nội/TP. Hồ
+Chí Minh — đúng đặc thù giao thông hỗn
+loạn, nhiều xe máy mà các bộ dữ liệu MTMC phương Tây không có. Hướng tiếp cận
+của công trình này là YOLOv7 (phát hiện) + DeepSORT (theo dõi) thu thập toạ
+độ phương tiện, sau đó dùng mô hình lai CNN-LSTM/CNN-GRU dự đoán vị trí tương
+lai — toàn bộ trong phạm vi **một camera duy nhất**, không có bước nhận diện
+lại xuyên camera. Kết quả này cho thấy dự đoán quỹ đạo trong giao thông hỗn
+loạn là một bài toán nghiên cứu có giá trị độc lập, không nhất thiết phải
+giải quyết xong bài toán theo dõi xuyên camera mới có ý nghĩa — đây là cơ sở
+để đề tài này xác định **dự đoán hướng đi dài hạn (UC4)** là trọng tâm đóng
+góp chính, còn theo dõi xuyên camera (UC2) là một tính năng hỗ trợ cho việc
+truy vết sau đánh dấu, có hạn chế đã biết với xe máy (Chương 5, mục 5.5.8) và
+không phải tiêu chí chính để đánh giá thành công của đề tài.
+
 Ở nhóm sản phẩm thương mại, các nền tảng giám sát giao thông tại Việt Nam
 hiện nay (hệ thống camera phạt nguội, hệ thống đèn tín hiệu "thông minh" tại
 Hà Nội/TP. Hồ Chí Minh) chủ yếu phục vụ hai chức năng: đếm lưu lượng phương
@@ -72,16 +87,16 @@ hệ thống đề xuất.
 
 **Bảng 2.1: So sánh các hệ thống giám sát/theo dõi giao thông liên quan**
 
-| Tiêu chí | DeepSORT/ StrongSORT | ByteTrack | CityFlow (MTMC) | CCTV giao thông VN hiện có | Hệ thống đề xuất |
-|---|---|---|---|---|---|
-| Theo dõi trong 1 camera | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Theo dõi xuyên nhiều camera (Re-ID) | – | – | ✓ | – | ✓ |
-| Phát hiện sự cố tự động (dừng đột ngột, ngược chiều...) | – | – | – | Một phần (vi phạm đèn đỏ/tốc độ) | ✓ |
-| Đánh dấu đối tượng nghi vấn để truy vết | – | – | – | – | ✓ |
-| Dự đoán hướng đi tại ngã tư tiếp theo | – | – | – | – | ✓ |
-| Suy diễn hành trình nhiều ngã tư và vẽ lên bản đồ thực | – | – | – | – | ✓ |
-| Phù hợp cơ cấu phương tiện Việt Nam (tỷ trọng xe máy cao) | – | – | – | Một phần | ✓ |
-| Hoạt động trên video CCTV thật, không cần phần cứng chuyên dụng | ✓ | ✓ | ✓ (cần dữ liệu lớn) | ✓ | ✓ |
+| Tiêu chí | DeepSORT/ StrongSORT | ByteTrack | CityFlow (MTMC) | Chau et al. [1] (Chaotic Traffic) | CCTV giao thông VN hiện có | Hệ thống đề xuất |
+|---|---|---|---|---|---|---|
+| Theo dõi trong 1 camera | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Theo dõi xuyên nhiều camera (Re-ID) | – | – | ✓ | – | – | ✓ (hạn chế với xe máy) |
+| Phát hiện sự cố tự động (dừng đột ngột, ngược chiều...) | – | – | – | – | Một phần (vi phạm đèn đỏ/tốc độ) | ✓ |
+| Đánh dấu đối tượng nghi vấn để truy vết | – | – | – | – | – | ✓ |
+| Dự đoán hướng đi tại ngã tư tiếp theo | – | – | – | Một phần (toạ độ tương lai, không phân loại hướng tại ngã tư) | – | ✓ |
+| Suy diễn hành trình nhiều ngã tư và vẽ lên bản đồ thực | – | – | – | – | – | ✓ |
+| Phù hợp cơ cấu phương tiện Việt Nam (tỷ trọng xe máy cao) | – | – | – | ✓ | Một phần | ✓ |
+| Hoạt động trên video CCTV thật, không cần phần cứng chuyên dụng | ✓ | ✓ | ✓ (cần dữ liệu lớn) | ✓ | ✓ | ✓ |
 
 ✓: Có hỗ trợ  –: Không hỗ trợ
 
@@ -110,15 +125,21 @@ chắn.
 
 ### Tổng hợp yêu cầu
 
-Từ kết quả khảo sát, đề tài xác định năm nhóm tính năng chính cần xây dựng:
-(i) phát hiện và theo dõi đối tượng theo thời gian thực trong từng camera;
-(ii) theo dõi xuyên camera, gán một định danh toàn cục (Global ID) duy nhất
-cho mỗi phương tiện/người đi bộ dù nó di chuyển qua nhiều camera; (iii) phát
-hiện sự cố giao thông tự động và cho phép người vận hành đánh dấu thủ công
-một đối tượng nghi vấn; (iv) dự đoán hướng đi của phương tiện tại ngã tư sắp
-tới và suy diễn tiếp hành trình dài hạn qua nhiều ngã tư trên bản đồ đường
-thực tế; (v) cung cấp giao diện giám sát thời gian thực (luồng video, cảnh
-báo, bản đồ hành trình dự đoán) cho người vận hành.
+Từ kết quả khảo sát, đề tài xác định năm nhóm tính năng chính cần xây dựng,
+trong đó **(iv) — dự đoán hướng đi dài hạn — là trọng tâm đóng góp chính**,
+đặt cạnh công trình gần nhất cùng bối cảnh giao thông Việt Nam (Chau et al.
+[1]) nhưng đi xa hơn ở việc suy diễn nhiều ngã tư liên tiếp trên bản đồ
+đường thực, không chỉ ngoại suy toạ độ ngắn hạn; các nhóm còn lại là hạ tầng
+cần thiết để vận hành (iv) trên dữ liệu thật, trong đó (ii) có hạn chế đã
+biết với xe máy (xem Chương 5, mục 5.5.8) và không phải tiêu chí đánh giá
+thành công chính của đề tài: (i) phát hiện và theo dõi đối tượng theo thời
+gian thực trong từng camera; (ii) theo dõi xuyên camera, gán một định danh
+toàn cục (Global ID) duy nhất cho mỗi phương tiện/người đi bộ dù nó di chuyển
+qua nhiều camera; (iii) phát hiện sự cố giao thông tự động và cho phép người
+vận hành đánh dấu thủ công một đối tượng nghi vấn; (iv) dự đoán hướng đi của
+phương tiện tại ngã tư sắp tới và suy diễn tiếp hành trình dài hạn qua nhiều
+ngã tư trên bản đồ đường thực tế; (v) cung cấp giao diện giám sát thời gian
+thực (luồng video, cảnh báo, bản đồ hành trình dự đoán) cho người vận hành.
 
 ---
 
@@ -516,3 +537,13 @@ năng, khả năng mở rộng, tính minh bạch của dự đoán và khả n�
 trên dữ liệu thực tế cũng đã được xác định. Trên cơ sở đó, Chương 3 sẽ trình
 bày nền tảng lý thuyết và công nghệ được lựa chọn để hiện thực hoá các yêu
 cầu trên.
+
+---
+
+## TÀI LIỆU THAM KHẢO (Chương 2)
+
+[1] T. Chau, D. V. Ngo, M. T. Nguyen, A. D. Nguyen-Tran, T. H. Do, "Leverage
+Deep Learning Methods for Vehicle Trajectory Prediction in Chaotic Traffic,"
+in *Intelligence of Things: Technologies and Applications (ICIT 2023)*,
+Lecture Notes on Data Engineering and Communications Technologies, vol. 187,
+Springer, Cham, 2023. DOI: 10.1007/978-3-031-46573-4_24.
