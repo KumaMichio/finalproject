@@ -2,7 +2,7 @@
 /api/stats — System statistics endpoints.
 """
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 
 from models.database import get_db
@@ -14,7 +14,7 @@ router = APIRouter()
 
 
 @router.get("/", response_model=SystemStats)
-def get_stats(db: Session = Depends(get_db)):
+def get_stats(request: Request, db: Session = Depends(get_db)):
     from app import get_uptime
 
     active_cameras = len(frame_buffer.get_camera_ids())
@@ -32,7 +32,7 @@ def get_stats(db: Session = Depends(get_db)):
         active_cameras=active_cameras,
         active_tracks=active_tracks,
         total_alerts_today=total_alerts_today,
-        uptime_seconds=get_uptime(),
+        uptime_seconds=get_uptime(request.app.state.start_time),
         source=source,
         map_enabled=map_enabled,
     )

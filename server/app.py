@@ -12,9 +12,12 @@ Chay voi AI pipeline tren video CCTV thuc (khong can CARLA):
     python app.py --with-ai --source file --video-path data/video1.mp4 --video-path data/video2.mp4
 
 Chay voi map/route prediction (can config co section 'route_prediction',
-vd camera_config_pho_hue.yaml):
+vd camera_config_pho_hue.yaml). --camera-ids PHAI khop dung 'camera_id' khai
+bao trong --config (mac dinh khong truyen se la CAM_001, CAM_002... khong
+khop voi calibration -> map/route prediction tat am tham, xem ai_processor.py):
     python app.py --with-ai --source file --video-path "<video Pho Hue>.mp4" \
-        --config ../custom_tracking_system/config/camera_config_pho_hue.yaml
+        --config ../custom_tracking_system/config/camera_config_pho_hue.yaml \
+        --camera-ids CAM_PHO_HUE_REAL
 """
 
 import asyncio
@@ -22,7 +25,7 @@ import logging
 import time
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from models.database import init_db
@@ -35,13 +38,17 @@ logger = logging.getLogger(__name__)
 # Lifespan — khoi dong / tat server
 # ---------------------------------------------------------------------------
 
-START_TIME: float = 0
-
-
 @asynccontextmanager
 async def lifespan(application: FastAPI):
-    global START_TIME
-    START_TIME = time.time()
+    # app.state, not a module global: "python app.py" runs this file as
+    # __main__, while routers/stats.py does `from app import get_uptime` —
+    # that import creates a SECOND, separate module object named "app" with
+    # its own fresh globals, so a module-level START_TIME set here would
+    # never be visible there (get_uptime() in that copy would see the
+    # un-set default and return raw time.time() instead of elapsed seconds).
+    # app.state lives on the actual FastAPI instance, shared regardless of
+    # which module identity imported it.
+    application.state.start_time = time.time()
 
     # Khoi tao database (tao bang neu chua co)
     init_db()
@@ -76,8 +83,8 @@ async def lifespan(application: FastAPI):
         _ai.stop()
 
 
-def get_uptime() -> float:
-    return time.time() - START_TIME
+def get_uptime(start_time: float) -> float:
+    return time.time() - start_time
 
 
 # ---------------------------------------------------------------------------
@@ -120,7 +127,7 @@ app.include_router(maproute.router, prefix="/api/map", tags=["Map"])
 # ---------------------------------------------------------------------------
 
 @app.get("/")
-async def root():
+async def root(request: Request):
     from services.ai_processor import get_ai_processor
 
     ai = get_ai_processor()
@@ -130,7 +137,7 @@ async def root():
         "name": "Multi-Camera CCTV Tracking System",
         "version": "1.0.0",
         "status": "running",
-        "uptime": get_uptime(),
+        "uptime": get_uptime(request.app.state.start_time),
         "ai_pipeline": ai_status,
         "docs": "/docs",
     }
