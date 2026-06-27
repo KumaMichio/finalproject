@@ -240,17 +240,28 @@ chương.
 
 | Mô hình | Tập đánh giá | Kết quả chính |
 |---|---|---|
-| YOLO11s_vn (phát hiện, 5 lớp giao thông VN) | 15.957 ảnh auto-label từ video CCTV thật (chưa hand-verify) | mAP50 = 89,5%, mAP50-95 = 77,0% |
+| YOLO11s_vn (phát hiện, 5 lớp giao thông VN) | 800 ảnh lấy mẫu ngẫu nhiên từ pool 15.957 ảnh auto-label (đã spot-check tay, xem dưới) | mAP50 = 89,5%, mAP50-95 = 77,0% |
 | OSNet fine-tune VeRi-776 v2 (ReID phương tiện) | VeRi-776 test set chuẩn (1.678 query / 11.579 gallery) | mAP = 71,89%, Rank-1 = 94,16%, Rank-5 = 96,84% |
 | Goal Classifier (real-world, horizon = 1,5s) | Test set track thật, tách riêng khỏi train (5.332 train / 1.334 test) | Accuracy = 60,12%, Balanced accuracy = 54,18%, ECE = 0,101 |
 
-Lưu ý quan trọng về độ tin cậy của từng số liệu: kết quả YOLO11s_vn đo trên
-nhãn tự động (auto-label), chưa qua xác minh tay toàn bộ, nên có thể lạc quan
-hơn so với đo trên ground-truth thủ công; kết quả OSNet là một benchmark
-retrieval ngoại tuyến (offline) trên crop sạch của VeRi-776, chưa phản ánh
-độ chính xác ghép cặp xuyên camera thật trong pipeline trực tiếp (với crop
-nhiễu từ detection/tracking); kết quả Goal Classifier đo trên track thật được
-tách biệt rõ giữa tập huấn luyện và tập kiểm thử (honest test set).
+Lưu ý quan trọng về độ tin cậy của từng số liệu: nhãn auto-label dùng huấn
+luyện YOLO11s_vn đã qua spot-check thủ công (120 ảnh grid đại diện, 1
+ảnh/video nguồn trong 124 video, kết luận >85% bbox hợp lệ — xem
+`docs/qa_auto_label.md`), không phải "chưa qua hand-verify" hoàn toàn; tuy
+nhiên đây là spot-check theo mẫu đại diện, không phải xác minh từng box trong
+toàn bộ 15.957 ảnh/623.329 box. Caveat quan trọng hơn nằm ở cách đo mAP: vì
+không lưu lại val split gốc từ lúc huấn luyện, mAP50/mAP50-95 ở trên được đo
+lại bằng cách lấy ngẫu nhiên 800 ảnh **từ chính pool dữ liệu đã dùng để
+huấn luyện** (`scripts/eval_yolo11s_autolabel.py`), không phải một tập kiểm
+thử độc lập (held-out) tách bạch — khác hẳn với Goal Classifier (train/test
+tách bạch rõ, xem cột bên). Số liệu này do đó có thể lạc quan hơn hiệu năng
+tổng quát hoá thật, và là một phần việc còn thiếu đã nêu ở mục 6.2(A) (cần
+một tập đánh giá YOLO độc lập, gán nhãn tay, ở địa điểm/thời điểm khác với
+dữ liệu huấn luyện). Kết quả OSNet là một benchmark retrieval ngoại tuyến
+(offline) trên crop sạch của VeRi-776, chưa phản ánh độ chính xác ghép cặp
+xuyên camera thật trong pipeline trực tiếp (với crop nhiễu từ
+detection/tracking); kết quả Goal Classifier đo trên track thật được tách
+biệt rõ giữa tập huấn luyện và tập kiểm thử (honest test set).
 
 ### 4.3.3 Minh hoạ chức năng chính
 

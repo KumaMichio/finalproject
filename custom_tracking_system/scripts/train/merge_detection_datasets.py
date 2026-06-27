@@ -50,13 +50,13 @@ def merge_split(name: str, src_root: Path, out_root: Path, split: str) -> int:
     return n
 
 
-def write_yaml(out_root: Path, yaml_path: Path):
+def write_yaml(out_root: Path, yaml_path: Path, names: list[str]):
     lines = [
         f"path: {out_root.resolve().as_posix()}",
         "train: images/train",
         "val: images/val",
-        f"nc: {len(VN_CLASS_NAMES)}",
-        f"names: {VN_CLASS_NAMES}",
+        f"nc: {len(names)}",
+        f"names: {names}",
         "",
     ]
     yaml_path.write_text('\n'.join(lines))
@@ -73,10 +73,18 @@ def main():
     parser.add_argument('--yaml', default=None,
                          help='path to write the ultralytics dataset config '
                               '(default: <out>.yaml)')
+    parser.add_argument('--names', nargs='+', default=None,
+                         help='class names, in id order (default: the 5 VN '
+                              'traffic classes — override for datasets with a '
+                              'different class set, e.g. --names 1 2 3 ... 0 '
+                              'for plate_chars_* or --names person car '
+                              'motorcycle bus truck license_plate for '
+                              'plate_pseudolabel)')
     args = parser.parse_args()
 
     out_root = Path(args.out)
     yaml_path = Path(args.yaml) if args.yaml else Path(str(out_root) + '.yaml')
+    names = args.names if args.names else VN_CLASS_NAMES
 
     for split in ('train', 'val'):
         total = 0
@@ -89,7 +97,7 @@ def main():
             total += n
         print(f"[{split}] total: {total} images -> {out_root / 'images' / split}")
 
-    write_yaml(out_root, yaml_path)
+    write_yaml(out_root, yaml_path, names)
     print(f"\nDataset config written to {yaml_path}")
     print(f"You can now run: python train_yolo_detector.py --data {yaml_path}")
 
