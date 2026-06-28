@@ -1,0 +1,450 @@
+{
+  "scriptCompleted": true,
+  "stats": {
+    "filesScanned": 244,
+    "filesWithImports": 54,
+    "totalEdges": 142
+  },
+  "importMap": {
+    ".gitattributes": [],
+    ".understand-anything/.understandignore": [],
+    "bao_cao_cuoi_cung.md": [],
+    "component_for_final/README.md": [],
+    "component_for_final/screenshots/capture_ui.mjs": [],
+    "component_for_final/screenshots/README.md": [],
+    "component_for_final/uml/01_usecase_tong_quat.puml": [],
+    "component_for_final/uml/02_usecase_uc1_phat_hien_theo_doi.puml": [],
+    "component_for_final/uml/03_usecase_uc2_xuyen_camera.puml": [],
+    "component_for_final/uml/04_usecase_uc3_su_co.puml": [],
+    "component_for_final/uml/05_usecase_uc4_hanh_trinh.puml": [],
+    "component_for_final/uml/06_activity_quy_trinh_truy_vet.puml": [],
+    "component_for_final/uml/07_activity_pipeline_1frame.puml": [],
+    "component_for_final/uml/08_sequence_tracking_xuyen_camera.puml": [],
+    "component_for_final/uml/09_sequence_danh_dau_route_map.puml": [],
+    "component_for_final/uml/10_class_diagram.puml": [],
+    "component_for_final/uml/11_package_diagram.puml": [],
+    "component_for_final/uml/12_component_kien_truc_tong_the.puml": [],
+    "component_for_final/uml/13_deployment.puml": [],
+    "custom_tracking_system/__init__.py": [
+      "custom_tracking_system/modules/alert_system.py",
+      "custom_tracking_system/modules/camera_controller.py",
+      "custom_tracking_system/modules/detector.py",
+      "custom_tracking_system/modules/global_tracking.py",
+      "custom_tracking_system/modules/reid.py",
+      "custom_tracking_system/modules/tracker.py",
+      "custom_tracking_system/modules/traffic_generator.py",
+      "custom_tracking_system/modules/trajectory_predictor.py",
+      "custom_tracking_system/utils/data_writer.py",
+      "custom_tracking_system/utils/metrics.py",
+      "custom_tracking_system/utils/visualization.py"
+    ],
+    "custom_tracking_system/auto_label_itd.py": [],
+    "custom_tracking_system/carla_bridge/server.py": [
+      "custom_tracking_system/modules/calibration.py",
+      "custom_tracking_system/modules/camera_controller.py",
+      "custom_tracking_system/modules/ground_truth.py",
+      "custom_tracking_system/modules/traffic_generator.py"
+    ],
+    "custom_tracking_system/carla_cam_det_v2.yaml": [],
+    "custom_tracking_system/config/camera_config_6cam.yaml": [],
+    "custom_tracking_system/config/camera_config_pho_hue.yaml": [],
+    "custom_tracking_system/config/camera_config_uc2_test.yaml": [],
+    "custom_tracking_system/config/camera_config.yaml": [],
+    "custom_tracking_system/constraints.txt": [],
+    "custom_tracking_system/docs/assets/eval_real/summary.csv": [],
+    "custom_tracking_system/docs/assets/mot_eval_v2/summary.csv": [],
+    "custom_tracking_system/docs/assets/mot_eval/summary.csv": [],
+    "custom_tracking_system/docs/assets/yolo11m_vn_carla6/results.csv": [],
+    "custom_tracking_system/docs/error.md": [],
+    "custom_tracking_system/georeference.py": [],
+    "custom_tracking_system/main.py": [
+      "custom_tracking_system/modules/alert_system.py",
+      "custom_tracking_system/modules/calibration.py",
+      "custom_tracking_system/modules/detector.py",
+      "custom_tracking_system/modules/evidence_package.py",
+      "custom_tracking_system/modules/global_tracking.py",
+      "custom_tracking_system/modules/goal_classifier.py",
+      "custom_tracking_system/modules/ground_truth.py",
+      "custom_tracking_system/modules/incident_detector.py",
+      "custom_tracking_system/modules/reid.py",
+      "custom_tracking_system/modules/tracker.py",
+      "custom_tracking_system/modules/trajectory_predictor.py",
+      "custom_tracking_system/modules/video_source.py",
+      "custom_tracking_system/utils/metrics.py",
+      "custom_tracking_system/utils/visualization.py"
+    ],
+    "custom_tracking_system/modules/alert_system.py": [],
+    "custom_tracking_system/modules/calibration.py": [],
+    "custom_tracking_system/modules/camera_controller.py": [],
+    "custom_tracking_system/modules/detector.py": [],
+    "custom_tracking_system/modules/evidence_package.py": [],
+    "custom_tracking_system/modules/global_tracking.py": [],
+    "custom_tracking_system/modules/goal_classifier.py": [],
+    "custom_tracking_system/modules/ground_truth.py": [],
+    "custom_tracking_system/modules/incident_detector.py": [],
+    "custom_tracking_system/modules/incident_snapshot.py": [],
+    "custom_tracking_system/modules/plate_ocr.py": [],
+    "custom_tracking_system/modules/reid.py": [],
+    "custom_tracking_system/modules/scenario_controller.py": [],
+    "custom_tracking_system/modules/tracker.py": [],
+    "custom_tracking_system/modules/traffic_generator.py": [],
+    "custom_tracking_system/modules/traffic_light_classifier.py": [],
+    "custom_tracking_system/modules/trajectory_gru.py": [],
+    "custom_tracking_system/modules/trajectory_predictor.py": [],
+    "custom_tracking_system/modules/video_source.py": [],
+    "custom_tracking_system/README.md": [],
+    "custom_tracking_system/requirements_cpu.txt": [],
+    "custom_tracking_system/requirements.txt": [],
+    "custom_tracking_system/route_predictor.py": [],
+    "custom_tracking_system/run.bat": [],
+    "custom_tracking_system/scripts/autolabel_turning.py": [],
+    "custom_tracking_system/scripts/benchmark_pipeline.py": [
+      "custom_tracking_system/modules/detector.py",
+      "custom_tracking_system/modules/goal_classifier.py",
+      "custom_tracking_system/modules/tracker.py"
+    ],
+    "custom_tracking_system/scripts/collect/collect_carla_cam_data.py": [
+      "custom_tracking_system/modules/calibration.py",
+      "custom_tracking_system/modules/traffic_generator.py"
+    ],
+    "custom_tracking_system/scripts/collect/collect_carla_cam_det_v2.py": [
+      "custom_tracking_system/modules/calibration.py"
+    ],
+    "custom_tracking_system/scripts/collect/collect_carla_detection_data.py": [
+      "custom_tracking_system/modules/calibration.py",
+      "custom_tracking_system/modules/traffic_generator.py"
+    ],
+    "custom_tracking_system/scripts/collect/collect_trajectory_data.py": [],
+    "custom_tracking_system/scripts/demo_accident_scenario.py": [
+      "custom_tracking_system/georeference.py",
+      "custom_tracking_system/route_predictor.py"
+    ],
+    "custom_tracking_system/scripts/demo_real_video_scenario.py": [
+      "custom_tracking_system/georeference.py",
+      "custom_tracking_system/modules/calibration.py",
+      "custom_tracking_system/modules/detector.py",
+      "custom_tracking_system/modules/goal_classifier.py",
+      "custom_tracking_system/modules/tracker.py",
+      "custom_tracking_system/modules/video_source.py",
+      "custom_tracking_system/route_predictor.py"
+    ],
+    "custom_tracking_system/scripts/eval_plate_chars_detector.py": [],
+    "custom_tracking_system/scripts/eval_yolo11s_autolabel.py": [],
+    "custom_tracking_system/scripts/eval_yolo11s_vn_plate.py": [],
+    "custom_tracking_system/scripts/eval_yolo11s.py": [],
+    "custom_tracking_system/scripts/eval/apply_id_corrections.py": [],
+    "custom_tracking_system/scripts/eval/detect_road_lines.py": [],
+    "custom_tracking_system/scripts/eval/eval_route_predictor_priors.py": [],
+    "custom_tracking_system/scripts/eval/eval_trajectory_gru.py": [
+      "custom_tracking_system/modules/trajectory_gru.py"
+    ],
+    "custom_tracking_system/scripts/eval/eval_veri_reid.py": [],
+    "custom_tracking_system/scripts/eval/evaluate_tracking.py": [
+      "custom_tracking_system/utils/mot_evaluator.py"
+    ],
+    "custom_tracking_system/scripts/eval/multiframe_plate_fusion.py": [
+      "custom_tracking_system/modules/detector.py",
+      "custom_tracking_system/modules/tracker.py",
+      "custom_tracking_system/scripts/eval/test_plate_ocr_feasibility_v3.py",
+      "custom_tracking_system/scripts/eval/test_plate_ocr_feasibility.py"
+    ],
+    "custom_tracking_system/scripts/eval/plot_veri_results.py": [],
+    "custom_tracking_system/scripts/eval/pseudo_label_plates.py": [
+      "custom_tracking_system/modules/detector.py",
+      "custom_tracking_system/scripts/eval/test_plate_ocr_feasibility_v3.py",
+      "custom_tracking_system/scripts/eval/test_plate_ocr_feasibility.py"
+    ],
+    "custom_tracking_system/scripts/eval/reid_pipeline_benchmark.py": [
+      "custom_tracking_system/modules/reid.py"
+    ],
+    "custom_tracking_system/scripts/eval/render_pred_review.py": [],
+    "custom_tracking_system/scripts/eval/smoke_test_dual_reid.py": [
+      "custom_tracking_system/modules/reid.py"
+    ],
+    "custom_tracking_system/scripts/eval/test_plate_ocr_feasibility_v2.py": [
+      "custom_tracking_system/modules/plate_ocr.py",
+      "custom_tracking_system/scripts/eval/test_plate_ocr_feasibility.py"
+    ],
+    "custom_tracking_system/scripts/eval/test_plate_ocr_feasibility_v3.py": [
+      "custom_tracking_system/scripts/eval/test_plate_ocr_feasibility.py"
+    ],
+    "custom_tracking_system/scripts/eval/test_plate_ocr_feasibility.py": [
+      "custom_tracking_system/modules/plate_ocr.py"
+    ],
+    "custom_tracking_system/scripts/eval/test_traffic_light_feasibility.py": [],
+    "custom_tracking_system/scripts/eval/tune_incident_thresholds.py": [],
+    "custom_tracking_system/scripts/extract_real_trajectories.py": [],
+    "custom_tracking_system/scripts/parse_xodr.py": [],
+    "custom_tracking_system/scripts/preview_cameras.py": [],
+    "custom_tracking_system/scripts/test_georeference.py": [
+      "custom_tracking_system/georeference.py"
+    ],
+    "custom_tracking_system/scripts/test_load_opendrive.py": [],
+    "custom_tracking_system/scripts/test_map_integration.py": [
+      "custom_tracking_system/georeference.py",
+      "custom_tracking_system/modules/calibration.py",
+      "custom_tracking_system/modules/goal_classifier.py",
+      "custom_tracking_system/route_predictor.py"
+    ],
+    "custom_tracking_system/scripts/test_route_predictor.py": [
+      "custom_tracking_system/georeference.py",
+      "custom_tracking_system/route_predictor.py"
+    ],
+    "custom_tracking_system/scripts/tools/pick_polygon_points.py": [],
+    "custom_tracking_system/scripts/trace_single_track.py": [
+      "custom_tracking_system/modules/detector.py",
+      "custom_tracking_system/modules/goal_classifier.py",
+      "custom_tracking_system/modules/tracker.py"
+    ],
+    "custom_tracking_system/scripts/train/continue_train.py": [],
+    "custom_tracking_system/scripts/train/merge_detection_datasets.py": [],
+    "custom_tracking_system/scripts/train/prepare_synthetic_char_data.py": [],
+    "custom_tracking_system/scripts/train/prepare_visdrone_dataset.py": [],
+    "custom_tracking_system/scripts/train/resume_carla6.py": [],
+    "custom_tracking_system/scripts/train/resume_stage2.py": [],
+    "custom_tracking_system/scripts/train/resume_train.py": [],
+    "custom_tracking_system/scripts/train/train_goal_classifier_real.py": [],
+    "custom_tracking_system/scripts/train/train_goal_classifier.py": [],
+    "custom_tracking_system/scripts/train/train_trajectory_predictor.py": [
+      "custom_tracking_system/modules/trajectory_gru.py"
+    ],
+    "custom_tracking_system/scripts/train/train_veri.py": [],
+    "custom_tracking_system/scripts/train/train_yolo_detector.py": [],
+    "custom_tracking_system/scripts/visualize_goal_predictions.py": [
+      "custom_tracking_system/modules/detector.py",
+      "custom_tracking_system/modules/goal_classifier.py",
+      "custom_tracking_system/modules/tracker.py"
+    ],
+    "custom_tracking_system/scripts/viz/visualize_trajectories.py": [],
+    "custom_tracking_system/smoke_test_itd.py": [],
+    "custom_tracking_system/utils/data_writer.py": [],
+    "custom_tracking_system/utils/metrics.py": [],
+    "custom_tracking_system/utils/mot_evaluator.py": [],
+    "custom_tracking_system/utils/visualization.py": [],
+    "custom_tracking_system/weights/_backup_horizon1.0/goal_classifier_real.pkl": [],
+    "custom_tracking_system/weights/_backup_horizon1.0/goal_feature_names_real.json": [],
+    "custom_tracking_system/weights/_backup_horizon1.0/goal_label_encoder_real.pkl": [],
+    "custom_tracking_system/weights/_backup_horizon1.0/goal_scaler_real.pkl": [],
+    "custom_tracking_system/weights/goal_classifier.pkl": [],
+    "custom_tracking_system/weights/goal_feature_names_real.json": [],
+    "custom_tracking_system/weights/goal_label_encoder_real.pkl": [],
+    "custom_tracking_system/weights/goal_scaler_real.pkl": [],
+    "custom_tracking_system/weights/osnet_veri776_v2.pth": [],
+    "custom_tracking_system/weights/osnet_veri776.pth": [],
+    "custom_tracking_system/weights/trajectory_gru.pth": [],
+    "custom_tracking_system/weights/yolo11m_vn.pt": [],
+    "custom_tracking_system/weights/yolo11s_carla_v2.pt": [],
+    "demo/incident_state.json": [],
+    "demo/map_view.html": [],
+    "demo/server.py": [],
+    "docs/assets/benchmark_pipeline.json": [],
+    "docs/assets/goal_classifier_real/metrics_v0_baseline.json": [],
+    "docs/assets/goal_classifier_real/metrics_v1_jf065_balanced.json": [],
+    "docs/assets/goal_classifier_real/metrics.json": [],
+    "docs/assets/osnet_veri776_v2/reid_eval_veri_test.json": [],
+    "docs/assets/osnet_veri776_v2/results.csv": [],
+    "docs/assets/plate_chars_detector/train_results.csv": [],
+    "docs/assets/plate_ocr_feasibility_v2/feasibility_v2_summary.json": [],
+    "docs/assets/plate_ocr_feasibility_v3/feasibility_v3_summary.json": [],
+    "docs/assets/plate_ocr_feasibility/feasibility_summary.json": [],
+    "docs/assets/trajectory_gru/ade_fde_results.json": [],
+    "docs/assets/trajectory_gru/train_log.txt": [],
+    "docs/assets/yolo11m_vn_carla/results.csv": [],
+    "docs/assets/yolo11m_vn_carla5/results.csv": [],
+    "docs/assets/yolo11s_carla_v2/forgetting_check_vs_visdrone_carla_vn.txt": [],
+    "docs/assets/yolo11s_carla_v2/results.csv": [],
+    "docs/assets/yolo11s_vn_plate/train_results.csv": [],
+    "docs/bao_cao_tien_do.md": [],
+    "docs/build_carla_from_ue4_source.md": [],
+    "docs/chuong1_gioi_thieu_de_tai.md": [],
+    "docs/chuong2_khao_sat_phan_tich_yeu_cau.md": [],
+    "docs/chuong3_nen_tang_ly_thuyet_va_cong_nghe.md": [],
+    "docs/chuong4_phan_tich_thiet_ke_trien_khai_danh_gia.md": [],
+    "docs/chuong5_cac_giai_phap_dong_gop_noi_bat.md": [],
+    "docs/chuong6_ket_luan_huong_phat_trien.md": [],
+    "docs/demo.md": [],
+    "docs/description.md": [],
+    "docs/development_roadmap.md": [],
+    "docs/execute.md": [],
+    "docs/finetune_cloud_prompt.md": [],
+    "docs/gpu_cloud_tasks.md": [],
+    "docs/instruction.txt": [],
+    "docs/MUST.md": [],
+    "docs/plan_thu_thap_gt_bytetrack.md": [],
+    "docs/plan_tinh_chinh_nguong_incident.md": [],
+    "docs/plan.md": [],
+    "docs/post_accident_prediction.md": [],
+    "docs/production_model_stack.md": [],
+    "docs/project_context.md": [],
+    "docs/qa_auto_label.md": [],
+    "docs/report.md": [],
+    "docs/tomorrow.md": [],
+    "docs/upgrade.md": [],
+    "docs/workflow.md": [],
+    "frontend/index.html": [],
+    "frontend/package.json": [],
+    "frontend/postcss.config.js": [],
+    "frontend/src/App.jsx": [
+      "frontend/src/pages/AlertManagement.jsx",
+      "frontend/src/pages/Dashboard.jsx",
+      "frontend/src/pages/IncidentDetail.jsx",
+      "frontend/src/pages/MapView.jsx",
+      "frontend/src/pages/ObjectHistory.jsx"
+    ],
+    "frontend/src/components/CameraFeed.jsx": [
+      "frontend/src/services/api.js"
+    ],
+    "frontend/src/components/CameraGrid.jsx": [
+      "frontend/src/components/CameraFeed.jsx"
+    ],
+    "frontend/src/components/IncidentCard.jsx": [],
+    "frontend/src/components/IncidentPanel.jsx": [
+      "frontend/src/components/IncidentCard.jsx"
+    ],
+    "frontend/src/components/ScenarioPanel.jsx": [
+      "frontend/src/services/api.js"
+    ],
+    "frontend/src/components/StatsBar.jsx": [
+      "frontend/src/hooks/useWebSocket.js"
+    ],
+    "frontend/src/hooks/useIncidents.js": [
+      "frontend/src/hooks/useWebSocket.js"
+    ],
+    "frontend/src/hooks/useWebSocket.js": [],
+    "frontend/src/index.css": [],
+    "frontend/src/main.jsx": [
+      "frontend/src/App.jsx",
+      "frontend/src/index.css"
+    ],
+    "frontend/src/pages/AlertManagement.jsx": [
+      "frontend/src/services/api.js"
+    ],
+    "frontend/src/pages/Dashboard.jsx": [
+      "frontend/src/components/CameraGrid.jsx",
+      "frontend/src/components/IncidentPanel.jsx",
+      "frontend/src/components/ScenarioPanel.jsx",
+      "frontend/src/components/StatsBar.jsx",
+      "frontend/src/hooks/useIncidents.js",
+      "frontend/src/services/api.js"
+    ],
+    "frontend/src/pages/IncidentDetail.jsx": [
+      "frontend/src/services/api.js"
+    ],
+    "frontend/src/pages/MapView.jsx": [
+      "frontend/src/services/api.js"
+    ],
+    "frontend/src/pages/ObjectHistory.jsx": [
+      "frontend/src/services/api.js"
+    ],
+    "frontend/src/services/api.js": [],
+    "frontend/tailwind.config.js": [],
+    "frontend/vite.config.js": [],
+    "Map/buildings_hanoi_district3.json": [],
+    "Map/buildings_render.py": [],
+    "Map/extract_buildings.py": [
+      "Map/georeference.py"
+    ],
+    "Map/fit_camera_pose.py": [
+      "Map/georeference.py"
+    ],
+    "Map/georeference.py": [],
+    "Map/hanoi_district3.xodr": [],
+    "Map/inspect_opendrive3.py": [],
+    "Map/junction_graph.json": [],
+    "Map/map3_smaller.osm": [],
+    "Map/pho_hue_tkc_junction_graph.json": [],
+    "Map/pho_hue_tkc.osm": [],
+    "Map/pho_hue_tkc.xodr": [],
+    "Map/test_buildings_grey.py": [
+      "Map/buildings_render.py"
+    ],
+    "Map/test_buildings.py": [],
+    "Map/test_traffic_lights.py": [
+      "Map/traffic_light_sim.py"
+    ],
+    "Map/test_traffic.py": [],
+    "Map/traffic_light_sim.py": [],
+    "qa_autolabel.py": [],
+    "server/__init__.py": [],
+    "server/app.py": [
+      "server/config.py",
+      "server/models/database.py",
+      "server/routers/__init__.py",
+      "server/routers/alerts.py",
+      "server/routers/cameras.py",
+      "server/routers/maproute.py",
+      "server/routers/rois.py",
+      "server/routers/scenarios.py",
+      "server/routers/stats.py",
+      "server/routers/stream.py",
+      "server/routers/tracks.py",
+      "server/routers/websocket.py"
+    ],
+    "server/config.py": [],
+    "server/middleware/__init__.py": [],
+    "server/models/__init__.py": [],
+    "server/models/database.py": [],
+    "server/models/schemas.py": [],
+    "server/requirements.txt": [],
+    "server/routers/__init__.py": [],
+    "server/routers/alerts.py": [
+      "server/models/database.py",
+      "server/models/schemas.py",
+      "server/services/__init__.py",
+      "server/services/alert_service.py"
+    ],
+    "server/routers/cameras.py": [
+      "server/models/database.py",
+      "server/models/schemas.py",
+      "server/services/__init__.py",
+      "server/services/camera_service.py"
+    ],
+    "server/routers/maproute.py": [
+      "server/services/ai_processor.py"
+    ],
+    "server/routers/rois.py": [
+      "server/models/database.py",
+      "server/models/schemas.py"
+    ],
+    "server/routers/scenarios.py": [
+      "server/services/ai_processor.py"
+    ],
+    "server/routers/stats.py": [
+      "server/models/database.py",
+      "server/models/schemas.py",
+      "server/services/__init__.py",
+      "server/services/alert_service.py",
+      "server/services/stream_service.py",
+      "server/services/tracking_service.py"
+    ],
+    "server/routers/stream.py": [
+      "server/config.py",
+      "server/services/stream_service.py"
+    ],
+    "server/routers/tracks.py": [
+      "server/models/database.py",
+      "server/models/schemas.py",
+      "server/services/__init__.py",
+      "server/services/tracking_service.py"
+    ],
+    "server/routers/websocket.py": [],
+    "server/run_server.bat": [],
+    "server/services/__init__.py": [],
+    "server/services/ai_processor.py": [],
+    "server/services/alert_service.py": [
+      "server/models/database.py"
+    ],
+    "server/services/camera_service.py": [
+      "server/models/database.py"
+    ],
+    "server/services/stream_service.py": [
+      "server/config.py"
+    ],
+    "server/services/tracking_service.py": [
+      "server/models/database.py"
+    ],
+    "start.bat": [],
+    "stop.bat": [],
+    "things_to_do.md": []
+  }
+}

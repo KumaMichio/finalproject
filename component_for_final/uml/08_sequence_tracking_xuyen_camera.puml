@@ -1,7 +1,7 @@
 @startuml sequence_tracking_xuyen_camera
 ' Sequence diagram - Tracking xuyên camera
 skinparam shadowing false
-title Sequence Diagram - Theo dõi xuyên camera (UC1 -> UC2)
+title Sequence Diagram - Theo dõi xuyên camera (hạ tầng Re-ID hỗ trợ UC1)
 
 actor "Người vận hành" as Op
 participant "VideoSource\n(camera)" as VS

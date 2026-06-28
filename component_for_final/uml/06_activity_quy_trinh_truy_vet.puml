@@ -1,7 +1,7 @@
 @startuml activity_quy_trinh_truy_vet
-' Hình 2.6 - Biểu đồ hoạt động: Quy trình giám sát & truy vết phương tiện sau sự cố
+' Hình 2.5 - Biểu đồ hoạt động: Quy trình giám sát & truy vết phương tiện sau sự cố
 skinparam shadowing false
-title Hình 2.6 - Quy trình giám sát & truy vết phương tiện sau sự cố
+title Hình 2.5 - Quy trình giám sát & truy vết phương tiện sau sự cố
 
 start
 :Camera bắt đầu giám sát;
@@ -11,7 +11,7 @@ if (Có dấu hiệu sự cố theo luật (UC3.1)\nHOẶC người vận hành 
   :UC3.3 - Đóng gói bằng chứng sự cố;
   :Đối tượng tiếp tục di chuyển,\nrời khỏi camera hiện tại;
   if (Đối tượng xuất hiện lại\nở một camera khác?) then (Có)
-    :UC2 - So khớp đặc trưng,\ngán lại đúng Global ID;
+    :Re-ID hạ tầng - So khớp đặc trưng,\ngán lại đúng Global ID;
   else (Không / chưa)
   endif
   :UC4.1 - Dự đoán hướng rẽ\ntại ngã tư kế tiếp;

@@ -1,0 +1,1225 @@
+{
+  "projectRoot": "E:/School_project/finalproject",
+  "files": [
+    {
+      "path": ".gitattributes",
+      "language": "unknown",
+      "fileCategory": "code"
+    },
+    {
+      "path": ".understand-anything/.understandignore",
+      "language": "unknown",
+      "fileCategory": "code"
+    },
+    {
+      "path": "bao_cao_cuoi_cung.md",
+      "language": "markdown",
+      "fileCategory": "docs"
+    },
+    {
+      "path": "component_for_final/README.md",
+      "language": "markdown",
+      "fileCategory": "docs"
+    },
+    {
+      "path": "component_for_final/screenshots/capture_ui.mjs",
+      "language": "javascript",
+      "fileCategory": "code"
+    },
+    {
+      "path": "component_for_final/screenshots/README.md",
+      "language": "markdown",
+      "fileCategory": "docs"
+    },
+    {
+      "path": "component_for_final/uml/01_usecase_tong_quat.puml",
+      "language": "puml",
+      "fileCategory": "code"
+    },
+    {
+      "path": "component_for_final/uml/02_usecase_uc1_phat_hien_theo_doi.puml",
+      "language": "puml",
+      "fileCategory": "code"
+    },
+    {
+      "path": "component_for_final/uml/03_usecase_uc2_xuyen_camera.puml",
+      "language": "puml",
+      "fileCategory": "code"
+    },
+    {
+      "path": "component_for_final/uml/04_usecase_uc3_su_co.puml",
+      "language": "puml",
+      "fileCategory": "code"
+    },
+    {
+      "path": "component_for_final/uml/05_usecase_uc4_hanh_trinh.puml",
+      "language": "puml",
+      "fileCategory": "code"
+    },
+    {
+      "path": "component_for_final/uml/06_activity_quy_trinh_truy_vet.puml",
+      "language": "puml",
+      "fileCategory": "code"
+    },
+    {
+      "path": "component_for_final/uml/07_activity_pipeline_1frame.puml",
+      "language": "puml",
+      "fileCategory": "code"
+    },
+    {
+      "path": "component_for_final/uml/08_sequence_tracking_xuyen_camera.puml",
+      "language": "puml",
+      "fileCategory": "code"
+    },
+    {
+      "path": "component_for_final/uml/09_sequence_danh_dau_route_map.puml",
+      "language": "puml",
+      "fileCategory": "code"
+    },
+    {
+      "path": "component_for_final/uml/10_class_diagram.puml",
+      "language": "puml",
+      "fileCategory": "code"
+    },
+    {
+      "path": "component_for_final/uml/11_package_diagram.puml",
+      "language": "puml",
+      "fileCategory": "code"
+    },
+    {
+      "path": "component_for_final/uml/12_component_kien_truc_tong_the.puml",
+      "language": "puml",
+      "fileCategory": "code"
+    },
+    {
+      "path": "component_for_final/uml/13_deployment.puml",
+      "language": "puml",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/__init__.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/auto_label_itd.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/carla_bridge/server.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/carla_cam_det_v2.yaml",
+      "language": "yaml",
+      "fileCategory": "config"
+    },
+    {
+      "path": "custom_tracking_system/config/camera_config_6cam.yaml",
+      "language": "yaml",
+      "fileCategory": "config"
+    },
+    {
+      "path": "custom_tracking_system/config/camera_config_pho_hue.yaml",
+      "language": "yaml",
+      "fileCategory": "config"
+    },
+    {
+      "path": "custom_tracking_system/config/camera_config_uc2_test.yaml",
+      "language": "yaml",
+      "fileCategory": "config"
+    },
+    {
+      "path": "custom_tracking_system/config/camera_config.yaml",
+      "language": "yaml",
+      "fileCategory": "config"
+    },
+    {
+      "path": "custom_tracking_system/constraints.txt",
+      "language": "txt",
+      "fileCategory": "docs"
+    },
+    {
+      "path": "custom_tracking_system/docs/assets/eval_real/summary.csv",
+      "language": "csv",
+      "fileCategory": "data"
+    },
+    {
+      "path": "custom_tracking_system/docs/assets/mot_eval_v2/summary.csv",
+      "language": "csv",
+      "fileCategory": "data"
+    },
+    {
+      "path": "custom_tracking_system/docs/assets/mot_eval/summary.csv",
+      "language": "csv",
+      "fileCategory": "data"
+    },
+    {
+      "path": "custom_tracking_system/docs/assets/yolo11m_vn_carla6/results.csv",
+      "language": "csv",
+      "fileCategory": "data"
+    },
+    {
+      "path": "custom_tracking_system/docs/error.md",
+      "language": "markdown",
+      "fileCategory": "docs"
+    },
+    {
+      "path": "custom_tracking_system/georeference.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/main.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/modules/alert_system.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/modules/calibration.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/modules/camera_controller.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/modules/detector.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/modules/evidence_package.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/modules/global_tracking.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/modules/goal_classifier.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/modules/ground_truth.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/modules/incident_detector.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/modules/incident_snapshot.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/modules/plate_ocr.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/modules/reid.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/modules/scenario_controller.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/modules/tracker.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/modules/traffic_generator.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/modules/traffic_light_classifier.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/modules/trajectory_gru.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/modules/trajectory_predictor.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/modules/video_source.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/README.md",
+      "language": "markdown",
+      "fileCategory": "docs"
+    },
+    {
+      "path": "custom_tracking_system/requirements_cpu.txt",
+      "language": "txt",
+      "fileCategory": "docs"
+    },
+    {
+      "path": "custom_tracking_system/requirements.txt",
+      "language": "txt",
+      "fileCategory": "docs"
+    },
+    {
+      "path": "custom_tracking_system/route_predictor.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/run.bat",
+      "language": "batch",
+      "fileCategory": "script"
+    },
+    {
+      "path": "custom_tracking_system/scripts/autolabel_turning.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/benchmark_pipeline.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/collect/collect_carla_cam_data.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/collect/collect_carla_cam_det_v2.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/collect/collect_carla_detection_data.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/collect/collect_trajectory_data.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/demo_accident_scenario.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/demo_real_video_scenario.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/eval_plate_chars_detector.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/eval_yolo11s_autolabel.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/eval_yolo11s_vn_plate.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/eval_yolo11s.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/eval/apply_id_corrections.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/eval/detect_road_lines.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/eval/eval_route_predictor_priors.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/eval/eval_trajectory_gru.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/eval/eval_veri_reid.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/eval/evaluate_tracking.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/eval/multiframe_plate_fusion.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/eval/plot_veri_results.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/eval/pseudo_label_plates.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/eval/reid_pipeline_benchmark.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/eval/render_pred_review.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/eval/smoke_test_dual_reid.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/eval/test_plate_ocr_feasibility_v2.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/eval/test_plate_ocr_feasibility_v3.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/eval/test_plate_ocr_feasibility.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/eval/test_traffic_light_feasibility.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/eval/tune_incident_thresholds.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/extract_real_trajectories.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/parse_xodr.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/preview_cameras.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/test_georeference.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/test_load_opendrive.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/test_map_integration.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/test_route_predictor.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/tools/pick_polygon_points.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/trace_single_track.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/train/continue_train.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/train/merge_detection_datasets.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/train/prepare_synthetic_char_data.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/train/prepare_visdrone_dataset.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/train/resume_carla6.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/train/resume_stage2.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/train/resume_train.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/train/train_goal_classifier_real.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/train/train_goal_classifier.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/train/train_trajectory_predictor.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/train/train_veri.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/train/train_yolo_detector.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/visualize_goal_predictions.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/viz/visualize_trajectories.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/smoke_test_itd.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/utils/data_writer.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/utils/metrics.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/utils/mot_evaluator.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/utils/visualization.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/weights/_backup_horizon1.0/goal_classifier_real.pkl",
+      "language": "pkl",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/weights/_backup_horizon1.0/goal_feature_names_real.json",
+      "language": "json",
+      "fileCategory": "config"
+    },
+    {
+      "path": "custom_tracking_system/weights/_backup_horizon1.0/goal_label_encoder_real.pkl",
+      "language": "pkl",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/weights/_backup_horizon1.0/goal_scaler_real.pkl",
+      "language": "pkl",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/weights/goal_classifier.pkl",
+      "language": "pkl",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/weights/goal_feature_names_real.json",
+      "language": "json",
+      "fileCategory": "config"
+    },
+    {
+      "path": "custom_tracking_system/weights/goal_label_encoder_real.pkl",
+      "language": "pkl",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/weights/goal_scaler_real.pkl",
+      "language": "pkl",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/weights/osnet_veri776_v2.pth",
+      "language": "pth",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/weights/osnet_veri776.pth",
+      "language": "pth",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/weights/trajectory_gru.pth",
+      "language": "pth",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/weights/yolo11m_vn.pt",
+      "language": "pt",
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/weights/yolo11s_carla_v2.pt",
+      "language": "pt",
+      "fileCategory": "code"
+    },
+    {
+      "path": "demo/incident_state.json",
+      "language": "json",
+      "fileCategory": "config"
+    },
+    {
+      "path": "demo/map_view.html",
+      "language": "html",
+      "fileCategory": "markup"
+    },
+    {
+      "path": "demo/server.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "docs/assets/benchmark_pipeline.json",
+      "language": "json",
+      "fileCategory": "config"
+    },
+    {
+      "path": "docs/assets/goal_classifier_real/metrics_v0_baseline.json",
+      "language": "json",
+      "fileCategory": "config"
+    },
+    {
+      "path": "docs/assets/goal_classifier_real/metrics_v1_jf065_balanced.json",
+      "language": "json",
+      "fileCategory": "config"
+    },
+    {
+      "path": "docs/assets/goal_classifier_real/metrics.json",
+      "language": "json",
+      "fileCategory": "config"
+    },
+    {
+      "path": "docs/assets/osnet_veri776_v2/reid_eval_veri_test.json",
+      "language": "json",
+      "fileCategory": "config"
+    },
+    {
+      "path": "docs/assets/osnet_veri776_v2/results.csv",
+      "language": "csv",
+      "fileCategory": "data"
+    },
+    {
+      "path": "docs/assets/plate_chars_detector/train_results.csv",
+      "language": "csv",
+      "fileCategory": "data"
+    },
+    {
+      "path": "docs/assets/plate_ocr_feasibility_v2/feasibility_v2_summary.json",
+      "language": "json",
+      "fileCategory": "config"
+    },
+    {
+      "path": "docs/assets/plate_ocr_feasibility_v3/feasibility_v3_summary.json",
+      "language": "json",
+      "fileCategory": "config"
+    },
+    {
+      "path": "docs/assets/plate_ocr_feasibility/feasibility_summary.json",
+      "language": "json",
+      "fileCategory": "config"
+    },
+    {
+      "path": "docs/assets/trajectory_gru/ade_fde_results.json",
+      "language": "json",
+      "fileCategory": "config"
+    },
+    {
+      "path": "docs/assets/trajectory_gru/train_log.txt",
+      "language": "txt",
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/assets/yolo11m_vn_carla/results.csv",
+      "language": "csv",
+      "fileCategory": "data"
+    },
+    {
+      "path": "docs/assets/yolo11m_vn_carla5/results.csv",
+      "language": "csv",
+      "fileCategory": "data"
+    },
+    {
+      "path": "docs/assets/yolo11s_carla_v2/forgetting_check_vs_visdrone_carla_vn.txt",
+      "language": "txt",
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/assets/yolo11s_carla_v2/results.csv",
+      "language": "csv",
+      "fileCategory": "data"
+    },
+    {
+      "path": "docs/assets/yolo11s_vn_plate/train_results.csv",
+      "language": "csv",
+      "fileCategory": "data"
+    },
+    {
+      "path": "docs/bao_cao_tien_do.md",
+      "language": "markdown",
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/build_carla_from_ue4_source.md",
+      "language": "markdown",
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/chuong1_gioi_thieu_de_tai.md",
+      "language": "markdown",
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/chuong2_khao_sat_phan_tich_yeu_cau.md",
+      "language": "markdown",
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/chuong3_nen_tang_ly_thuyet_va_cong_nghe.md",
+      "language": "markdown",
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/chuong4_phan_tich_thiet_ke_trien_khai_danh_gia.md",
+      "language": "markdown",
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/chuong5_cac_giai_phap_dong_gop_noi_bat.md",
+      "language": "markdown",
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/chuong6_ket_luan_huong_phat_trien.md",
+      "language": "markdown",
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/demo.md",
+      "language": "markdown",
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/description.md",
+      "language": "markdown",
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/development_roadmap.md",
+      "language": "markdown",
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/execute.md",
+      "language": "markdown",
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/finetune_cloud_prompt.md",
+      "language": "markdown",
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/gpu_cloud_tasks.md",
+      "language": "markdown",
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/instruction.txt",
+      "language": "txt",
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/MUST.md",
+      "language": "markdown",
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/plan_thu_thap_gt_bytetrack.md",
+      "language": "markdown",
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/plan_tinh_chinh_nguong_incident.md",
+      "language": "markdown",
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/plan.md",
+      "language": "markdown",
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/post_accident_prediction.md",
+      "language": "markdown",
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/production_model_stack.md",
+      "language": "markdown",
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/project_context.md",
+      "language": "markdown",
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/qa_auto_label.md",
+      "language": "markdown",
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/report.md",
+      "language": "markdown",
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/tomorrow.md",
+      "language": "markdown",
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/upgrade.md",
+      "language": "markdown",
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/workflow.md",
+      "language": "markdown",
+      "fileCategory": "docs"
+    },
+    {
+      "path": "frontend/index.html",
+      "language": "html",
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/package.json",
+      "language": "json",
+      "fileCategory": "config"
+    },
+    {
+      "path": "frontend/postcss.config.js",
+      "language": "javascript",
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/App.jsx",
+      "language": "javascript",
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/components/CameraFeed.jsx",
+      "language": "javascript",
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/components/CameraGrid.jsx",
+      "language": "javascript",
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/components/IncidentCard.jsx",
+      "language": "javascript",
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/components/IncidentPanel.jsx",
+      "language": "javascript",
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/components/ScenarioPanel.jsx",
+      "language": "javascript",
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/components/StatsBar.jsx",
+      "language": "javascript",
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/hooks/useIncidents.js",
+      "language": "javascript",
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/hooks/useWebSocket.js",
+      "language": "javascript",
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/index.css",
+      "language": "css",
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/main.jsx",
+      "language": "javascript",
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/pages/AlertManagement.jsx",
+      "language": "javascript",
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/pages/Dashboard.jsx",
+      "language": "javascript",
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/pages/IncidentDetail.jsx",
+      "language": "javascript",
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/pages/MapView.jsx",
+      "language": "javascript",
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/pages/ObjectHistory.jsx",
+      "language": "javascript",
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/services/api.js",
+      "language": "javascript",
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/tailwind.config.js",
+      "language": "javascript",
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/vite.config.js",
+      "language": "javascript",
+      "fileCategory": "code"
+    },
+    {
+      "path": "Map/buildings_hanoi_district3.json",
+      "language": "json",
+      "fileCategory": "config"
+    },
+    {
+      "path": "Map/buildings_render.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "Map/extract_buildings.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "Map/fit_camera_pose.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "Map/georeference.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "Map/hanoi_district3.xodr",
+      "language": "xodr",
+      "fileCategory": "code"
+    },
+    {
+      "path": "Map/inspect_opendrive3.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "Map/junction_graph.json",
+      "language": "json",
+      "fileCategory": "config"
+    },
+    {
+      "path": "Map/map3_smaller.osm",
+      "language": "osm",
+      "fileCategory": "code"
+    },
+    {
+      "path": "Map/pho_hue_tkc_junction_graph.json",
+      "language": "json",
+      "fileCategory": "config"
+    },
+    {
+      "path": "Map/pho_hue_tkc.osm",
+      "language": "osm",
+      "fileCategory": "code"
+    },
+    {
+      "path": "Map/pho_hue_tkc.xodr",
+      "language": "xodr",
+      "fileCategory": "code"
+    },
+    {
+      "path": "Map/test_buildings_grey.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "Map/test_buildings.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "Map/test_traffic_lights.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "Map/test_traffic.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "Map/traffic_light_sim.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "qa_autolabel.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "server/__init__.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "server/app.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "server/config.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "server/middleware/__init__.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "server/models/__init__.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "server/models/database.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "server/models/schemas.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "server/requirements.txt",
+      "language": "txt",
+      "fileCategory": "docs"
+    },
+    {
+      "path": "server/routers/__init__.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "server/routers/alerts.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "server/routers/cameras.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "server/routers/maproute.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "server/routers/rois.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "server/routers/scenarios.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "server/routers/stats.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "server/routers/stream.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "server/routers/tracks.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "server/routers/websocket.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "server/run_server.bat",
+      "language": "batch",
+      "fileCategory": "script"
+    },
+    {
+      "path": "server/services/__init__.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "server/services/ai_processor.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "server/services/alert_service.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "server/services/camera_service.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "server/services/stream_service.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "server/services/tracking_service.py",
+      "language": "python",
+      "fileCategory": "code"
+    },
+    {
+      "path": "start.bat",
+      "language": "batch",
+      "fileCategory": "script"
+    },
+    {
+      "path": "stop.bat",
+      "language": "batch",
+      "fileCategory": "script"
+    },
+    {
+      "path": "things_to_do.md",
+      "language": "markdown",
+      "fileCategory": "docs"
+    }
+  ]
+}

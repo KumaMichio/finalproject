@@ -1,0 +1,55 @@
+{
+  "projectRoot": "E:/School_project/finalproject",
+  "batchFiles": [
+    {"path": "custom_tracking_system/modules/detector.py", "language": "python", "sizeLines": 208, "fileCategory": "code"},
+    {"path": "custom_tracking_system/modules/goal_classifier.py", "language": "python", "sizeLines": 298, "fileCategory": "code"},
+    {"path": "custom_tracking_system/modules/plate_ocr.py", "language": "python", "sizeLines": 197, "fileCategory": "code"},
+    {"path": "custom_tracking_system/modules/tracker.py", "language": "python", "sizeLines": 382, "fileCategory": "code"},
+    {"path": "custom_tracking_system/modules/video_source.py", "language": "python", "sizeLines": 398, "fileCategory": "code"},
+    {"path": "custom_tracking_system/scripts/benchmark_pipeline.py", "language": "python", "sizeLines": 204, "fileCategory": "code"},
+    {"path": "custom_tracking_system/scripts/demo_real_video_scenario.py", "language": "python", "sizeLines": 252, "fileCategory": "code"},
+    {"path": "custom_tracking_system/scripts/eval/multiframe_plate_fusion.py", "language": "python", "sizeLines": 165, "fileCategory": "code"},
+    {"path": "custom_tracking_system/scripts/eval/pseudo_label_plates.py", "language": "python", "sizeLines": 203, "fileCategory": "code"},
+    {"path": "custom_tracking_system/scripts/eval/test_plate_ocr_feasibility.py", "language": "python", "sizeLines": 270, "fileCategory": "code"},
+    {"path": "custom_tracking_system/scripts/eval/test_plate_ocr_feasibility_v2.py", "language": "python", "sizeLines": 253, "fileCategory": "code"},
+    {"path": "custom_tracking_system/scripts/eval/test_plate_ocr_feasibility_v3.py", "language": "python", "sizeLines": 266, "fileCategory": "code"},
+    {"path": "custom_tracking_system/scripts/trace_single_track.py", "language": "python", "sizeLines": 111, "fileCategory": "code"},
+    {"path": "custom_tracking_system/scripts/visualize_goal_predictions.py", "language": "python", "sizeLines": 147, "fileCategory": "code"}
+  ],
+  "batchImportData": {
+    "custom_tracking_system/modules/detector.py": [],
+    "custom_tracking_system/modules/goal_classifier.py": [],
+    "custom_tracking_system/modules/plate_ocr.py": [],
+    "custom_tracking_system/modules/tracker.py": [],
+    "custom_tracking_system/modules/video_source.py": [],
+    "custom_tracking_system/scripts/benchmark_pipeline.py": [
+      "custom_tracking_system/modules/detector.py",
+      "custom_tracking_system/modules/goal_classifier.py",
+      "custom_tracking_system/modules/tracker.py"
+    ],
+    "custom_tracking_system/scripts/demo_real_video_scenario.py": [
+      "custom_tracking_system/modules/detector.py",
+      "custom_tracking_system/modules/goal_classifier.py",
+      "custom_tracking_system/modules/tracker.py",
+      "custom_tracking_system/modules/video_source.py"
+    ],
+    "custom_tracking_system/scripts/eval/multiframe_plate_fusion.py": [],
+    "custom_tracking_system/scripts/eval/pseudo_label_plates.py": [],
+    "custom_tracking_system/scripts/eval/test_plate_ocr_feasibility.py": [
+      "custom_tracking_system/modules/plate_ocr.py"
+    ],
+    "custom_tracking_system/scripts/eval/test_plate_ocr_feasibility_v2.py": [
+      "custom_tracking_system/modules/plate_ocr.py"
+    ],
+    "custom_tracking_system/scripts/eval/test_plate_ocr_feasibility_v3.py": [
+      "custom_tracking_system/modules/plate_ocr.py"
+    ],
+    "custom_tracking_system/scripts/trace_single_track.py": [
+      "custom_tracking_system/modules/detector.py",
+      "custom_tracking_system/modules/tracker.py"
+    ],
+    "custom_tracking_system/scripts/visualize_goal_predictions.py": [
+      "custom_tracking_system/modules/goal_classifier.py"
+    ]
+  }
+}

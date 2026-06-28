@@ -22,8 +22,9 @@ liên tiếp qua nhiều ngã tư trên đồ thị đường thực xây dựng
 (Route Predictor), rồi hiển thị trực tiếp lên bản đồ. Để vận hành UC4 trên dữ
 liệu thật, đề tài xây dựng đầy đủ hạ tầng hỗ trợ: phát hiện và theo dõi đối
 tượng trong từng camera (UC1, YOLO11s_vn + ByteTrack), theo dõi xuyên camera
-bằng nhận diện lại (UC2, OSNet fine-tune trên VeRi-776 — **hạ tầng hỗ trợ
-việc truy vết sau đánh dấu, không phải tiêu chí đánh giá thành công chính**;
+bằng nhận diện lại (OSNet fine-tune trên VeRi-776 — **năng lực hạ tầng hỗ
+trợ việc truy vết sau đánh dấu, không đặc tả như một use case riêng — mục
+2.4 Chương 2 — và không phải tiêu chí đánh giá thành công chính**;
 có hạn chế đã biết và đo được với xe máy, mục 6.1 dưới và Chương 5 mục
 5.5.8), phát hiện và đánh dấu sự cố (UC3, hệ luật suy diễn kết hợp đánh dấu
 thủ công — bổ sung 2026-06-26: lưu ảnh crop đối tượng vào CSDL ngay khi đánh
@@ -126,7 +127,7 @@ bày dưới đây vẫn theo nhóm chức năng để dễ tra cứu.
   phát hiện (FN) — hạn chế cấu trúc của quy trình tái dùng-pred hiện tại là
   không bao giờ phát hiện được trường hợp ByteTrack bỏ sót hoàn toàn một
   đối tượng.
-- **Chứng minh theo dõi xuyên camera (UC2) trên video thật**: quay đồng thời
+- **Chứng minh theo dõi xuyên camera trên video thật**: quay đồng thời
   (hoặc lệch không quá 1–2 phút) hai video tại hai giao lộ liền kề trên cùng
   một trục đường, camera cố định, tối thiểu 10–15 phút mỗi video, để có dữ
   liệu kiểm chứng Re-ID xuyên camera trên điều kiện triển khai thật — demo

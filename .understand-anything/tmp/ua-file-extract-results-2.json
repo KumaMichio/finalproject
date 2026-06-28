@@ -1,0 +1,4357 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 20,
+  "filesSkipped": [],
+  "results": [
+    {
+      "path": "server/app.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 196,
+      "nonEmptyLines": 161,
+      "functions": [
+        {
+          "name": "lifespan",
+          "startLine": 42,
+          "endLine": 83,
+          "params": [
+            "application"
+          ]
+        },
+        {
+          "name": "get_uptime",
+          "startLine": 86,
+          "endLine": 87,
+          "params": [
+            "start_time"
+          ]
+        },
+        {
+          "name": "root",
+          "startLine": 130,
+          "endLine": 143,
+          "params": [
+            "request"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "lifespan",
+          "line": 41,
+          "isDefault": false
+        },
+        {
+          "name": "get_uptime",
+          "line": 86,
+          "isDefault": false
+        },
+        {
+          "name": "root",
+          "line": 129,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "lifespan",
+          "callee": "time.time",
+          "lineNumber": 51
+        },
+        {
+          "caller": "lifespan",
+          "callee": "init_db",
+          "lineNumber": 54
+        },
+        {
+          "caller": "lifespan",
+          "callee": "frame_buffer.set_loop",
+          "lineNumber": 58
+        },
+        {
+          "caller": "lifespan",
+          "callee": "asyncio.get_running_loop",
+          "lineNumber": 58
+        },
+        {
+          "caller": "lifespan",
+          "callee": "getattr",
+          "lineNumber": 62
+        },
+        {
+          "caller": "lifespan",
+          "callee": "getattr",
+          "lineNumber": 64
+        },
+        {
+          "caller": "lifespan",
+          "callee": "getattr",
+          "lineNumber": 65
+        },
+        {
+          "caller": "lifespan",
+          "callee": "str",
+          "lineNumber": 65
+        },
+        {
+          "caller": "lifespan",
+          "callee": "create_ai_processor",
+          "lineNumber": 66
+        },
+        {
+          "caller": "lifespan",
+          "callee": "getattr",
+          "lineNumber": 71
+        },
+        {
+          "caller": "lifespan",
+          "callee": "getattr",
+          "lineNumber": 72
+        },
+        {
+          "caller": "lifespan",
+          "callee": "getattr",
+          "lineNumber": 73
+        },
+        {
+          "caller": "lifespan",
+          "callee": "_ai.set_event_loop",
+          "lineNumber": 75
+        },
+        {
+          "caller": "lifespan",
+          "callee": "asyncio.get_running_loop",
+          "lineNumber": 75
+        },
+        {
+          "caller": "lifespan",
+          "callee": "_ai.start",
+          "lineNumber": 76
+        },
+        {
+          "caller": "lifespan",
+          "callee": "logger.info",
+          "lineNumber": 77
+        },
+        {
+          "caller": "lifespan",
+          "callee": "_ai.stop",
+          "lineNumber": 83
+        },
+        {
+          "caller": "get_uptime",
+          "callee": "time.time",
+          "lineNumber": 87
+        },
+        {
+          "caller": "root",
+          "callee": "get_ai_processor",
+          "lineNumber": 133
+        },
+        {
+          "caller": "root",
+          "callee": "ai.get_status",
+          "lineNumber": 134
+        },
+        {
+          "caller": "root",
+          "callee": "get_uptime",
+          "lineNumber": 140
+        }
+      ],
+      "metrics": {
+        "importCount": 11,
+        "exportCount": 3,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "server/config.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 30,
+      "nonEmptyLines": 24,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "server/models/database.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 146,
+      "nonEmptyLines": 113,
+      "functions": [
+        {
+          "name": "init_db",
+          "startLine": 135,
+          "endLine": 137,
+          "params": []
+        },
+        {
+          "name": "get_db",
+          "startLine": 140,
+          "endLine": 146,
+          "params": []
+        }
+      ],
+      "classes": [
+        {
+          "name": "Camera",
+          "startLine": 20,
+          "endLine": 40,
+          "methods": [],
+          "properties": []
+        },
+        {
+          "name": "Alert",
+          "startLine": 43,
+          "endLine": 68,
+          "methods": [],
+          "properties": []
+        },
+        {
+          "name": "TrackedObject",
+          "startLine": 71,
+          "endLine": 83,
+          "methods": [],
+          "properties": []
+        },
+        {
+          "name": "TrackingHistory",
+          "startLine": 86,
+          "endLine": 108,
+          "methods": [],
+          "properties": []
+        },
+        {
+          "name": "ROI",
+          "startLine": 111,
+          "endLine": 122,
+          "methods": [],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "Camera",
+          "line": 20,
+          "isDefault": false
+        },
+        {
+          "name": "Alert",
+          "line": 43,
+          "isDefault": false
+        },
+        {
+          "name": "TrackedObject",
+          "line": 71,
+          "isDefault": false
+        },
+        {
+          "name": "TrackingHistory",
+          "line": 86,
+          "isDefault": false
+        },
+        {
+          "name": "ROI",
+          "line": 111,
+          "isDefault": false
+        },
+        {
+          "name": "init_db",
+          "line": 135,
+          "isDefault": false
+        },
+        {
+          "name": "get_db",
+          "line": 140,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "init_db",
+          "callee": "Base.metadata.create_all",
+          "lineNumber": 137
+        },
+        {
+          "caller": "get_db",
+          "callee": "SessionLocal",
+          "lineNumber": 142
+        },
+        {
+          "caller": "get_db",
+          "callee": "db.close",
+          "lineNumber": 146
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 7,
+        "functionCount": 2,
+        "classCount": 5
+      }
+    },
+    {
+      "path": "server/models/schemas.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 170,
+      "nonEmptyLines": 141,
+      "classes": [
+        {
+          "name": "CameraBase",
+          "startLine": 12,
+          "endLine": 24,
+          "methods": [],
+          "properties": [
+            "id",
+            "name",
+            "position_x",
+            "position_y",
+            "position_z",
+            "rotation_pitch",
+            "rotation_yaw",
+            "rotation_roll",
+            "resolution_w",
+            "resolution_h",
+            "fov",
+            "fps"
+          ]
+        },
+        {
+          "name": "CameraCreate",
+          "startLine": 26,
+          "endLine": 27,
+          "methods": [],
+          "properties": []
+        },
+        {
+          "name": "CameraUpdate",
+          "startLine": 29,
+          "endLine": 40,
+          "methods": [],
+          "properties": [
+            "name",
+            "position_x",
+            "position_y",
+            "position_z",
+            "rotation_pitch",
+            "rotation_yaw",
+            "rotation_roll",
+            "resolution_w",
+            "resolution_h",
+            "fov",
+            "fps"
+          ]
+        },
+        {
+          "name": "CameraResponse",
+          "startLine": 42,
+          "endLine": 48,
+          "methods": [],
+          "properties": [
+            "status",
+            "created_at",
+            "updated_at"
+          ]
+        },
+        {
+          "name": "AlertCreate",
+          "startLine": 52,
+          "endLine": 59,
+          "methods": [],
+          "properties": [
+            "type",
+            "severity",
+            "global_id",
+            "camera_id",
+            "roi_name",
+            "message",
+            "details"
+          ]
+        },
+        {
+          "name": "AlertResponse",
+          "startLine": 61,
+          "endLine": 78,
+          "methods": [],
+          "properties": [
+            "id",
+            "type",
+            "severity",
+            "global_id",
+            "camera_id",
+            "roi_name",
+            "message",
+            "details",
+            "snapshot_path",
+            "clip_path",
+            "status",
+            "acknowledged_by",
+            "created_at",
+            "acknowledged_at"
+          ]
+        },
+        {
+          "name": "AlertAcknowledge",
+          "startLine": 80,
+          "endLine": 81,
+          "methods": [],
+          "properties": [
+            "acknowledged_by"
+          ]
+        },
+        {
+          "name": "TrackedObjectResponse",
+          "startLine": 85,
+          "endLine": 96,
+          "methods": [],
+          "properties": [
+            "global_id",
+            "object_class",
+            "first_seen",
+            "last_seen",
+            "total_cameras",
+            "status",
+            "marked_snapshot_path",
+            "marked_at"
+          ]
+        },
+        {
+          "name": "TrackingHistoryResponse",
+          "startLine": 100,
+          "endLine": 115,
+          "methods": [],
+          "properties": [
+            "id",
+            "global_id",
+            "camera_id",
+            "frame_number",
+            "box_x1",
+            "box_y1",
+            "box_x2",
+            "box_y2",
+            "center_x",
+            "center_y",
+            "confidence",
+            "timestamp"
+          ]
+        },
+        {
+          "name": "ROICreate",
+          "startLine": 119,
+          "endLine": 123,
+          "methods": [],
+          "properties": [
+            "camera_id",
+            "name",
+            "polygon",
+            "alert_types"
+          ]
+        },
+        {
+          "name": "ROIUpdate",
+          "startLine": 125,
+          "endLine": 129,
+          "methods": [],
+          "properties": [
+            "name",
+            "polygon",
+            "alert_types",
+            "is_active"
+          ]
+        },
+        {
+          "name": "ROIResponse",
+          "startLine": 131,
+          "endLine": 141,
+          "methods": [],
+          "properties": [
+            "id",
+            "camera_id",
+            "name",
+            "polygon",
+            "alert_types",
+            "is_active",
+            "created_at"
+          ]
+        },
+        {
+          "name": "SystemStats",
+          "startLine": 145,
+          "endLine": 152,
+          "methods": [],
+          "properties": [
+            "fps",
+            "active_cameras",
+            "active_tracks",
+            "total_alerts_today",
+            "uptime_seconds",
+            "source",
+            "map_enabled"
+          ]
+        },
+        {
+          "name": "WSAlertMessage",
+          "startLine": 156,
+          "endLine": 158,
+          "methods": [],
+          "properties": [
+            "event",
+            "data"
+          ]
+        },
+        {
+          "name": "WSTrackMessage",
+          "startLine": 160,
+          "endLine": 166,
+          "methods": [],
+          "properties": [
+            "event",
+            "global_id",
+            "camera_id",
+            "box",
+            "object_class",
+            "frame_count"
+          ]
+        },
+        {
+          "name": "WSStatsMessage",
+          "startLine": 168,
+          "endLine": 170,
+          "methods": [],
+          "properties": [
+            "event",
+            "data"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "CameraBase",
+          "line": 12,
+          "isDefault": false
+        },
+        {
+          "name": "CameraCreate",
+          "line": 26,
+          "isDefault": false
+        },
+        {
+          "name": "CameraUpdate",
+          "line": 29,
+          "isDefault": false
+        },
+        {
+          "name": "CameraResponse",
+          "line": 42,
+          "isDefault": false
+        },
+        {
+          "name": "AlertCreate",
+          "line": 52,
+          "isDefault": false
+        },
+        {
+          "name": "AlertResponse",
+          "line": 61,
+          "isDefault": false
+        },
+        {
+          "name": "AlertAcknowledge",
+          "line": 80,
+          "isDefault": false
+        },
+        {
+          "name": "TrackedObjectResponse",
+          "line": 85,
+          "isDefault": false
+        },
+        {
+          "name": "TrackingHistoryResponse",
+          "line": 100,
+          "isDefault": false
+        },
+        {
+          "name": "ROICreate",
+          "line": 119,
+          "isDefault": false
+        },
+        {
+          "name": "ROIUpdate",
+          "line": 125,
+          "isDefault": false
+        },
+        {
+          "name": "ROIResponse",
+          "line": 131,
+          "isDefault": false
+        },
+        {
+          "name": "SystemStats",
+          "line": 145,
+          "isDefault": false
+        },
+        {
+          "name": "WSAlertMessage",
+          "line": 156,
+          "isDefault": false
+        },
+        {
+          "name": "WSTrackMessage",
+          "line": 160,
+          "isDefault": false
+        },
+        {
+          "name": "WSStatsMessage",
+          "line": 168,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 16,
+        "functionCount": 0,
+        "classCount": 16
+      }
+    },
+    {
+      "path": "server/routers/__init__.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 1,
+      "nonEmptyLines": 0,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "server/routers/alerts.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 63,
+      "nonEmptyLines": 52,
+      "functions": [
+        {
+          "name": "get_alerts",
+          "startLine": 16,
+          "endLine": 35,
+          "params": [
+            "camera_id",
+            "type",
+            "severity",
+            "status",
+            "hours",
+            "limit",
+            "offset",
+            "db"
+          ]
+        },
+        {
+          "name": "clear_alerts",
+          "startLine": 39,
+          "endLine": 41,
+          "params": [
+            "db"
+          ]
+        },
+        {
+          "name": "get_alert",
+          "startLine": 45,
+          "endLine": 49,
+          "params": [
+            "alert_id",
+            "db"
+          ]
+        },
+        {
+          "name": "acknowledge_alert",
+          "startLine": 53,
+          "endLine": 63,
+          "params": [
+            "alert_id",
+            "body",
+            "db"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "get_alerts",
+          "line": 15,
+          "isDefault": false
+        },
+        {
+          "name": "clear_alerts",
+          "line": 38,
+          "isDefault": false
+        },
+        {
+          "name": "get_alert",
+          "line": 44,
+          "isDefault": false
+        },
+        {
+          "name": "acknowledge_alert",
+          "line": 52,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "get_alerts",
+          "callee": "Depends",
+          "lineNumber": 24
+        },
+        {
+          "caller": "get_alerts",
+          "callee": "alert_service.list_alerts",
+          "lineNumber": 26
+        },
+        {
+          "caller": "clear_alerts",
+          "callee": "Depends",
+          "lineNumber": 39
+        },
+        {
+          "caller": "clear_alerts",
+          "callee": "alert_service.clear_all_alerts",
+          "lineNumber": 40
+        },
+        {
+          "caller": "get_alert",
+          "callee": "Depends",
+          "lineNumber": 45
+        },
+        {
+          "caller": "get_alert",
+          "callee": "alert_service.get_alert",
+          "lineNumber": 46
+        },
+        {
+          "caller": "get_alert",
+          "callee": "HTTPException",
+          "lineNumber": 48
+        },
+        {
+          "caller": "acknowledge_alert",
+          "callee": "Depends",
+          "lineNumber": 56
+        },
+        {
+          "caller": "acknowledge_alert",
+          "callee": "alert_service.acknowledge_alert",
+          "lineNumber": 58
+        },
+        {
+          "caller": "acknowledge_alert",
+          "callee": "HTTPException",
+          "lineNumber": 62
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 4,
+        "functionCount": 4,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "server/routers/cameras.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 51,
+      "nonEmptyLines": 38,
+      "functions": [
+        {
+          "name": "get_cameras",
+          "startLine": 16,
+          "endLine": 17,
+          "params": [
+            "status",
+            "db"
+          ]
+        },
+        {
+          "name": "get_camera",
+          "startLine": 21,
+          "endLine": 25,
+          "params": [
+            "camera_id",
+            "db"
+          ]
+        },
+        {
+          "name": "create_camera",
+          "startLine": 29,
+          "endLine": 33,
+          "params": [
+            "data",
+            "db"
+          ]
+        },
+        {
+          "name": "update_camera",
+          "startLine": 37,
+          "endLine": 43,
+          "params": [
+            "camera_id",
+            "data",
+            "db"
+          ]
+        },
+        {
+          "name": "delete_camera",
+          "startLine": 47,
+          "endLine": 51,
+          "params": [
+            "camera_id",
+            "db"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "get_cameras",
+          "line": 15,
+          "isDefault": false
+        },
+        {
+          "name": "get_camera",
+          "line": 20,
+          "isDefault": false
+        },
+        {
+          "name": "create_camera",
+          "line": 28,
+          "isDefault": false
+        },
+        {
+          "name": "update_camera",
+          "line": 36,
+          "isDefault": false
+        },
+        {
+          "name": "delete_camera",
+          "line": 46,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "get_cameras",
+          "callee": "Depends",
+          "lineNumber": 16
+        },
+        {
+          "caller": "get_cameras",
+          "callee": "camera_service.list_cameras",
+          "lineNumber": 17
+        },
+        {
+          "caller": "get_camera",
+          "callee": "Depends",
+          "lineNumber": 21
+        },
+        {
+          "caller": "get_camera",
+          "callee": "camera_service.get_camera",
+          "lineNumber": 22
+        },
+        {
+          "caller": "get_camera",
+          "callee": "HTTPException",
+          "lineNumber": 24
+        },
+        {
+          "caller": "create_camera",
+          "callee": "Depends",
+          "lineNumber": 29
+        },
+        {
+          "caller": "create_camera",
+          "callee": "camera_service.get_camera",
+          "lineNumber": 30
+        },
+        {
+          "caller": "create_camera",
+          "callee": "HTTPException",
+          "lineNumber": 32
+        },
+        {
+          "caller": "create_camera",
+          "callee": "camera_service.create_camera",
+          "lineNumber": 33
+        },
+        {
+          "caller": "create_camera",
+          "callee": "data.model_dump",
+          "lineNumber": 33
+        },
+        {
+          "caller": "update_camera",
+          "callee": "Depends",
+          "lineNumber": 37
+        },
+        {
+          "caller": "update_camera",
+          "callee": "camera_service.update_camera",
+          "lineNumber": 38
+        },
+        {
+          "caller": "update_camera",
+          "callee": "data.model_dump",
+          "lineNumber": 39
+        },
+        {
+          "caller": "update_camera",
+          "callee": "HTTPException",
+          "lineNumber": 42
+        },
+        {
+          "caller": "delete_camera",
+          "callee": "Depends",
+          "lineNumber": 47
+        },
+        {
+          "caller": "delete_camera",
+          "callee": "camera_service.delete_camera",
+          "lineNumber": 48
+        },
+        {
+          "caller": "delete_camera",
+          "callee": "HTTPException",
+          "lineNumber": 50
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 5,
+        "functionCount": 5,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "server/routers/maproute.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 40,
+      "nonEmptyLines": 30,
+      "functions": [
+        {
+          "name": "get_map_state",
+          "startLine": 17,
+          "endLine": 21,
+          "params": []
+        },
+        {
+          "name": "mark_object",
+          "startLine": 25,
+          "endLine": 32,
+          "params": [
+            "global_id"
+          ]
+        },
+        {
+          "name": "unmark_object",
+          "startLine": 36,
+          "endLine": 40,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "get_map_state",
+          "line": 16,
+          "isDefault": false
+        },
+        {
+          "name": "mark_object",
+          "line": 24,
+          "isDefault": false
+        },
+        {
+          "name": "unmark_object",
+          "line": 35,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "get_map_state",
+          "callee": "get_ai_processor",
+          "lineNumber": 18
+        },
+        {
+          "caller": "get_map_state",
+          "callee": "HTTPException",
+          "lineNumber": 20
+        },
+        {
+          "caller": "get_map_state",
+          "callee": "ai.get_map_state",
+          "lineNumber": 21
+        },
+        {
+          "caller": "mark_object",
+          "callee": "get_ai_processor",
+          "lineNumber": 26
+        },
+        {
+          "caller": "mark_object",
+          "callee": "HTTPException",
+          "lineNumber": 28
+        },
+        {
+          "caller": "mark_object",
+          "callee": "ai.mark_object",
+          "lineNumber": 29
+        },
+        {
+          "caller": "mark_object",
+          "callee": "HTTPException",
+          "lineNumber": 31
+        },
+        {
+          "caller": "unmark_object",
+          "callee": "get_ai_processor",
+          "lineNumber": 37
+        },
+        {
+          "caller": "unmark_object",
+          "callee": "HTTPException",
+          "lineNumber": 39
+        },
+        {
+          "caller": "unmark_object",
+          "callee": "ai.unmark_object",
+          "lineNumber": 40
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 3,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "server/routers/rois.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 59,
+      "nonEmptyLines": 46,
+      "functions": [
+        {
+          "name": "get_rois",
+          "startLine": 15,
+          "endLine": 19,
+          "params": [
+            "camera_id",
+            "db"
+          ]
+        },
+        {
+          "name": "get_roi",
+          "startLine": 23,
+          "endLine": 27,
+          "params": [
+            "roi_id",
+            "db"
+          ]
+        },
+        {
+          "name": "create_roi",
+          "startLine": 31,
+          "endLine": 36,
+          "params": [
+            "data",
+            "db"
+          ]
+        },
+        {
+          "name": "update_roi",
+          "startLine": 40,
+          "endLine": 49,
+          "params": [
+            "roi_id",
+            "data",
+            "db"
+          ]
+        },
+        {
+          "name": "delete_roi",
+          "startLine": 53,
+          "endLine": 59,
+          "params": [
+            "roi_id",
+            "db"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "get_rois",
+          "line": 14,
+          "isDefault": false
+        },
+        {
+          "name": "get_roi",
+          "line": 22,
+          "isDefault": false
+        },
+        {
+          "name": "create_roi",
+          "line": 30,
+          "isDefault": false
+        },
+        {
+          "name": "update_roi",
+          "line": 39,
+          "isDefault": false
+        },
+        {
+          "name": "delete_roi",
+          "line": 52,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "get_rois",
+          "callee": "Depends",
+          "lineNumber": 15
+        },
+        {
+          "caller": "get_rois",
+          "callee": "db.query",
+          "lineNumber": 16
+        },
+        {
+          "caller": "get_rois",
+          "callee": "q.filter",
+          "lineNumber": 18
+        },
+        {
+          "caller": "get_rois",
+          "callee": "q.order_by(ROI.camera_id, ROI.name).all",
+          "lineNumber": 19
+        },
+        {
+          "caller": "get_rois",
+          "callee": "q.order_by",
+          "lineNumber": 19
+        },
+        {
+          "caller": "get_roi",
+          "callee": "Depends",
+          "lineNumber": 23
+        },
+        {
+          "caller": "get_roi",
+          "callee": "db.query(ROI).filter(ROI.id == roi_id).first",
+          "lineNumber": 24
+        },
+        {
+          "caller": "get_roi",
+          "callee": "db.query(ROI).filter",
+          "lineNumber": 24
+        },
+        {
+          "caller": "get_roi",
+          "callee": "db.query",
+          "lineNumber": 24
+        },
+        {
+          "caller": "get_roi",
+          "callee": "HTTPException",
+          "lineNumber": 26
+        },
+        {
+          "caller": "create_roi",
+          "callee": "Depends",
+          "lineNumber": 31
+        },
+        {
+          "caller": "create_roi",
+          "callee": "ROI",
+          "lineNumber": 32
+        },
+        {
+          "caller": "create_roi",
+          "callee": "data.model_dump",
+          "lineNumber": 32
+        },
+        {
+          "caller": "create_roi",
+          "callee": "db.add",
+          "lineNumber": 33
+        },
+        {
+          "caller": "create_roi",
+          "callee": "db.commit",
+          "lineNumber": 34
+        },
+        {
+          "caller": "create_roi",
+          "callee": "db.refresh",
+          "lineNumber": 35
+        },
+        {
+          "caller": "update_roi",
+          "callee": "Depends",
+          "lineNumber": 40
+        },
+        {
+          "caller": "update_roi",
+          "callee": "db.query(ROI).filter(ROI.id == roi_id).first",
+          "lineNumber": 41
+        },
+        {
+          "caller": "update_roi",
+          "callee": "db.query(ROI).filter",
+          "lineNumber": 41
+        },
+        {
+          "caller": "update_roi",
+          "callee": "db.query",
+          "lineNumber": 41
+        },
+        {
+          "caller": "update_roi",
+          "callee": "HTTPException",
+          "lineNumber": 43
+        },
+        {
+          "caller": "update_roi",
+          "callee": "data.model_dump(exclude_unset=True).items",
+          "lineNumber": 44
+        },
+        {
+          "caller": "update_roi",
+          "callee": "data.model_dump",
+          "lineNumber": 44
+        },
+        {
+          "caller": "update_roi",
+          "callee": "setattr",
+          "lineNumber": 46
+        },
+        {
+          "caller": "update_roi",
+          "callee": "db.commit",
+          "lineNumber": 47
+        },
+        {
+          "caller": "update_roi",
+          "callee": "db.refresh",
+          "lineNumber": 48
+        },
+        {
+          "caller": "delete_roi",
+          "callee": "Depends",
+          "lineNumber": 53
+        },
+        {
+          "caller": "delete_roi",
+          "callee": "db.query(ROI).filter(ROI.id == roi_id).first",
+          "lineNumber": 54
+        },
+        {
+          "caller": "delete_roi",
+          "callee": "db.query(ROI).filter",
+          "lineNumber": 54
+        },
+        {
+          "caller": "delete_roi",
+          "callee": "db.query",
+          "lineNumber": 54
+        },
+        {
+          "caller": "delete_roi",
+          "callee": "HTTPException",
+          "lineNumber": 56
+        },
+        {
+          "caller": "delete_roi",
+          "callee": "db.delete",
+          "lineNumber": 57
+        },
+        {
+          "caller": "delete_roi",
+          "callee": "db.commit",
+          "lineNumber": 58
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 5,
+        "functionCount": 5,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "server/routers/scenarios.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 27,
+      "nonEmptyLines": 19,
+      "functions": [
+        {
+          "name": "list_scenarios",
+          "startLine": 14,
+          "endLine": 15,
+          "params": []
+        },
+        {
+          "name": "trigger_scenario",
+          "startLine": 19,
+          "endLine": 27,
+          "params": [
+            "name"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "list_scenarios",
+          "line": 13,
+          "isDefault": false
+        },
+        {
+          "name": "trigger_scenario",
+          "line": 18,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "list_scenarios",
+          "callee": "list",
+          "lineNumber": 15
+        },
+        {
+          "caller": "list_scenarios",
+          "callee": "AIProcessor.SCENARIOS.keys",
+          "lineNumber": 15
+        },
+        {
+          "caller": "trigger_scenario",
+          "callee": "get_ai_processor",
+          "lineNumber": 20
+        },
+        {
+          "caller": "trigger_scenario",
+          "callee": "HTTPException",
+          "lineNumber": 22
+        },
+        {
+          "caller": "trigger_scenario",
+          "callee": "ai.trigger_scenario",
+          "lineNumber": 24
+        },
+        {
+          "caller": "trigger_scenario",
+          "callee": "HTTPException",
+          "lineNumber": 26
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 2,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "server/routers/stats.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 38,
+      "nonEmptyLines": 30,
+      "functions": [
+        {
+          "name": "get_stats",
+          "startLine": 17,
+          "endLine": 38,
+          "params": [
+            "request",
+            "db"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "get_stats",
+          "line": 16,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "get_stats",
+          "callee": "Depends",
+          "lineNumber": 17
+        },
+        {
+          "caller": "get_stats",
+          "callee": "len",
+          "lineNumber": 20
+        },
+        {
+          "caller": "get_stats",
+          "callee": "frame_buffer.get_camera_ids",
+          "lineNumber": 20
+        },
+        {
+          "caller": "get_stats",
+          "callee": "tracking_service.count_active_objects",
+          "lineNumber": 21
+        },
+        {
+          "caller": "get_stats",
+          "callee": "alert_service.count_alerts_today",
+          "lineNumber": 22
+        },
+        {
+          "caller": "get_stats",
+          "callee": "get_ai_processor",
+          "lineNumber": 25
+        },
+        {
+          "caller": "get_stats",
+          "callee": "bool",
+          "lineNumber": 28
+        },
+        {
+          "caller": "get_stats",
+          "callee": "SystemStats",
+          "lineNumber": 30
+        },
+        {
+          "caller": "get_stats",
+          "callee": "round",
+          "lineNumber": 31
+        },
+        {
+          "caller": "get_stats",
+          "callee": "get_uptime",
+          "lineNumber": 35
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "server/routers/stream.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 81,
+      "nonEmptyLines": 69,
+      "functions": [
+        {
+          "name": "_mjpeg_generator",
+          "startLine": 22,
+          "endLine": 54,
+          "params": [
+            "camera_id"
+          ]
+        },
+        {
+          "name": "video_stream",
+          "startLine": 58,
+          "endLine": 71,
+          "params": [
+            "camera_id"
+          ]
+        },
+        {
+          "name": "list_streams",
+          "startLine": 75,
+          "endLine": 81,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "_mjpeg_generator",
+          "line": 22,
+          "isDefault": false
+        },
+        {
+          "name": "video_stream",
+          "line": 57,
+          "isDefault": false
+        },
+        {
+          "name": "list_streams",
+          "line": 74,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "_mjpeg_generator",
+          "callee": "frame_buffer.wait_for_frame",
+          "lineNumber": 26
+        },
+        {
+          "caller": "_mjpeg_generator",
+          "callee": "asyncio.sleep",
+          "lineNumber": 54
+        },
+        {
+          "caller": "video_stream",
+          "callee": "StreamingResponse",
+          "lineNumber": 64
+        },
+        {
+          "caller": "video_stream",
+          "callee": "_mjpeg_generator",
+          "lineNumber": 65
+        },
+        {
+          "caller": "list_streams",
+          "callee": "frame_buffer.get_camera_ids",
+          "lineNumber": 77
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 3,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "server/routers/tracks.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 59,
+      "nonEmptyLines": 47,
+      "functions": [
+        {
+          "name": "get_tracks",
+          "startLine": 19,
+          "endLine": 28,
+          "params": [
+            "status",
+            "object_class",
+            "limit",
+            "offset",
+            "db"
+          ]
+        },
+        {
+          "name": "get_track",
+          "startLine": 32,
+          "endLine": 36,
+          "params": [
+            "global_id",
+            "db"
+          ]
+        },
+        {
+          "name": "get_snapshot",
+          "startLine": 40,
+          "endLine": 46,
+          "params": [
+            "global_id",
+            "db"
+          ]
+        },
+        {
+          "name": "get_trajectory",
+          "startLine": 50,
+          "endLine": 59,
+          "params": [
+            "global_id",
+            "camera_id",
+            "limit",
+            "db"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "get_tracks",
+          "line": 18,
+          "isDefault": false
+        },
+        {
+          "name": "get_track",
+          "line": 31,
+          "isDefault": false
+        },
+        {
+          "name": "get_snapshot",
+          "line": 39,
+          "isDefault": false
+        },
+        {
+          "name": "get_trajectory",
+          "line": 49,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "get_tracks",
+          "callee": "Depends",
+          "lineNumber": 24
+        },
+        {
+          "caller": "get_tracks",
+          "callee": "tracking_service.list_tracked_objects",
+          "lineNumber": 26
+        },
+        {
+          "caller": "get_track",
+          "callee": "Depends",
+          "lineNumber": 32
+        },
+        {
+          "caller": "get_track",
+          "callee": "tracking_service.get_tracked_object",
+          "lineNumber": 33
+        },
+        {
+          "caller": "get_track",
+          "callee": "HTTPException",
+          "lineNumber": 35
+        },
+        {
+          "caller": "get_snapshot",
+          "callee": "Depends",
+          "lineNumber": 40
+        },
+        {
+          "caller": "get_snapshot",
+          "callee": "tracking_service.get_tracked_object",
+          "lineNumber": 41
+        },
+        {
+          "caller": "get_snapshot",
+          "callee": "HTTPException",
+          "lineNumber": 43
+        },
+        {
+          "caller": "get_snapshot",
+          "callee": "Path(obj.marked_snapshot_path).exists",
+          "lineNumber": 44
+        },
+        {
+          "caller": "get_snapshot",
+          "callee": "Path",
+          "lineNumber": 44
+        },
+        {
+          "caller": "get_snapshot",
+          "callee": "HTTPException",
+          "lineNumber": 45
+        },
+        {
+          "caller": "get_snapshot",
+          "callee": "FileResponse",
+          "lineNumber": 46
+        },
+        {
+          "caller": "get_trajectory",
+          "callee": "Depends",
+          "lineNumber": 54
+        },
+        {
+          "caller": "get_trajectory",
+          "callee": "tracking_service.get_tracked_object",
+          "lineNumber": 56
+        },
+        {
+          "caller": "get_trajectory",
+          "callee": "HTTPException",
+          "lineNumber": 58
+        },
+        {
+          "caller": "get_trajectory",
+          "callee": "tracking_service.get_trajectory",
+          "lineNumber": 59
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 4,
+        "functionCount": 4,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "server/routers/websocket.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 98,
+      "nonEmptyLines": 77,
+      "functions": [
+        {
+          "name": "ws_alerts",
+          "startLine": 68,
+          "endLine": 75,
+          "params": [
+            "ws"
+          ]
+        },
+        {
+          "name": "ws_tracks",
+          "startLine": 79,
+          "endLine": 85,
+          "params": [
+            "ws"
+          ]
+        },
+        {
+          "name": "ws_stats",
+          "startLine": 89,
+          "endLine": 98,
+          "params": [
+            "ws"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "ConnectionManager",
+          "startLine": 24,
+          "endLine": 56,
+          "methods": [
+            "__init__",
+            "connect",
+            "disconnect",
+            "broadcast",
+            "get_count"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "ConnectionManager",
+          "line": 24,
+          "isDefault": false
+        },
+        {
+          "name": "ws_alerts",
+          "line": 67,
+          "isDefault": false
+        },
+        {
+          "name": "ws_tracks",
+          "line": 78,
+          "isDefault": false
+        },
+        {
+          "name": "ws_stats",
+          "line": 88,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "connect",
+          "callee": "ws.accept",
+          "lineNumber": 32
+        },
+        {
+          "caller": "connect",
+          "callee": "set",
+          "lineNumber": 34
+        },
+        {
+          "caller": "connect",
+          "callee": "self._connections[channel].add",
+          "lineNumber": 35
+        },
+        {
+          "caller": "connect",
+          "callee": "logger.info",
+          "lineNumber": 36
+        },
+        {
+          "caller": "connect",
+          "callee": "len",
+          "lineNumber": 36
+        },
+        {
+          "caller": "disconnect",
+          "callee": "self._connections[channel].discard",
+          "lineNumber": 40
+        },
+        {
+          "caller": "disconnect",
+          "callee": "logger.info",
+          "lineNumber": 41
+        },
+        {
+          "caller": "broadcast",
+          "callee": "self._connections.get(channel, set()).copy",
+          "lineNumber": 45
+        },
+        {
+          "caller": "broadcast",
+          "callee": "self._connections.get",
+          "lineNumber": 45
+        },
+        {
+          "caller": "broadcast",
+          "callee": "set",
+          "lineNumber": 45
+        },
+        {
+          "caller": "broadcast",
+          "callee": "ws.send_json",
+          "lineNumber": 49
+        },
+        {
+          "caller": "broadcast",
+          "callee": "dead.append",
+          "lineNumber": 51
+        },
+        {
+          "caller": "broadcast",
+          "callee": "self._connections[channel].discard",
+          "lineNumber": 53
+        },
+        {
+          "caller": "get_count",
+          "callee": "len",
+          "lineNumber": 56
+        },
+        {
+          "caller": "get_count",
+          "callee": "self._connections.get",
+          "lineNumber": 56
+        },
+        {
+          "caller": "get_count",
+          "callee": "set",
+          "lineNumber": 56
+        },
+        {
+          "caller": "ws_alerts",
+          "callee": "ws_manager.connect",
+          "lineNumber": 69
+        },
+        {
+          "caller": "ws_alerts",
+          "callee": "ws.receive_text",
+          "lineNumber": 73
+        },
+        {
+          "caller": "ws_alerts",
+          "callee": "ws_manager.disconnect",
+          "lineNumber": 75
+        },
+        {
+          "caller": "ws_tracks",
+          "callee": "ws_manager.connect",
+          "lineNumber": 80
+        },
+        {
+          "caller": "ws_tracks",
+          "callee": "ws.receive_text",
+          "lineNumber": 83
+        },
+        {
+          "caller": "ws_tracks",
+          "callee": "ws_manager.disconnect",
+          "lineNumber": 85
+        },
+        {
+          "caller": "ws_stats",
+          "callee": "ws_manager.connect",
+          "lineNumber": 91
+        },
+        {
+          "caller": "ws_stats",
+          "callee": "ws.receive_text",
+          "lineNumber": 96
+        },
+        {
+          "caller": "ws_stats",
+          "callee": "ws_manager.disconnect",
+          "lineNumber": 98
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 4,
+        "functionCount": 3,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "server/services/__init__.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 1,
+      "nonEmptyLines": 0,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "server/services/ai_processor.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 1049,
+      "nonEmptyLines": 915,
+      "functions": [
+        {
+          "name": "get_ai_processor",
+          "startLine": 1042,
+          "endLine": 1043,
+          "params": []
+        },
+        {
+          "name": "create_ai_processor",
+          "startLine": 1046,
+          "endLine": 1049,
+          "params": [
+            "config_path",
+            "**kwargs"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "AIProcessor",
+          "startLine": 33,
+          "endLine": 1035,
+          "methods": [
+            "__init__",
+            "start",
+            "stop",
+            "_run",
+            "_initialize",
+            "_sync_cameras_to_db",
+            "_find_nearby_traffic_lights",
+            "_get_traffic_light_state",
+            "_main_loop",
+            "_safe_tick",
+            "_check_scenario_collisions",
+            "_save_incident",
+            "_push_incident_ws",
+            "_save_alert",
+            "_push_ws_updates",
+            "_push_stats_ws",
+            "set_event_loop",
+            "trigger_scenario",
+            "_schedule_scenario_cleanup",
+            "_cleanup",
+            "get_status",
+            "_update_world_position",
+            "_update_marked_route",
+            "_prune_stale_tracking_state",
+            "get_map_state",
+            "mark_object",
+            "unmark_object"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "AIProcessor",
+          "line": 33,
+          "isDefault": false
+        },
+        {
+          "name": "get_ai_processor",
+          "line": 1042,
+          "isDefault": false
+        },
+        {
+          "name": "create_ai_processor",
+          "line": 1046,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "__init__",
+          "callee": "threading.Lock",
+          "lineNumber": 55
+        },
+        {
+          "caller": "start",
+          "callee": "logger.warning",
+          "lineNumber": 97
+        },
+        {
+          "caller": "start",
+          "callee": "threading.Thread",
+          "lineNumber": 101
+        },
+        {
+          "caller": "start",
+          "callee": "self._thread.start",
+          "lineNumber": 102
+        },
+        {
+          "caller": "start",
+          "callee": "logger.info",
+          "lineNumber": 103
+        },
+        {
+          "caller": "stop",
+          "callee": "self._thread.join",
+          "lineNumber": 109
+        },
+        {
+          "caller": "stop",
+          "callee": "logger.info",
+          "lineNumber": 111
+        },
+        {
+          "caller": "_run",
+          "callee": "self._initialize",
+          "lineNumber": 116
+        },
+        {
+          "caller": "_run",
+          "callee": "self._main_loop",
+          "lineNumber": 118
+        },
+        {
+          "caller": "_run",
+          "callee": "logger.error",
+          "lineNumber": 120
+        },
+        {
+          "caller": "_run",
+          "callee": "self._cleanup",
+          "lineNumber": 123
+        },
+        {
+          "caller": "_initialize",
+          "callee": "logger.info",
+          "lineNumber": 127
+        },
+        {
+          "caller": "_initialize",
+          "callee": "carla.Client",
+          "lineNumber": 144
+        },
+        {
+          "caller": "_initialize",
+          "callee": "self.client.set_timeout",
+          "lineNumber": 145
+        },
+        {
+          "caller": "_initialize",
+          "callee": "self.client.get_world",
+          "lineNumber": 146
+        },
+        {
+          "caller": "_initialize",
+          "callee": "self.world.get_settings",
+          "lineNumber": 149
+        },
+        {
+          "caller": "_initialize",
+          "callee": "self.world.apply_settings",
+          "lineNumber": 152
+        },
+        {
+          "caller": "_initialize",
+          "callee": "CameraController",
+          "lineNumber": 158
+        },
+        {
+          "caller": "_initialize",
+          "callee": "self.camera_controller.setup_cameras",
+          "lineNumber": 160
+        },
+        {
+          "caller": "_initialize",
+          "callee": "TrafficGenerator",
+          "lineNumber": 164
+        },
+        {
+          "caller": "_initialize",
+          "callee": "self.traffic_generator.spawn_actors",
+          "lineNumber": 166
+        },
+        {
+          "caller": "_initialize",
+          "callee": "ScenarioController",
+          "lineNumber": 168
+        },
+        {
+          "caller": "_initialize",
+          "callee": "self.config.get",
+          "lineNumber": 170
+        },
+        {
+          "caller": "_initialize",
+          "callee": "self._find_nearby_traffic_lights",
+          "lineNumber": 171
+        },
+        {
+          "caller": "_initialize",
+          "callee": "list",
+          "lineNumber": 172
+        },
+        {
+          "caller": "_initialize",
+          "callee": "self.camera_controller.cameras.keys",
+          "lineNumber": 172
+        },
+        {
+          "caller": "_initialize",
+          "callee": "open",
+          "lineNumber": 179
+        },
+        {
+          "caller": "_initialize",
+          "callee": "yaml.safe_load",
+          "lineNumber": 180
+        },
+        {
+          "caller": "_initialize",
+          "callee": "range",
+          "lineNumber": 183
+        },
+        {
+          "caller": "_initialize",
+          "callee": "len",
+          "lineNumber": 183
+        },
+        {
+          "caller": "_initialize",
+          "callee": "len",
+          "lineNumber": 185
+        },
+        {
+          "caller": "_initialize",
+          "callee": "len",
+          "lineNumber": 185
+        },
+        {
+          "caller": "_initialize",
+          "callee": "ValueError",
+          "lineNumber": 186
+        },
+        {
+          "caller": "_initialize",
+          "callee": "len",
+          "lineNumber": 187
+        },
+        {
+          "caller": "_initialize",
+          "callee": "len",
+          "lineNumber": 188
+        },
+        {
+          "caller": "_initialize",
+          "callee": "MultiVideoSource",
+          "lineNumber": 191
+        },
+        {
+          "caller": "_initialize",
+          "callee": "zip",
+          "lineNumber": 192
+        },
+        {
+          "caller": "_initialize",
+          "callee": "self.frame_source.add_source",
+          "lineNumber": 193
+        },
+        {
+          "caller": "_initialize",
+          "callee": "FileVideoSource",
+          "lineNumber": 194
+        },
+        {
+          "caller": "_initialize",
+          "callee": "str",
+          "lineNumber": 204
+        },
+        {
+          "caller": "_initialize",
+          "callee": "_yolo_s.exists",
+          "lineNumber": 204
+        },
+        {
+          "caller": "_initialize",
+          "callee": "ObjectDetector",
+          "lineNumber": 205
+        },
+        {
+          "caller": "_initialize",
+          "callee": "ByteTrackWrapper",
+          "lineNumber": 209
+        },
+        {
+          "caller": "_initialize",
+          "callee": "str",
+          "lineNumber": 217
+        },
+        {
+          "caller": "_initialize",
+          "callee": "DualReIDExtractor",
+          "lineNumber": 218
+        },
+        {
+          "caller": "_initialize",
+          "callee": "self.config.get",
+          "lineNumber": 221
+        },
+        {
+          "caller": "_initialize",
+          "callee": "tuple",
+          "lineNumber": 223
+        },
+        {
+          "caller": "_initialize",
+          "callee": "k.split",
+          "lineNumber": 223
+        },
+        {
+          "caller": "_initialize",
+          "callee": "tuple",
+          "lineNumber": 223
+        },
+        {
+          "caller": "_initialize",
+          "callee": "raw_topology.items",
+          "lineNumber": 224
+        },
+        {
+          "caller": "_initialize",
+          "callee": "GlobalTracker",
+          "lineNumber": 226
+        },
+        {
+          "caller": "_initialize",
+          "callee": "CalibrationStore.load_from_config",
+          "lineNumber": 229
+        },
+        {
+          "caller": "_initialize",
+          "callee": "logger.warning",
+          "lineNumber": 231
+        },
+        {
+          "caller": "_initialize",
+          "callee": "EnsembleTrajectoryPredictor",
+          "lineNumber": 234
+        },
+        {
+          "caller": "_initialize",
+          "callee": "str",
+          "lineNumber": 236
+        },
+        {
+          "caller": "_initialize",
+          "callee": "AlertSystem",
+          "lineNumber": 238
+        },
+        {
+          "caller": "_initialize",
+          "callee": "self.alert_system.set_rois",
+          "lineNumber": 240
+        },
+        {
+          "caller": "_initialize",
+          "callee": "self.config.get",
+          "lineNumber": 242
+        },
+        {
+          "caller": "_initialize",
+          "callee": "IncidentDetector",
+          "lineNumber": 243
+        },
+        {
+          "caller": "_initialize",
+          "callee": "EvidencePackage",
+          "lineNumber": 244
+        },
+        {
+          "caller": "_initialize",
+          "callee": "(incident_cfg.get(\"traffic_light\", {}) or {}).get",
+          "lineNumber": 251
+        },
+        {
+          "caller": "_initialize",
+          "callee": "incident_cfg.get",
+          "lineNumber": 251
+        },
+        {
+          "caller": "_initialize",
+          "callee": "TrafficLightColorClassifier",
+          "lineNumber": 254
+        },
+        {
+          "caller": "_initialize",
+          "callee": "GoalClassifier",
+          "lineNumber": 261
+        },
+        {
+          "caller": "_initialize",
+          "callee": "str",
+          "lineNumber": 262
+        },
+        {
+          "caller": "_initialize",
+          "callee": "str",
+          "lineNumber": 263
+        },
+        {
+          "caller": "_initialize",
+          "callee": "str",
+          "lineNumber": 264
+        },
+        {
+          "caller": "_initialize",
+          "callee": "str",
+          "lineNumber": 265
+        },
+        {
+          "caller": "_initialize",
+          "callee": "logger.warning",
+          "lineNumber": 268
+        },
+        {
+          "caller": "_initialize",
+          "callee": "self.config.get",
+          "lineNumber": 277
+        },
+        {
+          "caller": "_initialize",
+          "callee": "route_cfg.get",
+          "lineNumber": 287
+        },
+        {
+          "caller": "_initialize",
+          "callee": "GeoReference.from_map",
+          "lineNumber": 288
+        },
+        {
+          "caller": "_initialize",
+          "callee": "RoutePredictor.from_map",
+          "lineNumber": 289
+        },
+        {
+          "caller": "_initialize",
+          "callee": "route_cfg.get",
+          "lineNumber": 291
+        },
+        {
+          "caller": "_initialize",
+          "callee": "route_cfg.get",
+          "lineNumber": 292
+        },
+        {
+          "caller": "_initialize",
+          "callee": "logger.info",
+          "lineNumber": 293
+        },
+        {
+          "caller": "_initialize",
+          "callee": "logger.warning",
+          "lineNumber": 295
+        },
+        {
+          "caller": "_initialize",
+          "callee": "logger.warning",
+          "lineNumber": 312
+        },
+        {
+          "caller": "_initialize",
+          "callee": "list",
+          "lineNumber": 317
+        },
+        {
+          "caller": "_initialize",
+          "callee": "self.calibration.keys",
+          "lineNumber": 317
+        },
+        {
+          "caller": "_initialize",
+          "callee": "Visualizer",
+          "lineNumber": 320
+        },
+        {
+          "caller": "_initialize",
+          "callee": "self._sync_cameras_to_db",
+          "lineNumber": 323
+        },
+        {
+          "caller": "_initialize",
+          "callee": "logger.info",
+          "lineNumber": 325
+        },
+        {
+          "caller": "_sync_cameras_to_db",
+          "callee": "SessionLocal",
+          "lineNumber": 331
+        },
+        {
+          "caller": "_sync_cameras_to_db",
+          "callee": "self.config[\"cameras\"].items",
+          "lineNumber": 333
+        },
+        {
+          "caller": "_sync_cameras_to_db",
+          "callee": "db.query(Camera).filter(Camera.id == cam_id).first",
+          "lineNumber": 335
+        },
+        {
+          "caller": "_sync_cameras_to_db",
+          "callee": "db.query(Camera).filter",
+          "lineNumber": 335
+        },
+        {
+          "caller": "_sync_cameras_to_db",
+          "callee": "db.query",
+          "lineNumber": 335
+        },
+        {
+          "caller": "_sync_cameras_to_db",
+          "callee": "db.add",
+          "lineNumber": 337
+        },
+        {
+          "caller": "_sync_cameras_to_db",
+          "callee": "Camera",
+          "lineNumber": 337
+        },
+        {
+          "caller": "_sync_cameras_to_db",
+          "callee": "cam_cfg.get",
+          "lineNumber": 349
+        },
+        {
+          "caller": "_sync_cameras_to_db",
+          "callee": "db.commit",
+          "lineNumber": 352
+        },
+        {
+          "caller": "_sync_cameras_to_db",
+          "callee": "db.close",
+          "lineNumber": 354
+        },
+        {
+          "caller": "_find_nearby_traffic_lights",
+          "callee": "self.config.get(\"incident_detection\", {}).get",
+          "lineNumber": 359
+        },
+        {
+          "caller": "_find_nearby_traffic_lights",
+          "callee": "self.config.get",
+          "lineNumber": 359
+        },
+        {
+          "caller": "_find_nearby_traffic_lights",
+          "callee": "red_light_cfg.get",
+          "lineNumber": 360
+        },
+        {
+          "caller": "_find_nearby_traffic_lights",
+          "callee": "list",
+          "lineNumber": 363
+        },
+        {
+          "caller": "_find_nearby_traffic_lights",
+          "callee": "self.world.get_actors().filter",
+          "lineNumber": 363
+        },
+        {
+          "caller": "_find_nearby_traffic_lights",
+          "callee": "self.world.get_actors",
+          "lineNumber": 363
+        },
+        {
+          "caller": "_find_nearby_traffic_lights",
+          "callee": "logger.warning",
+          "lineNumber": 365
+        },
+        {
+          "caller": "_find_nearby_traffic_lights",
+          "callee": "self.config[\"cameras\"].values",
+          "lineNumber": 369
+        },
+        {
+          "caller": "_find_nearby_traffic_lights",
+          "callee": "tl.get_location",
+          "lineNumber": 374
+        },
+        {
+          "caller": "_find_nearby_traffic_lights",
+          "callee": "nearby.append",
+          "lineNumber": 377
+        },
+        {
+          "caller": "_find_nearby_traffic_lights",
+          "callee": "logger.info",
+          "lineNumber": 379
+        },
+        {
+          "caller": "_find_nearby_traffic_lights",
+          "callee": "len",
+          "lineNumber": 380
+        },
+        {
+          "caller": "_get_traffic_light_state",
+          "callee": "self.traffic_light_classifier.classify",
+          "lineNumber": 394
+        },
+        {
+          "caller": "_get_traffic_light_state",
+          "callee": "self.camera_traffic_lights.get",
+          "lineNumber": 396
+        },
+        {
+          "caller": "_get_traffic_light_state",
+          "callee": "set",
+          "lineNumber": 399
+        },
+        {
+          "caller": "_get_traffic_light_state",
+          "callee": "states.add",
+          "lineNumber": 402
+        },
+        {
+          "caller": "_get_traffic_light_state",
+          "callee": "tl.get_state",
+          "lineNumber": 402
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "time.time",
+          "lineNumber": 417
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "time.time",
+          "lineNumber": 425
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "time.time",
+          "lineNumber": 429
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "self._push_stats_ws",
+          "lineNumber": 430
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "self.frame_source.get_synchronized_frames",
+          "lineNumber": 433
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "self._safe_tick",
+          "lineNumber": 436
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "self.scenario_controller.get_new_collisions",
+          "lineNumber": 444
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "time.time",
+          "lineNumber": 448
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "col.get",
+          "lineNumber": 450
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "SessionLocal",
+          "lineNumber": 455
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "list",
+          "lineNumber": 460
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "sync_frames.keys",
+          "lineNumber": 460
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "self.detector.detect_batch",
+          "lineNumber": 463
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "zip",
+          "lineNumber": 465
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "self.trackers[camera_id].update",
+          "lineNumber": 473
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "self._seen_track_ids.setdefault",
+          "lineNumber": 478
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "set",
+          "lineNumber": 478
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "set",
+          "lineNumber": 479
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "reid_track_ids.add",
+          "lineNumber": 483
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "seen.add",
+          "lineNumber": 484
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "self.global_tracker.process_camera_tracks",
+          "lineNumber": 486
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "all_global_tracks.extend",
+          "lineNumber": 489
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "self.trajectory_predictor.update_trajectory",
+          "lineNumber": 502
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "g_track.get",
+          "lineNumber": 505
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "self.trajectory_predictor.predict",
+          "lineNumber": 509
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "list",
+          "lineNumber": 512
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "predicted.values",
+          "lineNumber": 512
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "self.alert_system.check_alerts",
+          "lineNumber": 515
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "self.alert_system.log_alert",
+          "lineNumber": 519
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "self._save_alert",
+          "lineNumber": 520
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "self.calibration.get",
+          "lineNumber": 524
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "self._update_world_position",
+          "lineNumber": 526
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "g_track.get",
+          "lineNumber": 528
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "self.goal_classifier.update_and_predict",
+          "lineNumber": 532
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "g_track.get",
+          "lineNumber": 533
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "self._update_marked_route",
+          "lineNumber": 540
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "max",
+          "lineNumber": 548
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "int",
+          "lineNumber": 548
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "max",
+          "lineNumber": 549
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "int",
+          "lineNumber": 549
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "min",
+          "lineNumber": 550
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "int",
+          "lineNumber": 550
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "min",
+          "lineNumber": 551
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "int",
+          "lineNumber": 551
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "Path",
+          "lineNumber": 554
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "out_dir.mkdir",
+          "lineNumber": 555
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "str",
+          "lineNumber": 556
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "cv2.imwrite",
+          "lineNumber": 557
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "set_marked_snapshot",
+          "lineNumber": 558
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "datetime.fromtimestamp",
+          "lineNumber": 559
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "upsert_tracked_object",
+          "lineNumber": 565
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "add_history",
+          "lineNumber": 568
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "self.incident_detector.update",
+          "lineNumber": 573
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "self._get_traffic_light_state",
+          "lineNumber": 577
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "self._save_incident",
+          "lineNumber": 580
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "self._push_incident_ws",
+          "lineNumber": 581
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "self.evidence.capture",
+          "lineNumber": 587
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "self.evidence.buffer_frame",
+          "lineNumber": 594
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "self.visualizer.draw_tracks",
+          "lineNumber": 597
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "self.visualizer.draw_predictions",
+          "lineNumber": 599
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "self._collision_overlay_until.get",
+          "lineNumber": 603
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "time.time",
+          "lineNumber": 603
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "self.visualizer.draw_collision_banner",
+          "lineNumber": 604
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "frame_buffer.put_frame",
+          "lineNumber": 607
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "self._check_scenario_collisions",
+          "lineNumber": 610
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "db.commit",
+          "lineNumber": 612
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "len",
+          "lineNumber": 614
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "self._prune_stale_tracking_state",
+          "lineNumber": 615
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "self._push_ws_updates",
+          "lineNumber": 616
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "logger.error",
+          "lineNumber": 619
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "db.rollback",
+          "lineNumber": 620
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "db.close",
+          "lineNumber": 622
+        },
+        {
+          "caller": "_main_loop",
+          "callee": "self._safe_tick",
+          "lineNumber": 626
+        },
+        {
+          "caller": "_safe_tick",
+          "callee": "self.world.tick",
+          "lineNumber": 638
+        },
+        {
+          "caller": "_safe_tick",
+          "callee": "str",
+          "lineNumber": 640
+        },
+        {
+          "caller": "_safe_tick",
+          "callee": "logger.warning",
+          "lineNumber": 641
+        },
+        {
+          "caller": "_check_scenario_collisions",
+          "callee": "col.get",
+          "lineNumber": 649
+        },
+        {
+          "caller": "_check_scenario_collisions",
+          "callee": "datetime.now",
+          "lineNumber": 655
+        },
+        {
+          "caller": "_check_scenario_collisions",
+          "callee": "self._save_incident",
+          "lineNumber": 661
+        },
+        {
+          "caller": "_check_scenario_collisions",
+          "callee": "self._push_incident_ws",
+          "lineNumber": 662
+        },
+        {
+          "caller": "_check_scenario_collisions",
+          "callee": "self.evidence.capture",
+          "lineNumber": 669
+        },
+        {
+          "caller": "_save_incident",
+          "callee": "db.add",
+          "lineNumber": 678
+        },
+        {
+          "caller": "_save_incident",
+          "callee": "Alert",
+          "lineNumber": 678
+        },
+        {
+          "caller": "_save_incident",
+          "callee": "json.dumps",
+          "lineNumber": 684
+        },
+        {
+          "caller": "_save_incident",
+          "callee": "incident.get",
+          "lineNumber": 684
+        },
+        {
+          "caller": "_push_incident_ws",
+          "callee": "hasattr",
+          "lineNumber": 692
+        },
+        {
+          "caller": "_push_incident_ws",
+          "callee": "ws_manager.get_count",
+          "lineNumber": 692
+        },
+        {
+          "caller": "_push_incident_ws",
+          "callee": "incident.get",
+          "lineNumber": 701
+        },
+        {
+          "caller": "_push_incident_ws",
+          "callee": "incident['timestamp'].isoformat",
+          "lineNumber": 702
+        },
+        {
+          "caller": "_push_incident_ws",
+          "callee": "asyncio.run_coroutine_threadsafe",
+          "lineNumber": 704
+        },
+        {
+          "caller": "_push_incident_ws",
+          "callee": "ws_manager.broadcast",
+          "lineNumber": 705
+        },
+        {
+          "caller": "_save_alert",
+          "callee": "Alert",
+          "lineNumber": 715
+        },
+        {
+          "caller": "_save_alert",
+          "callee": "alert_dict.get",
+          "lineNumber": 716
+        },
+        {
+          "caller": "_save_alert",
+          "callee": "alert_dict.get",
+          "lineNumber": 718
+        },
+        {
+          "caller": "_save_alert",
+          "callee": "alert_dict.get",
+          "lineNumber": 719
+        },
+        {
+          "caller": "_save_alert",
+          "callee": "alert_dict.get",
+          "lineNumber": 720
+        },
+        {
+          "caller": "_save_alert",
+          "callee": "alert_dict.get",
+          "lineNumber": 721
+        },
+        {
+          "caller": "_save_alert",
+          "callee": "alert_dict.get",
+          "lineNumber": 722
+        },
+        {
+          "caller": "_save_alert",
+          "callee": "json.dumps",
+          "lineNumber": 723
+        },
+        {
+          "caller": "_save_alert",
+          "callee": "alert_dict.get",
+          "lineNumber": 724
+        },
+        {
+          "caller": "_save_alert",
+          "callee": "datetime.utcnow",
+          "lineNumber": 726
+        },
+        {
+          "caller": "_save_alert",
+          "callee": "db.add",
+          "lineNumber": 728
+        },
+        {
+          "caller": "_push_ws_updates",
+          "callee": "hasattr",
+          "lineNumber": 734
+        },
+        {
+          "caller": "_push_ws_updates",
+          "callee": "ws_manager.get_count",
+          "lineNumber": 734
+        },
+        {
+          "caller": "_push_ws_updates",
+          "callee": "asyncio.run_coroutine_threadsafe",
+          "lineNumber": 745
+        },
+        {
+          "caller": "_push_ws_updates",
+          "callee": "ws_manager.broadcast",
+          "lineNumber": 746
+        },
+        {
+          "caller": "_push_stats_ws",
+          "callee": "hasattr",
+          "lineNumber": 756
+        },
+        {
+          "caller": "_push_stats_ws",
+          "callee": "ws_manager.get_count",
+          "lineNumber": 756
+        },
+        {
+          "caller": "_push_stats_ws",
+          "callee": "SessionLocal",
+          "lineNumber": 760
+        },
+        {
+          "caller": "_push_stats_ws",
+          "callee": "count_alerts_today",
+          "lineNumber": 762
+        },
+        {
+          "caller": "_push_stats_ws",
+          "callee": "db.close",
+          "lineNumber": 764
+        },
+        {
+          "caller": "_push_stats_ws",
+          "callee": "round",
+          "lineNumber": 767
+        },
+        {
+          "caller": "_push_stats_ws",
+          "callee": "asyncio.run_coroutine_threadsafe",
+          "lineNumber": 773
+        },
+        {
+          "caller": "_push_stats_ws",
+          "callee": "ws_manager.broadcast",
+          "lineNumber": 774
+        },
+        {
+          "caller": "trigger_scenario",
+          "callee": "self.SCENARIOS.get",
+          "lineNumber": 809
+        },
+        {
+          "caller": "trigger_scenario",
+          "callee": "getattr",
+          "lineNumber": 815
+        },
+        {
+          "caller": "trigger_scenario",
+          "callee": "(result or {}).get",
+          "lineNumber": 816
+        },
+        {
+          "caller": "trigger_scenario",
+          "callee": "logger.info",
+          "lineNumber": 822
+        },
+        {
+          "caller": "trigger_scenario",
+          "callee": "self._schedule_scenario_cleanup",
+          "lineNumber": 823
+        },
+        {
+          "caller": "trigger_scenario",
+          "callee": "logger.error",
+          "lineNumber": 826
+        },
+        {
+          "caller": "trigger_scenario",
+          "callee": "str",
+          "lineNumber": 827
+        },
+        {
+          "caller": "_schedule_scenario_cleanup",
+          "callee": "self._scenario_cleanup_timer.cancel",
+          "lineNumber": 834
+        },
+        {
+          "caller": "_do_cleanup",
+          "callee": "self.scenario_controller.cleanup",
+          "lineNumber": 839
+        },
+        {
+          "caller": "_do_cleanup",
+          "callee": "logger.info",
+          "lineNumber": 840
+        },
+        {
+          "caller": "_do_cleanup",
+          "callee": "logger.warning",
+          "lineNumber": 842
+        },
+        {
+          "caller": "_schedule_scenario_cleanup",
+          "callee": "threading.Timer",
+          "lineNumber": 844
+        },
+        {
+          "caller": "_schedule_scenario_cleanup",
+          "callee": "self._scenario_cleanup_timer.start",
+          "lineNumber": 847
+        },
+        {
+          "caller": "_cleanup",
+          "callee": "self._scenario_cleanup_timer.cancel",
+          "lineNumber": 853
+        },
+        {
+          "caller": "_cleanup",
+          "callee": "hasattr",
+          "lineNumber": 854
+        },
+        {
+          "caller": "_cleanup",
+          "callee": "self.evidence.flush",
+          "lineNumber": 855
+        },
+        {
+          "caller": "_cleanup",
+          "callee": "getattr",
+          "lineNumber": 859
+        },
+        {
+          "caller": "_cleanup",
+          "callee": "self.scenario_controller.cleanup",
+          "lineNumber": 860
+        },
+        {
+          "caller": "_cleanup",
+          "callee": "hasattr",
+          "lineNumber": 861
+        },
+        {
+          "caller": "_cleanup",
+          "callee": "self.camera_controller.cleanup",
+          "lineNumber": 862
+        },
+        {
+          "caller": "_cleanup",
+          "callee": "hasattr",
+          "lineNumber": 863
+        },
+        {
+          "caller": "_cleanup",
+          "callee": "self.traffic_generator.cleanup",
+          "lineNumber": 864
+        },
+        {
+          "caller": "_cleanup",
+          "callee": "getattr",
+          "lineNumber": 865
+        },
+        {
+          "caller": "_cleanup",
+          "callee": "self.world.get_settings",
+          "lineNumber": 866
+        },
+        {
+          "caller": "_cleanup",
+          "callee": "self.world.apply_settings",
+          "lineNumber": 868
+        },
+        {
+          "caller": "_cleanup",
+          "callee": "hasattr",
+          "lineNumber": 869
+        },
+        {
+          "caller": "_cleanup",
+          "callee": "self.frame_source.release_all",
+          "lineNumber": 870
+        },
+        {
+          "caller": "_cleanup",
+          "callee": "logger.error",
+          "lineNumber": 872
+        },
+        {
+          "caller": "get_status",
+          "callee": "round",
+          "lineNumber": 878
+        },
+        {
+          "caller": "_update_world_position",
+          "callee": "calib.pixel_to_world",
+          "lineNumber": 899
+        },
+        {
+          "caller": "_update_world_position",
+          "callee": "next",
+          "lineNumber": 901
+        },
+        {
+          "caller": "_update_world_position",
+          "callee": "self.config[\"cameras\"].values",
+          "lineNumber": 901
+        },
+        {
+          "caller": "_update_world_position",
+          "callee": "math.hypot",
+          "lineNumber": 905
+        },
+        {
+          "caller": "_update_world_position",
+          "callee": "self._world_hist.setdefault",
+          "lineNumber": 908
+        },
+        {
+          "caller": "_update_world_position",
+          "callee": "deque",
+          "lineNumber": 908
+        },
+        {
+          "caller": "_update_world_position",
+          "callee": "hist.append",
+          "lineNumber": 909
+        },
+        {
+          "caller": "_update_world_position",
+          "callee": "len",
+          "lineNumber": 912
+        },
+        {
+          "caller": "_update_world_position",
+          "callee": "math.hypot",
+          "lineNumber": 915
+        },
+        {
+          "caller": "_update_world_position",
+          "callee": "math.degrees",
+          "lineNumber": 916
+        },
+        {
+          "caller": "_update_world_position",
+          "callee": "math.atan2",
+          "lineNumber": 916
+        },
+        {
+          "caller": "_update_world_position",
+          "callee": "math.hypot",
+          "lineNumber": 919
+        },
+        {
+          "caller": "_update_world_position",
+          "callee": "self.georef.carla_to_latlon",
+          "lineNumber": 923
+        },
+        {
+          "caller": "_update_world_position",
+          "callee": "round",
+          "lineNumber": 929
+        },
+        {
+          "caller": "_update_world_position",
+          "callee": "round",
+          "lineNumber": 929
+        },
+        {
+          "caller": "_update_world_position",
+          "callee": "round",
+          "lineNumber": 930
+        },
+        {
+          "caller": "_update_world_position",
+          "callee": "round",
+          "lineNumber": 931
+        },
+        {
+          "caller": "_update_world_position",
+          "callee": "round",
+          "lineNumber": 932
+        },
+        {
+          "caller": "_update_world_position",
+          "callee": "round",
+          "lineNumber": 933
+        },
+        {
+          "caller": "_update_marked_route",
+          "callee": "self._world_pos.get",
+          "lineNumber": 941
+        },
+        {
+          "caller": "_update_marked_route",
+          "callee": "self._goal_predictions.get",
+          "lineNumber": 948
+        },
+        {
+          "caller": "_update_marked_route",
+          "callee": "self.route_predictor.predict",
+          "lineNumber": 954
+        },
+        {
+          "caller": "_update_marked_route",
+          "callee": "round",
+          "lineNumber": 959
+        },
+        {
+          "caller": "_update_marked_route",
+          "callee": "round",
+          "lineNumber": 960
+        },
+        {
+          "caller": "_update_marked_route",
+          "callee": "probs.items",
+          "lineNumber": 960
+        },
+        {
+          "caller": "_prune_stale_tracking_state",
+          "callee": "list",
+          "lineNumber": 967
+        },
+        {
+          "caller": "_prune_stale_tracking_state",
+          "callee": "store.keys",
+          "lineNumber": 967
+        },
+        {
+          "caller": "_prune_stale_tracking_state",
+          "callee": "store.pop",
+          "lineNumber": 969
+        },
+        {
+          "caller": "get_map_state",
+          "callee": "self.config[\"cameras\"].values",
+          "lineNumber": 986
+        },
+        {
+          "caller": "get_map_state",
+          "callee": "self.georef.carla_to_latlon",
+          "lineNumber": 988
+        },
+        {
+          "caller": "get_map_state",
+          "callee": "cameras.append",
+          "lineNumber": 989
+        },
+        {
+          "caller": "get_map_state",
+          "callee": "round",
+          "lineNumber": 991
+        },
+        {
+          "caller": "get_map_state",
+          "callee": "round",
+          "lineNumber": 991
+        },
+        {
+          "caller": "get_map_state",
+          "callee": "self._world_pos.items",
+          "lineNumber": 995
+        },
+        {
+          "caller": "get_map_state",
+          "callee": "dict",
+          "lineNumber": 996
+        },
+        {
+          "caller": "get_map_state",
+          "callee": "tracks.append",
+          "lineNumber": 998
+        },
+        {
+          "caller": "get_map_state",
+          "callee": "self._world_pos.get",
+          "lineNumber": 1002
+        },
+        {
+          "caller": "get_map_state",
+          "callee": "pos.get",
+          "lineNumber": 1007
+        },
+        {
+          "caller": "get_map_state",
+          "callee": "pos.get",
+          "lineNumber": 1008
+        },
+        {
+          "caller": "get_map_state",
+          "callee": "pos.get",
+          "lineNumber": 1009
+        },
+        {
+          "caller": "create_ai_processor",
+          "callee": "AIProcessor",
+          "lineNumber": 1048
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 3,
+        "functionCount": 2,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "server/services/alert_service.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 75,
+      "nonEmptyLines": 58,
+      "functions": [
+        {
+          "name": "list_alerts",
+          "startLine": 13,
+          "endLine": 37,
+          "params": [
+            "db",
+            "camera_id",
+            "alert_type",
+            "severity",
+            "status",
+            "hours",
+            "limit",
+            "offset"
+          ]
+        },
+        {
+          "name": "get_alert",
+          "startLine": 40,
+          "endLine": 41,
+          "params": [
+            "db",
+            "alert_id"
+          ]
+        },
+        {
+          "name": "create_alert",
+          "startLine": 44,
+          "endLine": 49,
+          "params": [
+            "db",
+            "data"
+          ]
+        },
+        {
+          "name": "acknowledge_alert",
+          "startLine": 52,
+          "endLine": 63,
+          "params": [
+            "db",
+            "alert_id",
+            "acknowledged_by"
+          ]
+        },
+        {
+          "name": "count_alerts_today",
+          "startLine": 66,
+          "endLine": 68,
+          "params": [
+            "db"
+          ]
+        },
+        {
+          "name": "clear_all_alerts",
+          "startLine": 71,
+          "endLine": 75,
+          "params": [
+            "db"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "list_alerts",
+          "line": 13,
+          "isDefault": false
+        },
+        {
+          "name": "get_alert",
+          "line": 40,
+          "isDefault": false
+        },
+        {
+          "name": "create_alert",
+          "line": 44,
+          "isDefault": false
+        },
+        {
+          "name": "acknowledge_alert",
+          "line": 52,
+          "isDefault": false
+        },
+        {
+          "name": "count_alerts_today",
+          "line": 66,
+          "isDefault": false
+        },
+        {
+          "name": "clear_all_alerts",
+          "line": 71,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "list_alerts",
+          "callee": "db.query",
+          "lineNumber": 23
+        },
+        {
+          "caller": "list_alerts",
+          "callee": "q.filter",
+          "lineNumber": 26
+        },
+        {
+          "caller": "list_alerts",
+          "callee": "q.filter",
+          "lineNumber": 28
+        },
+        {
+          "caller": "list_alerts",
+          "callee": "q.filter",
+          "lineNumber": 30
+        },
+        {
+          "caller": "list_alerts",
+          "callee": "q.filter",
+          "lineNumber": 32
+        },
+        {
+          "caller": "list_alerts",
+          "callee": "datetime.utcnow",
+          "lineNumber": 34
+        },
+        {
+          "caller": "list_alerts",
+          "callee": "timedelta",
+          "lineNumber": 34
+        },
+        {
+          "caller": "list_alerts",
+          "callee": "q.filter",
+          "lineNumber": 35
+        },
+        {
+          "caller": "list_alerts",
+          "callee": "q.order_by(Alert.created_at.desc()).offset(offset).limit(limit).all",
+          "lineNumber": 37
+        },
+        {
+          "caller": "list_alerts",
+          "callee": "q.order_by(Alert.created_at.desc()).offset(offset).limit",
+          "lineNumber": 37
+        },
+        {
+          "caller": "list_alerts",
+          "callee": "q.order_by(Alert.created_at.desc()).offset",
+          "lineNumber": 37
+        },
+        {
+          "caller": "list_alerts",
+          "callee": "q.order_by",
+          "lineNumber": 37
+        },
+        {
+          "caller": "list_alerts",
+          "callee": "Alert.created_at.desc",
+          "lineNumber": 37
+        },
+        {
+          "caller": "get_alert",
+          "callee": "db.query(Alert).filter(Alert.id == alert_id).first",
+          "lineNumber": 41
+        },
+        {
+          "caller": "get_alert",
+          "callee": "db.query(Alert).filter",
+          "lineNumber": 41
+        },
+        {
+          "caller": "get_alert",
+          "callee": "db.query",
+          "lineNumber": 41
+        },
+        {
+          "caller": "create_alert",
+          "callee": "Alert",
+          "lineNumber": 45
+        },
+        {
+          "caller": "create_alert",
+          "callee": "datetime.utcnow",
+          "lineNumber": 45
+        },
+        {
+          "caller": "create_alert",
+          "callee": "db.add",
+          "lineNumber": 46
+        },
+        {
+          "caller": "create_alert",
+          "callee": "db.commit",
+          "lineNumber": 47
+        },
+        {
+          "caller": "create_alert",
+          "callee": "db.refresh",
+          "lineNumber": 48
+        },
+        {
+          "caller": "acknowledge_alert",
+          "callee": "get_alert",
+          "lineNumber": 55
+        },
+        {
+          "caller": "acknowledge_alert",
+          "callee": "datetime.utcnow",
+          "lineNumber": 60
+        },
+        {
+          "caller": "acknowledge_alert",
+          "callee": "db.commit",
+          "lineNumber": 61
+        },
+        {
+          "caller": "acknowledge_alert",
+          "callee": "db.refresh",
+          "lineNumber": 62
+        },
+        {
+          "caller": "count_alerts_today",
+          "callee": "datetime.utcnow().replace",
+          "lineNumber": 67
+        },
+        {
+          "caller": "count_alerts_today",
+          "callee": "datetime.utcnow",
+          "lineNumber": 67
+        },
+        {
+          "caller": "count_alerts_today",
+          "callee": "db.query(Alert).filter(Alert.created_at >= today_start).count",
+          "lineNumber": 68
+        },
+        {
+          "caller": "count_alerts_today",
+          "callee": "db.query(Alert).filter",
+          "lineNumber": 68
+        },
+        {
+          "caller": "count_alerts_today",
+          "callee": "db.query",
+          "lineNumber": 68
+        },
+        {
+          "caller": "clear_all_alerts",
+          "callee": "db.query(Alert).delete",
+          "lineNumber": 73
+        },
+        {
+          "caller": "clear_all_alerts",
+          "callee": "db.query",
+          "lineNumber": 73
+        },
+        {
+          "caller": "clear_all_alerts",
+          "callee": "db.commit",
+          "lineNumber": 74
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 6,
+        "functionCount": 6,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "server/services/camera_service.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 51,
+      "nonEmptyLines": 38,
+      "functions": [
+        {
+          "name": "list_cameras",
+          "startLine": 13,
+          "endLine": 17,
+          "params": [
+            "db",
+            "status"
+          ]
+        },
+        {
+          "name": "get_camera",
+          "startLine": 20,
+          "endLine": 21,
+          "params": [
+            "db",
+            "camera_id"
+          ]
+        },
+        {
+          "name": "create_camera",
+          "startLine": 24,
+          "endLine": 29,
+          "params": [
+            "db",
+            "data"
+          ]
+        },
+        {
+          "name": "update_camera",
+          "startLine": 32,
+          "endLine": 42,
+          "params": [
+            "db",
+            "camera_id",
+            "data"
+          ]
+        },
+        {
+          "name": "delete_camera",
+          "startLine": 45,
+          "endLine": 51,
+          "params": [
+            "db",
+            "camera_id"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "list_cameras",
+          "line": 13,
+          "isDefault": false
+        },
+        {
+          "name": "get_camera",
+          "line": 20,
+          "isDefault": false
+        },
+        {
+          "name": "create_camera",
+          "line": 24,
+          "isDefault": false
+        },
+        {
+          "name": "update_camera",
+          "line": 32,
+          "isDefault": false
+        },
+        {
+          "name": "delete_camera",
+          "line": 45,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "list_cameras",
+          "callee": "db.query",
+          "lineNumber": 14
+        },
+        {
+          "caller": "list_cameras",
+          "callee": "q.filter",
+          "lineNumber": 16
+        },
+        {
+          "caller": "list_cameras",
+          "callee": "q.order_by(Camera.id).all",
+          "lineNumber": 17
+        },
+        {
+          "caller": "list_cameras",
+          "callee": "q.order_by",
+          "lineNumber": 17
+        },
+        {
+          "caller": "get_camera",
+          "callee": "db.query(Camera).filter(Camera.id == camera_id).first",
+          "lineNumber": 21
+        },
+        {
+          "caller": "get_camera",
+          "callee": "db.query(Camera).filter",
+          "lineNumber": 21
+        },
+        {
+          "caller": "get_camera",
+          "callee": "db.query",
+          "lineNumber": 21
+        },
+        {
+          "caller": "create_camera",
+          "callee": "Camera",
+          "lineNumber": 25
+        },
+        {
+          "caller": "create_camera",
+          "callee": "datetime.utcnow",
+          "lineNumber": 25
+        },
+        {
+          "caller": "create_camera",
+          "callee": "datetime.utcnow",
+          "lineNumber": 25
+        },
+        {
+          "caller": "create_camera",
+          "callee": "db.add",
+          "lineNumber": 26
+        },
+        {
+          "caller": "create_camera",
+          "callee": "db.commit",
+          "lineNumber": 27
+        },
+        {
+          "caller": "create_camera",
+          "callee": "db.refresh",
+          "lineNumber": 28
+        },
+        {
+          "caller": "update_camera",
+          "callee": "get_camera",
+          "lineNumber": 33
+        },
+        {
+          "caller": "update_camera",
+          "callee": "data.items",
+          "lineNumber": 36
+        },
+        {
+          "caller": "update_camera",
+          "callee": "setattr",
+          "lineNumber": 38
+        },
+        {
+          "caller": "update_camera",
+          "callee": "datetime.utcnow",
+          "lineNumber": 39
+        },
+        {
+          "caller": "update_camera",
+          "callee": "db.commit",
+          "lineNumber": 40
+        },
+        {
+          "caller": "update_camera",
+          "callee": "db.refresh",
+          "lineNumber": 41
+        },
+        {
+          "caller": "delete_camera",
+          "callee": "get_camera",
+          "lineNumber": 46
+        },
+        {
+          "caller": "delete_camera",
+          "callee": "db.delete",
+          "lineNumber": 49
+        },
+        {
+          "caller": "delete_camera",
+          "callee": "db.commit",
+          "lineNumber": 50
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 5,
+        "functionCount": 5,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "server/services/stream_service.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 70,
+      "nonEmptyLines": 56,
+      "classes": [
+        {
+          "name": "FrameBuffer",
+          "startLine": 19,
+          "endLine": 66,
+          "methods": [
+            "__init__",
+            "set_loop",
+            "put_frame",
+            "get_latest",
+            "wait_for_frame",
+            "get_camera_ids"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "FrameBuffer",
+          "line": 19,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "__init__",
+          "callee": "defaultdict",
+          "lineNumber": 26
+        },
+        {
+          "caller": "put_frame",
+          "callee": "cv2.imencode",
+          "lineNumber": 36
+        },
+        {
+          "caller": "put_frame",
+          "callee": "jpeg.tobytes",
+          "lineNumber": 39
+        },
+        {
+          "caller": "put_frame",
+          "callee": "time.time",
+          "lineNumber": 39
+        },
+        {
+          "caller": "put_frame",
+          "callee": "self._events.get",
+          "lineNumber": 41
+        },
+        {
+          "caller": "put_frame",
+          "callee": "self._loop.is_running",
+          "lineNumber": 43
+        },
+        {
+          "caller": "put_frame",
+          "callee": "self._loop.call_soon_threadsafe",
+          "lineNumber": 44
+        },
+        {
+          "caller": "put_frame",
+          "callee": "event.set",
+          "lineNumber": 46
+        },
+        {
+          "caller": "get_latest",
+          "callee": "self._frames.get",
+          "lineNumber": 50
+        },
+        {
+          "caller": "wait_for_frame",
+          "callee": "event.clear",
+          "lineNumber": 58
+        },
+        {
+          "caller": "wait_for_frame",
+          "callee": "asyncio.wait_for",
+          "lineNumber": 60
+        },
+        {
+          "caller": "wait_for_frame",
+          "callee": "event.wait",
+          "lineNumber": 60
+        },
+        {
+          "caller": "wait_for_frame",
+          "callee": "self.get_latest",
+          "lineNumber": 63
+        },
+        {
+          "caller": "get_camera_ids",
+          "callee": "list",
+          "lineNumber": 66
+        },
+        {
+          "caller": "get_camera_ids",
+          "callee": "self._frames.keys",
+          "lineNumber": 66
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "server/services/tracking_service.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 103,
+      "nonEmptyLines": 84,
+      "functions": [
+        {
+          "name": "list_tracked_objects",
+          "startLine": 15,
+          "endLine": 27,
+          "params": [
+            "db",
+            "status",
+            "object_class",
+            "limit",
+            "offset"
+          ]
+        },
+        {
+          "name": "get_tracked_object",
+          "startLine": 30,
+          "endLine": 31,
+          "params": [
+            "db",
+            "global_id"
+          ]
+        },
+        {
+          "name": "upsert_tracked_object",
+          "startLine": 34,
+          "endLine": 54,
+          "params": [
+            "db",
+            "global_id",
+            "object_class",
+            "camera_id"
+          ]
+        },
+        {
+          "name": "set_marked_snapshot",
+          "startLine": 57,
+          "endLine": 68,
+          "params": [
+            "db",
+            "global_id",
+            "snapshot_path",
+            "marked_at"
+          ]
+        },
+        {
+          "name": "add_history",
+          "startLine": 73,
+          "endLine": 90,
+          "params": [
+            "db",
+            "global_id",
+            "camera_id",
+            "frame_number",
+            "box",
+            "confidence"
+          ]
+        },
+        {
+          "name": "get_trajectory",
+          "startLine": 93,
+          "endLine": 99,
+          "params": [
+            "db",
+            "global_id",
+            "camera_id",
+            "limit"
+          ]
+        },
+        {
+          "name": "count_active_objects",
+          "startLine": 102,
+          "endLine": 103,
+          "params": [
+            "db"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "list_tracked_objects",
+          "line": 15,
+          "isDefault": false
+        },
+        {
+          "name": "get_tracked_object",
+          "line": 30,
+          "isDefault": false
+        },
+        {
+          "name": "upsert_tracked_object",
+          "line": 34,
+          "isDefault": false
+        },
+        {
+          "name": "set_marked_snapshot",
+          "line": 57,
+          "isDefault": false
+        },
+        {
+          "name": "add_history",
+          "line": 73,
+          "isDefault": false
+        },
+        {
+          "name": "get_trajectory",
+          "line": 93,
+          "isDefault": false
+        },
+        {
+          "name": "count_active_objects",
+          "line": 102,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "list_tracked_objects",
+          "callee": "db.query",
+          "lineNumber": 22
+        },
+        {
+          "caller": "list_tracked_objects",
+          "callee": "q.filter",
+          "lineNumber": 24
+        },
+        {
+          "caller": "list_tracked_objects",
+          "callee": "q.filter",
+          "lineNumber": 26
+        },
+        {
+          "caller": "list_tracked_objects",
+          "callee": "q.order_by(TrackedObject.last_seen.desc()).offset(offset).limit(limit).all",
+          "lineNumber": 27
+        },
+        {
+          "caller": "list_tracked_objects",
+          "callee": "q.order_by(TrackedObject.last_seen.desc()).offset(offset).limit",
+          "lineNumber": 27
+        },
+        {
+          "caller": "list_tracked_objects",
+          "callee": "q.order_by(TrackedObject.last_seen.desc()).offset",
+          "lineNumber": 27
+        },
+        {
+          "caller": "list_tracked_objects",
+          "callee": "q.order_by",
+          "lineNumber": 27
+        },
+        {
+          "caller": "list_tracked_objects",
+          "callee": "TrackedObject.last_seen.desc",
+          "lineNumber": 27
+        },
+        {
+          "caller": "get_tracked_object",
+          "callee": "db.query(TrackedObject).filter(TrackedObject.global_id == global_id).first",
+          "lineNumber": 31
+        },
+        {
+          "caller": "get_tracked_object",
+          "callee": "db.query(TrackedObject).filter",
+          "lineNumber": 31
+        },
+        {
+          "caller": "get_tracked_object",
+          "callee": "db.query",
+          "lineNumber": 31
+        },
+        {
+          "caller": "upsert_tracked_object",
+          "callee": "get_tracked_object",
+          "lineNumber": 37
+        },
+        {
+          "caller": "upsert_tracked_object",
+          "callee": "datetime.utcnow",
+          "lineNumber": 38
+        },
+        {
+          "caller": "upsert_tracked_object",
+          "callee": "TrackedObject",
+          "lineNumber": 40
+        },
+        {
+          "caller": "upsert_tracked_object",
+          "callee": "db.add",
+          "lineNumber": 48
+        },
+        {
+          "caller": "upsert_tracked_object",
+          "callee": "db.commit",
+          "lineNumber": 52
+        },
+        {
+          "caller": "upsert_tracked_object",
+          "callee": "db.refresh",
+          "lineNumber": 53
+        },
+        {
+          "caller": "set_marked_snapshot",
+          "callee": "get_tracked_object",
+          "lineNumber": 61
+        },
+        {
+          "caller": "set_marked_snapshot",
+          "callee": "db.commit",
+          "lineNumber": 66
+        },
+        {
+          "caller": "set_marked_snapshot",
+          "callee": "db.refresh",
+          "lineNumber": 67
+        },
+        {
+          "caller": "add_history",
+          "callee": "TrackingHistory",
+          "lineNumber": 78
+        },
+        {
+          "caller": "add_history",
+          "callee": "datetime.utcnow",
+          "lineNumber": 86
+        },
+        {
+          "caller": "add_history",
+          "callee": "db.add",
+          "lineNumber": 88
+        },
+        {
+          "caller": "add_history",
+          "callee": "db.commit",
+          "lineNumber": 89
+        },
+        {
+          "caller": "get_trajectory",
+          "callee": "db.query(TrackingHistory).filter",
+          "lineNumber": 96
+        },
+        {
+          "caller": "get_trajectory",
+          "callee": "db.query",
+          "lineNumber": 96
+        },
+        {
+          "caller": "get_trajectory",
+          "callee": "q.filter",
+          "lineNumber": 98
+        },
+        {
+          "caller": "get_trajectory",
+          "callee": "q.order_by(TrackingHistory.timestamp.asc()).limit(limit).all",
+          "lineNumber": 99
+        },
+        {
+          "caller": "get_trajectory",
+          "callee": "q.order_by(TrackingHistory.timestamp.asc()).limit",
+          "lineNumber": 99
+        },
+        {
+          "caller": "get_trajectory",
+          "callee": "q.order_by",
+          "lineNumber": 99
+        },
+        {
+          "caller": "get_trajectory",
+          "callee": "TrackingHistory.timestamp.asc",
+          "lineNumber": 99
+        },
+        {
+          "caller": "count_active_objects",
+          "callee": "db.query(TrackedObject).filter(TrackedObject.status == \"active\").count",
+          "lineNumber": 103
+        },
+        {
+          "caller": "count_active_objects",
+          "callee": "db.query(TrackedObject).filter",
+          "lineNumber": 103
+        },
+        {
+          "caller": "count_active_objects",
+          "callee": "db.query",
+          "lineNumber": 103
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 7,
+        "functionCount": 7,
+        "classCount": 0
+      }
+    }
+  ]
+}

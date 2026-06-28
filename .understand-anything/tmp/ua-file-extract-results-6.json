@@ -1,0 +1,1179 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 3,
+  "filesSkipped": [],
+  "results": [
+    {
+      "path": "custom_tracking_system/modules/trajectory_gru.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 228,
+      "nonEmptyLines": 179,
+      "functions": [
+        {
+          "name": "class_to_onehot",
+          "startLine": 58,
+          "endLine": 64,
+          "params": [
+            "obj_class"
+          ]
+        },
+        {
+          "name": "compute_intent_label",
+          "startLine": 67,
+          "endLine": 96,
+          "params": [
+            "vel_obs",
+            "vel_future",
+            "speed_eps",
+            "turn_threshold_deg"
+          ]
+        },
+        {
+          "name": "build_feature_vector",
+          "startLine": 99,
+          "endLine": 122,
+          "params": [
+            "pos",
+            "vel",
+            "obj_class",
+            "neighbor_rel",
+            "norm_mean",
+            "norm_std"
+          ]
+        },
+        {
+          "name": "trajectory_loss",
+          "startLine": 197,
+          "endLine": 228,
+          "params": [
+            "pred_deltas",
+            "mode_logits",
+            "intent_logits",
+            "target_rel",
+            "intent_labels",
+            "lambda_mode",
+            "lambda_intent"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "TrajectoryGRU",
+          "startLine": 129,
+          "endLine": 190,
+          "methods": [
+            "__init__",
+            "forward"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "class_to_onehot",
+          "line": 58,
+          "isDefault": false
+        },
+        {
+          "name": "compute_intent_label",
+          "line": 67,
+          "isDefault": false
+        },
+        {
+          "name": "build_feature_vector",
+          "line": 99,
+          "isDefault": false
+        },
+        {
+          "name": "TrajectoryGRU",
+          "line": 129,
+          "isDefault": false
+        },
+        {
+          "name": "trajectory_loss",
+          "line": 197,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "class_to_onehot",
+          "callee": "np.zeros",
+          "lineNumber": 59
+        },
+        {
+          "caller": "class_to_onehot",
+          "callee": "len",
+          "lineNumber": 59
+        },
+        {
+          "caller": "class_to_onehot",
+          "callee": "CLASS_LIST.index",
+          "lineNumber": 61
+        },
+        {
+          "caller": "compute_intent_label",
+          "callee": "float",
+          "lineNumber": 78
+        },
+        {
+          "caller": "compute_intent_label",
+          "callee": "np.linalg.norm",
+          "lineNumber": 78
+        },
+        {
+          "caller": "compute_intent_label",
+          "callee": "float",
+          "lineNumber": 79
+        },
+        {
+          "caller": "compute_intent_label",
+          "callee": "np.linalg.norm",
+          "lineNumber": 79
+        },
+        {
+          "caller": "compute_intent_label",
+          "callee": "INTENT_LABELS.index",
+          "lineNumber": 82
+        },
+        {
+          "caller": "compute_intent_label",
+          "callee": "INTENT_LABELS.index",
+          "lineNumber": 85
+        },
+        {
+          "caller": "compute_intent_label",
+          "callee": "np.arctan2",
+          "lineNumber": 87
+        },
+        {
+          "caller": "compute_intent_label",
+          "callee": "np.arctan2",
+          "lineNumber": 88
+        },
+        {
+          "caller": "compute_intent_label",
+          "callee": "np.degrees",
+          "lineNumber": 89
+        },
+        {
+          "caller": "compute_intent_label",
+          "callee": "INTENT_LABELS.index",
+          "lineNumber": 93
+        },
+        {
+          "caller": "compute_intent_label",
+          "callee": "INTENT_LABELS.index",
+          "lineNumber": 95
+        },
+        {
+          "caller": "compute_intent_label",
+          "callee": "INTENT_LABELS.index",
+          "lineNumber": 96
+        },
+        {
+          "caller": "build_feature_vector",
+          "callee": "np.array",
+          "lineNumber": 116
+        },
+        {
+          "caller": "build_feature_vector",
+          "callee": "np.zeros",
+          "lineNumber": 118
+        },
+        {
+          "caller": "build_feature_vector",
+          "callee": "enumerate",
+          "lineNumber": 119
+        },
+        {
+          "caller": "build_feature_vector",
+          "callee": "np.asarray",
+          "lineNumber": 120
+        },
+        {
+          "caller": "build_feature_vector",
+          "callee": "np.concatenate([own, class_to_onehot(obj_class), neighbor_feats]).astype",
+          "lineNumber": 122
+        },
+        {
+          "caller": "build_feature_vector",
+          "callee": "np.concatenate",
+          "lineNumber": 122
+        },
+        {
+          "caller": "build_feature_vector",
+          "callee": "class_to_onehot",
+          "lineNumber": 122
+        },
+        {
+          "caller": "__init__",
+          "callee": "len",
+          "lineNumber": 133
+        },
+        {
+          "caller": "__init__",
+          "callee": "super().__init__",
+          "lineNumber": 136
+        },
+        {
+          "caller": "__init__",
+          "callee": "super",
+          "lineNumber": 136
+        },
+        {
+          "caller": "__init__",
+          "callee": "nn.GRU",
+          "lineNumber": 141
+        },
+        {
+          "caller": "__init__",
+          "callee": "nn.Embedding",
+          "lineNumber": 143
+        },
+        {
+          "caller": "__init__",
+          "callee": "nn.GRUCell",
+          "lineNumber": 144
+        },
+        {
+          "caller": "__init__",
+          "callee": "nn.Linear",
+          "lineNumber": 145
+        },
+        {
+          "caller": "__init__",
+          "callee": "nn.Linear",
+          "lineNumber": 147
+        },
+        {
+          "caller": "__init__",
+          "callee": "nn.Linear",
+          "lineNumber": 148
+        },
+        {
+          "caller": "forward",
+          "callee": "obs_seq.size",
+          "lineNumber": 162
+        },
+        {
+          "caller": "forward",
+          "callee": "self.encoder",
+          "lineNumber": 163
+        },
+        {
+          "caller": "forward",
+          "callee": "h_n.squeeze",
+          "lineNumber": 164
+        },
+        {
+          "caller": "forward",
+          "callee": "self.mode_prob_head",
+          "lineNumber": 166
+        },
+        {
+          "caller": "forward",
+          "callee": "self.intent_head",
+          "lineNumber": 167
+        },
+        {
+          "caller": "forward",
+          "callee": "range",
+          "lineNumber": 170
+        },
+        {
+          "caller": "forward",
+          "callee": "self.mode_embeddings",
+          "lineNumber": 171
+        },
+        {
+          "caller": "forward",
+          "callee": "torch.full",
+          "lineNumber": 172
+        },
+        {
+          "caller": "forward",
+          "callee": "torch.zeros",
+          "lineNumber": 175
+        },
+        {
+          "caller": "forward",
+          "callee": "torch.zeros",
+          "lineNumber": 176
+        },
+        {
+          "caller": "forward",
+          "callee": "range",
+          "lineNumber": 179
+        },
+        {
+          "caller": "forward",
+          "callee": "torch.cat",
+          "lineNumber": 180
+        },
+        {
+          "caller": "forward",
+          "callee": "self.decoder_cell",
+          "lineNumber": 181
+        },
+        {
+          "caller": "forward",
+          "callee": "self.displacement_head",
+          "lineNumber": 182
+        },
+        {
+          "caller": "forward",
+          "callee": "steps.append",
+          "lineNumber": 184
+        },
+        {
+          "caller": "forward",
+          "callee": "all_modes.append",
+          "lineNumber": 187
+        },
+        {
+          "caller": "forward",
+          "callee": "torch.stack",
+          "lineNumber": 187
+        },
+        {
+          "caller": "forward",
+          "callee": "torch.stack",
+          "lineNumber": 189
+        },
+        {
+          "caller": "trajectory_loss",
+          "callee": "target_rel.unsqueeze",
+          "lineNumber": 213
+        },
+        {
+          "caller": "trajectory_loss",
+          "callee": "diff.pow(2).sum(dim=-1).mean",
+          "lineNumber": 214
+        },
+        {
+          "caller": "trajectory_loss",
+          "callee": "diff.pow(2).sum",
+          "lineNumber": 214
+        },
+        {
+          "caller": "trajectory_loss",
+          "callee": "diff.pow",
+          "lineNumber": 214
+        },
+        {
+          "caller": "trajectory_loss",
+          "callee": "per_mode_err.argmin",
+          "lineNumber": 216
+        },
+        {
+          "caller": "trajectory_loss",
+          "callee": "per_mode_err.gather(1, best_mode.unsqueeze(1)).mean",
+          "lineNumber": 217
+        },
+        {
+          "caller": "trajectory_loss",
+          "callee": "per_mode_err.gather",
+          "lineNumber": 217
+        },
+        {
+          "caller": "trajectory_loss",
+          "callee": "best_mode.unsqueeze",
+          "lineNumber": 217
+        },
+        {
+          "caller": "trajectory_loss",
+          "callee": "F.cross_entropy",
+          "lineNumber": 219
+        },
+        {
+          "caller": "trajectory_loss",
+          "callee": "F.cross_entropy",
+          "lineNumber": 220
+        },
+        {
+          "caller": "trajectory_loss",
+          "callee": "traj_loss.item",
+          "lineNumber": 224
+        },
+        {
+          "caller": "trajectory_loss",
+          "callee": "mode_loss.item",
+          "lineNumber": 225
+        },
+        {
+          "caller": "trajectory_loss",
+          "callee": "intent_loss.item",
+          "lineNumber": 226
+        },
+        {
+          "caller": "trajectory_loss",
+          "callee": "total.item",
+          "lineNumber": 227
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 5,
+        "functionCount": 4,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "custom_tracking_system/scripts/eval/eval_trajectory_gru.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 113,
+      "nonEmptyLines": 91,
+      "functions": [
+        {
+          "name": "main",
+          "startLine": 40,
+          "endLine": 109,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "main",
+          "line": 40,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "main",
+          "callee": "argparse.ArgumentParser",
+          "lineNumber": 41
+        },
+        {
+          "caller": "main",
+          "callee": "parser.add_argument",
+          "lineNumber": 42
+        },
+        {
+          "caller": "main",
+          "callee": "parser.add_argument",
+          "lineNumber": 43
+        },
+        {
+          "caller": "main",
+          "callee": "parser.add_argument",
+          "lineNumber": 44
+        },
+        {
+          "caller": "main",
+          "callee": "parser.add_argument",
+          "lineNumber": 45
+        },
+        {
+          "caller": "main",
+          "callee": "parser.add_argument",
+          "lineNumber": 46
+        },
+        {
+          "caller": "main",
+          "callee": "parser.parse_args",
+          "lineNumber": 48
+        },
+        {
+          "caller": "main",
+          "callee": "sorted",
+          "lineNumber": 51
+        },
+        {
+          "caller": "main",
+          "callee": "data_dir.glob",
+          "lineNumber": 52
+        },
+        {
+          "caller": "main",
+          "callee": "p.stem.endswith",
+          "lineNumber": 52
+        },
+        {
+          "caller": "main",
+          "callee": "max",
+          "lineNumber": 53
+        },
+        {
+          "caller": "main",
+          "callee": "round",
+          "lineNumber": 53
+        },
+        {
+          "caller": "main",
+          "callee": "len",
+          "lineNumber": 53
+        },
+        {
+          "caller": "main",
+          "callee": "print",
+          "lineNumber": 55
+        },
+        {
+          "caller": "main",
+          "callee": "len",
+          "lineNumber": 55
+        },
+        {
+          "caller": "main",
+          "callee": "tempfile.TemporaryDirectory",
+          "lineNumber": 58
+        },
+        {
+          "caller": "main",
+          "callee": "Path",
+          "lineNumber": 59
+        },
+        {
+          "caller": "main",
+          "callee": "shutil.copy",
+          "lineNumber": 61
+        },
+        {
+          "caller": "main",
+          "callee": "TrajectoryDataset",
+          "lineNumber": 62
+        },
+        {
+          "caller": "main",
+          "callee": "str",
+          "lineNumber": 62
+        },
+        {
+          "caller": "main",
+          "callee": "torch.load",
+          "lineNumber": 65
+        },
+        {
+          "caller": "main",
+          "callee": "np.asarray",
+          "lineNumber": 69
+        },
+        {
+          "caller": "main",
+          "callee": "np.asarray",
+          "lineNumber": 70
+        },
+        {
+          "caller": "main",
+          "callee": "TrajectoryGRU",
+          "lineNumber": 72
+        },
+        {
+          "caller": "main",
+          "callee": "model.load_state_dict",
+          "lineNumber": 73
+        },
+        {
+          "caller": "main",
+          "callee": "model.eval",
+          "lineNumber": 74
+        },
+        {
+          "caller": "main",
+          "callee": "torch.no_grad",
+          "lineNumber": 79
+        },
+        {
+          "caller": "main",
+          "callee": "range",
+          "lineNumber": 80
+        },
+        {
+          "caller": "main",
+          "callee": "len",
+          "lineNumber": 80
+        },
+        {
+          "caller": "main",
+          "callee": "model",
+          "lineNumber": 82
+        },
+        {
+          "caller": "main",
+          "callee": "obs_seq.unsqueeze",
+          "lineNumber": 82
+        },
+        {
+          "caller": "main",
+          "callee": "int",
+          "lineNumber": 84
+        },
+        {
+          "caller": "main",
+          "callee": "torch.softmax(mode_logits, dim=-1)[0].argmax().item",
+          "lineNumber": 84
+        },
+        {
+          "caller": "main",
+          "callee": "torch.softmax(mode_logits, dim=-1)[0].argmax",
+          "lineNumber": 84
+        },
+        {
+          "caller": "main",
+          "callee": "torch.softmax",
+          "lineNumber": 84
+        },
+        {
+          "caller": "main",
+          "callee": "pred_deltas[0, best_mode].numpy",
+          "lineNumber": 85
+        },
+        {
+          "caller": "main",
+          "callee": "target_rel.numpy",
+          "lineNumber": 86
+        },
+        {
+          "caller": "main",
+          "callee": "np.linalg.norm",
+          "lineNumber": 88
+        },
+        {
+          "caller": "main",
+          "callee": "zip",
+          "lineNumber": 89
+        },
+        {
+          "caller": "main",
+          "callee": "horizon_err_m[h].append",
+          "lineNumber": 90
+        },
+        {
+          "caller": "main",
+          "callee": "float",
+          "lineNumber": 93
+        },
+        {
+          "caller": "main",
+          "callee": "np.mean",
+          "lineNumber": 93
+        },
+        {
+          "caller": "main",
+          "callee": "len",
+          "lineNumber": 94
+        },
+        {
+          "caller": "main",
+          "callee": "float",
+          "lineNumber": 98
+        },
+        {
+          "caller": "main",
+          "callee": "np.mean",
+          "lineNumber": 99
+        },
+        {
+          "caller": "main",
+          "callee": "len",
+          "lineNumber": 100
+        },
+        {
+          "caller": "main",
+          "callee": "(project_root.parent / args.out).resolve",
+          "lineNumber": 105
+        },
+        {
+          "caller": "main",
+          "callee": "out_path.parent.mkdir",
+          "lineNumber": 106
+        },
+        {
+          "caller": "main",
+          "callee": "out_path.write_text",
+          "lineNumber": 107
+        },
+        {
+          "caller": "main",
+          "callee": "json.dumps",
+          "lineNumber": 107
+        },
+        {
+          "caller": "main",
+          "callee": "print",
+          "lineNumber": 108
+        },
+        {
+          "caller": "main",
+          "callee": "json.dumps",
+          "lineNumber": 108
+        },
+        {
+          "caller": "main",
+          "callee": "print",
+          "lineNumber": 109
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "custom_tracking_system/scripts/train/train_trajectory_predictor.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 236,
+      "nonEmptyLines": 188,
+      "functions": [
+        {
+          "name": "main",
+          "startLine": 170,
+          "endLine": 232,
+          "params": []
+        }
+      ],
+      "classes": [
+        {
+          "name": "TrajectoryDataset",
+          "startLine": 41,
+          "endLine": 167,
+          "methods": [
+            "__init__",
+            "_get_neighbors",
+            "_compute_norm_stats",
+            "__len__",
+            "__getitem__"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "TrajectoryDataset",
+          "line": 41,
+          "isDefault": false
+        },
+        {
+          "name": "main",
+          "line": 170,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "__init__",
+          "callee": "sorted",
+          "lineNumber": 52
+        },
+        {
+          "caller": "__init__",
+          "callee": "Path(data_dir).glob",
+          "lineNumber": 52
+        },
+        {
+          "caller": "__init__",
+          "callee": "Path",
+          "lineNumber": 52
+        },
+        {
+          "caller": "__init__",
+          "callee": "FileNotFoundError",
+          "lineNumber": 54
+        },
+        {
+          "caller": "__init__",
+          "callee": "max",
+          "lineNumber": 56
+        },
+        {
+          "caller": "__init__",
+          "callee": "pd.read_csv",
+          "lineNumber": 59
+        },
+        {
+          "caller": "__init__",
+          "callee": "df.groupby",
+          "lineNumber": 65
+        },
+        {
+          "caller": "__init__",
+          "callee": "group['actor_id'].to_numpy",
+          "lineNumber": 67
+        },
+        {
+          "caller": "__init__",
+          "callee": "group[['x', 'y']].to_numpy",
+          "lineNumber": 68
+        },
+        {
+          "caller": "__init__",
+          "callee": "group[['vx', 'vy']].to_numpy",
+          "lineNumber": 69
+        },
+        {
+          "caller": "__init__",
+          "callee": "df.groupby",
+          "lineNumber": 72
+        },
+        {
+          "caller": "__init__",
+          "callee": "actor_df.sort_values('t').reset_index",
+          "lineNumber": 73
+        },
+        {
+          "caller": "__init__",
+          "callee": "actor_df.sort_values",
+          "lineNumber": 73
+        },
+        {
+          "caller": "__init__",
+          "callee": "len",
+          "lineNumber": 74
+        },
+        {
+          "caller": "__init__",
+          "callee": "range",
+          "lineNumber": 76
+        },
+        {
+          "caller": "__init__",
+          "callee": "obs_rows.iterrows",
+          "lineNumber": 86
+        },
+        {
+          "caller": "__init__",
+          "callee": "self._get_neighbors",
+          "lineNumber": 87
+        },
+        {
+          "caller": "__init__",
+          "callee": "timestep_data.get",
+          "lineNumber": 88
+        },
+        {
+          "caller": "__init__",
+          "callee": "obs_list.append",
+          "lineNumber": 90
+        },
+        {
+          "caller": "__init__",
+          "callee": "self.samples.append",
+          "lineNumber": 97
+        },
+        {
+          "caller": "__init__",
+          "callee": "future_rows.iterrows",
+          "lineNumber": 101
+        },
+        {
+          "caller": "__init__",
+          "callee": "RuntimeError",
+          "lineNumber": 106
+        },
+        {
+          "caller": "__init__",
+          "callee": "self._compute_norm_stats",
+          "lineNumber": 108
+        },
+        {
+          "caller": "__init__",
+          "callee": "logger.info",
+          "lineNumber": 109
+        },
+        {
+          "caller": "__init__",
+          "callee": "len",
+          "lineNumber": 110
+        },
+        {
+          "caller": "__init__",
+          "callee": "len",
+          "lineNumber": 110
+        },
+        {
+          "caller": "__init__",
+          "callee": "logger.info",
+          "lineNumber": 111
+        },
+        {
+          "caller": "_get_neighbors",
+          "callee": "mask.any",
+          "lineNumber": 118
+        },
+        {
+          "caller": "_get_neighbors",
+          "callee": "np.linalg.norm",
+          "lineNumber": 123
+        },
+        {
+          "caller": "_get_neighbors",
+          "callee": "np.array",
+          "lineNumber": 123
+        },
+        {
+          "caller": "_get_neighbors",
+          "callee": "np.argsort",
+          "lineNumber": 124
+        },
+        {
+          "caller": "_get_neighbors",
+          "callee": "rel.append",
+          "lineNumber": 130
+        },
+        {
+          "caller": "_compute_norm_stats",
+          "callee": "np.array",
+          "lineNumber": 134
+        },
+        {
+          "caller": "_compute_norm_stats",
+          "callee": "own_states.mean",
+          "lineNumber": 137
+        },
+        {
+          "caller": "_compute_norm_stats",
+          "callee": "own_states.std",
+          "lineNumber": 138
+        },
+        {
+          "caller": "_compute_norm_stats",
+          "callee": "np.maximum",
+          "lineNumber": 139
+        },
+        {
+          "caller": "__len__",
+          "callee": "len",
+          "lineNumber": 143
+        },
+        {
+          "caller": "__getitem__",
+          "callee": "np.stack",
+          "lineNumber": 148
+        },
+        {
+          "caller": "__getitem__",
+          "callee": "build_feature_vector",
+          "lineNumber": 149
+        },
+        {
+          "caller": "__getitem__",
+          "callee": "np.array",
+          "lineNumber": 154
+        },
+        {
+          "caller": "__getitem__",
+          "callee": "np.stack",
+          "lineNumber": 156
+        },
+        {
+          "caller": "__getitem__",
+          "callee": "np.array",
+          "lineNumber": 157
+        },
+        {
+          "caller": "__getitem__",
+          "callee": "compute_intent_label",
+          "lineNumber": 161
+        },
+        {
+          "caller": "__getitem__",
+          "callee": "torch.from_numpy(obs_seq).float",
+          "lineNumber": 164
+        },
+        {
+          "caller": "__getitem__",
+          "callee": "torch.from_numpy",
+          "lineNumber": 164
+        },
+        {
+          "caller": "__getitem__",
+          "callee": "torch.from_numpy(target_rel).float",
+          "lineNumber": 165
+        },
+        {
+          "caller": "__getitem__",
+          "callee": "torch.from_numpy",
+          "lineNumber": 165
+        },
+        {
+          "caller": "__getitem__",
+          "callee": "torch.tensor",
+          "lineNumber": 166
+        },
+        {
+          "caller": "main",
+          "callee": "argparse.ArgumentParser",
+          "lineNumber": 171
+        },
+        {
+          "caller": "main",
+          "callee": "parser.add_argument",
+          "lineNumber": 172
+        },
+        {
+          "caller": "main",
+          "callee": "parser.add_argument",
+          "lineNumber": 173
+        },
+        {
+          "caller": "main",
+          "callee": "parser.add_argument",
+          "lineNumber": 174
+        },
+        {
+          "caller": "main",
+          "callee": "parser.add_argument",
+          "lineNumber": 175
+        },
+        {
+          "caller": "main",
+          "callee": "parser.add_argument",
+          "lineNumber": 176
+        },
+        {
+          "caller": "main",
+          "callee": "parser.add_argument",
+          "lineNumber": 177
+        },
+        {
+          "caller": "main",
+          "callee": "parser.parse_args",
+          "lineNumber": 178
+        },
+        {
+          "caller": "main",
+          "callee": "TrajectoryDataset",
+          "lineNumber": 180
+        },
+        {
+          "caller": "main",
+          "callee": "DataLoader",
+          "lineNumber": 181
+        },
+        {
+          "caller": "main",
+          "callee": "torch.cuda.is_available",
+          "lineNumber": 183
+        },
+        {
+          "caller": "main",
+          "callee": "logger.info",
+          "lineNumber": 184
+        },
+        {
+          "caller": "main",
+          "callee": "TrajectoryGRU().to",
+          "lineNumber": 186
+        },
+        {
+          "caller": "main",
+          "callee": "TrajectoryGRU",
+          "lineNumber": 186
+        },
+        {
+          "caller": "main",
+          "callee": "torch.optim.Adam",
+          "lineNumber": 187
+        },
+        {
+          "caller": "main",
+          "callee": "model.parameters",
+          "lineNumber": 187
+        },
+        {
+          "caller": "main",
+          "callee": "range",
+          "lineNumber": 189
+        },
+        {
+          "caller": "main",
+          "callee": "model.train",
+          "lineNumber": 190
+        },
+        {
+          "caller": "main",
+          "callee": "obs_seq.to",
+          "lineNumber": 194
+        },
+        {
+          "caller": "main",
+          "callee": "target_rel.to",
+          "lineNumber": 195
+        },
+        {
+          "caller": "main",
+          "callee": "intent_labels.to",
+          "lineNumber": 196
+        },
+        {
+          "caller": "main",
+          "callee": "model",
+          "lineNumber": 198
+        },
+        {
+          "caller": "main",
+          "callee": "trajectory_loss",
+          "lineNumber": 199
+        },
+        {
+          "caller": "main",
+          "callee": "optimizer.zero_grad",
+          "lineNumber": 202
+        },
+        {
+          "caller": "main",
+          "callee": "loss.backward",
+          "lineNumber": 203
+        },
+        {
+          "caller": "main",
+          "callee": "optimizer.step",
+          "lineNumber": 204
+        },
+        {
+          "caller": "main",
+          "callee": "comps.items",
+          "lineNumber": 206
+        },
+        {
+          "caller": "main",
+          "callee": "len",
+          "lineNumber": 209
+        },
+        {
+          "caller": "main",
+          "callee": "logger.info",
+          "lineNumber": 210
+        },
+        {
+          "caller": "main",
+          "callee": "Path",
+          "lineNumber": 219
+        },
+        {
+          "caller": "main",
+          "callee": "out_path.parent.mkdir",
+          "lineNumber": 220
+        },
+        {
+          "caller": "main",
+          "callee": "torch.save",
+          "lineNumber": 221
+        },
+        {
+          "caller": "main",
+          "callee": "model.state_dict",
+          "lineNumber": 222
+        },
+        {
+          "caller": "main",
+          "callee": "logger.info",
+          "lineNumber": 232
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 2,
+        "functionCount": 1,
+        "classCount": 1
+      }
+    }
+  ]
+}

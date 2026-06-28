@@ -83,9 +83,10 @@ năng độc lập nguồn camera" đã đặt ra ở mục 2.4.
 ### 4.1.3 Thiết kế chi tiết gói — các lớp chính
 
 Hình 4.4 trình bày sơ đồ lớp rút gọn của lõi AI Pipeline, chỉ giữ các lớp
-quan trọng nhất tương ứng với từng use case đã đặc tả ở Chương 2: `GlobalTracker`
-(UC2 — theo dõi xuyên camera), `ByteTrackWrapper` (UC1.2 — theo dõi trong một
-camera), `DualReIDExtractor` (UC1.3 — trích đặc trưng định danh, kế thừa từ
+quan trọng nhất tương ứng với từng use case/năng lực hạ tầng đã đặc tả ở
+Chương 2: `GlobalTracker` (hạ tầng theo dõi xuyên camera, mục 2.4),
+`ByteTrackWrapper` (UC1.2 — theo dõi trong một camera), `DualReIDExtractor`
+(UC1.3 — trích đặc trưng định danh, kế thừa từ
 `ReIDExtractor` để dùng hai nhánh mô hình OSNet riêng cho người và phương
 tiện), `IncidentDetector` (UC3.1 — phát hiện sự cố tự động), `GoalClassifier`
 (UC4.1 — dự đoán hướng rẽ) và `RoutePredictor` (UC4.2 — suy diễn hành trình
@@ -125,13 +126,13 @@ quỹ đạo gần nhất) ở giữa, danh sách cảnh báo thời gian thực
 ### 4.2.2 Thiết kế lớp
 
 Hình 4.6 và Hình 4.7 minh hoạ hai luồng tương tác xuyên suốt nhiều lớp, tương
-ứng hai luồng nghiệp vụ quan trọng nhất đã giới thiệu ở mục 2.2.6: theo dõi
-xuyên camera (UC1 → UC2), và đánh dấu đối tượng → suy diễn hành trình → vẽ
-lên bản đồ (UC3.2 → UC4).
+ứng hai luồng nghiệp vụ quan trọng nhất đã giới thiệu ở mục 2.2.5: theo dõi
+xuyên camera (hạ tầng Re-ID hỗ trợ UC1), và đánh dấu đối tượng → suy diễn
+hành trình → vẽ lên bản đồ (UC3.2 → UC4).
 
 ![Hình 4.6 - Sequence theo dõi xuyên camera](../component_for_final/uml/png/sequence_tracking_xuyen_camera.png)
 
-**Hình 4.6: Sơ đồ tuần tự — theo dõi xuyên camera (UC1 → UC2)**
+**Hình 4.6: Sơ đồ tuần tự — theo dõi xuyên camera (hạ tầng Re-ID hỗ trợ UC1)**
 
 ![Hình 4.7 - Sequence đánh dấu, dự đoán, vẽ bản đồ](../component_for_final/uml/png/sequence_danh_dau_route_map.png)
 

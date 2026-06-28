@@ -1,11 +1,12 @@
 # CHƯƠNG 3. NỀN TẢNG LÝ THUYẾT VÀ CÔNG NGHỆ SỬ DỤNG
 
 > Chương 2 đã xác định các yêu cầu chức năng của hệ thống — phát hiện và theo
-> dõi đối tượng trong từng camera (UC1.1–UC1.2), theo dõi xuyên camera
-> (UC2), phát hiện và đánh dấu sự cố (UC3), dự đoán hướng rẽ và suy diễn hành
-> trình dài hạn trên bản đồ thực tế (UC4.1–UC4.3) — cùng các yêu cầu phi chức
-> năng về hiệu năng thời gian thực, khả năng mở rộng nguồn camera, tính minh
-> bạch của dự đoán và khả năng triển khai trực tiếp trên dữ liệu CCTV thật.
+> dõi đối tượng trong từng camera (UC1.1–UC1.2), phát hiện và đánh dấu sự cố
+> (UC3), dự đoán hướng rẽ và suy diễn hành trình dài hạn trên bản đồ thực tế
+> (UC4.1–UC4.3) — cùng các yêu cầu phi chức năng về hiệu năng thời gian thực,
+> khả năng mở rộng nguồn camera (gồm năng lực duy trì định danh xuyên
+> camera, mục 2.4), tính minh bạch của dự đoán và khả năng triển khai trực
+> tiếp trên dữ liệu CCTV thật.
 > Chương 3 trình bày các nền tảng lý thuyết và công nghệ được lựa chọn để
 > hiện thực hoá từng yêu cầu trên, đồng thời phân tích các hướng tiếp cận
 > thay thế đã được xem xét và lý do lựa chọn cuối cùng. Nội dung được trình
@@ -99,9 +100,9 @@ xuyên camera ở mục 3.3 — vốn mới là nơi thực sự cần đặc tr
 
 ## 3.3 Nhận diện lại xuyên camera (Re-Identification)
 
-UC2 yêu cầu hệ thống nhận ra cùng một đối tượng khi nó xuất hiện ở một
-camera khác — bài toán này được gọi là nhận diện lại (Re-Identification —
-ReID). Khác với theo dõi trong một camera (mục 3.2), ReID không có thông tin
+Năng lực hạ tầng duy trì định danh xuyên camera (mục 2.4) yêu cầu hệ thống
+nhận ra cùng một đối tượng khi nó xuất hiện ở một camera khác — bài toán này
+được gọi là nhận diện lại (Re-Identification — ReID). Khác với theo dõi trong một camera (mục 3.2), ReID không có thông tin
 chuyển động liên tục giữa hai camera (đối tượng "biến mất" khỏi camera này
 một khoảng thời gian trước khi "xuất hiện" ở camera kia), nên phải dựa hoàn
 toàn vào đặc trưng hình ảnh: trích một vector đặc trưng (embedding) đại diện
@@ -132,9 +133,9 @@ thường, trực tiếp đáp ứng yêu cầu khả năng mở rộng số lư
 2.4); (2) đã có sẵn trọng số huấn luyện trước (pretrained) trên bộ dữ liệu
 Market-1501 [8] cho người đi bộ, đồng thời có thể huấn luyện lại (fine-tune)
 trên VeRi-776 [9] — bộ dữ liệu ReID chuyên cho phương tiện cơ giới (ô tô,
-xe máy) — thông qua thư viện `torchreid` [10], phù hợp với việc UC2 cần phân
-biệt nhiều loại đối tượng khác nhau (người đi bộ và nhiều loại phương tiện)
-chứ không chỉ một loại duy nhất. Để giảm tỷ lệ ghép sai khi hai đối tượng có
+xe máy) — thông qua thư viện `torchreid` [10], phù hợp với yêu cầu hạ tầng
+Re-ID cần phân biệt nhiều loại đối tượng khác nhau (người đi bộ và nhiều
+loại phương tiện) chứ không chỉ một loại duy nhất. Để giảm tỷ lệ ghép sai khi hai đối tượng có
 diện mạo tương tự (ví dụ hai xe máy cùng màu, cùng kiểu), việc so khớp đặc
 trưng còn được kết hợp với một bộ lọc thời gian–không gian: chỉ chấp nhận
 một cặp match nếu khoảng thời gian giữa hai lần quan sát phù hợp với thời

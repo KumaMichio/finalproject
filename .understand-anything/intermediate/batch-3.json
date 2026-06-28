@@ -1,0 +1,649 @@
+{
+  "nodes": [
+    {
+      "id": "file:frontend/src/App.jsx",
+      "type": "file",
+      "name": "App.jsx",
+      "filePath": "frontend/src/App.jsx",
+      "summary": "Root React application component that defines client-side routing using React Router, mapping URL paths to the five main pages: Dashboard, AlertManagement, MapView, IncidentDetail, and ObjectHistory.",
+      "tags": ["entry-point", "component", "routing"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:frontend/src/App.jsx:App",
+      "type": "function",
+      "name": "App",
+      "filePath": "frontend/src/App.jsx",
+      "lineRange": [9, 19],
+      "summary": "Top-level React component rendering a BrowserRouter with route definitions for all dashboard pages.",
+      "tags": ["entry-point", "component", "routing"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:frontend/src/components/CameraFeed.jsx",
+      "type": "file",
+      "name": "CameraFeed.jsx",
+      "filePath": "frontend/src/components/CameraFeed.jsx",
+      "summary": "React component displaying a live MJPEG camera stream for a single camera, showing the camera ID, connection status, and the most recent incident alert badge with severity color coding.",
+      "tags": ["component", "video-stream", "monitoring"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/components/CameraFeed.jsx:CameraFeed",
+      "type": "function",
+      "name": "CameraFeed",
+      "filePath": "frontend/src/components/CameraFeed.jsx",
+      "lineRange": [13, 52],
+      "summary": "Renders a camera tile with MJPEG stream URL from the API, an incident badge displaying the latest violation type, and a click handler for camera selection.",
+      "tags": ["component", "video-stream", "api-handler"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/components/CameraGrid.jsx",
+      "type": "file",
+      "name": "CameraGrid.jsx",
+      "filePath": "frontend/src/components/CameraGrid.jsx",
+      "summary": "React component that renders a responsive grid of CameraFeed tiles, distributing a list of camera objects across a CSS grid layout with a shared selection state callback.",
+      "tags": ["component", "layout", "monitoring"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:frontend/src/components/CameraGrid.jsx:CameraGrid",
+      "type": "function",
+      "name": "CameraGrid",
+      "filePath": "frontend/src/components/CameraGrid.jsx",
+      "lineRange": [7, 32],
+      "summary": "Maps over a cameras array to render a grid of CameraFeed components with shared selection and incident data props.",
+      "tags": ["component", "layout"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:frontend/src/components/IncidentCard.jsx",
+      "type": "file",
+      "name": "IncidentCard.jsx",
+      "filePath": "frontend/src/components/IncidentCard.jsx",
+      "summary": "React component displaying a single traffic incident as a card with severity badge, formatted timestamp, camera ID, violation type label, and action buttons to view details or acknowledge the alert.",
+      "tags": ["component", "incident-management", "ui-card"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/components/IncidentCard.jsx:IncidentCard",
+      "type": "function",
+      "name": "IncidentCard",
+      "filePath": "frontend/src/components/IncidentCard.jsx",
+      "lineRange": [10, 71],
+      "summary": "Renders an incident summary card with color-coded severity, formatted time, and navigation to the IncidentDetail page on click.",
+      "tags": ["component", "incident-management", "event-handler"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/components/IncidentPanel.jsx",
+      "type": "file",
+      "name": "IncidentPanel.jsx",
+      "filePath": "frontend/src/components/IncidentPanel.jsx",
+      "summary": "React panel component listing recent traffic incidents with severity-based filter tabs (ALL, CRITICAL, WARNING, INFO), rendering each incident as an IncidentCard sorted by timestamp.",
+      "tags": ["component", "incident-management", "filtering"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/components/IncidentPanel.jsx:IncidentPanel",
+      "type": "function",
+      "name": "IncidentPanel",
+      "filePath": "frontend/src/components/IncidentPanel.jsx",
+      "lineRange": [6, 62],
+      "summary": "Stateful panel that filters and sorts incidents by severity using tab controls, then renders a scrollable list of IncidentCard components.",
+      "tags": ["component", "incident-management", "filtering"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/components/ScenarioPanel.jsx",
+      "type": "file",
+      "name": "ScenarioPanel.jsx",
+      "filePath": "frontend/src/components/ScenarioPanel.jsx",
+      "summary": "React component providing a demo control panel to manually trigger predefined traffic violation scenarios (red light, wrong lane, speeding) via the backend API for testing purposes.",
+      "tags": ["component", "demo-control", "testing"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/components/ScenarioPanel.jsx:ScenarioPanel",
+      "type": "function",
+      "name": "ScenarioPanel",
+      "filePath": "frontend/src/components/ScenarioPanel.jsx",
+      "lineRange": [12, 57],
+      "summary": "Renders a list of scenario trigger buttons with async pending state and feedback messages, calling api.triggerScenario on button click.",
+      "tags": ["component", "demo-control", "event-handler"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/components/StatsBar.jsx",
+      "type": "file",
+      "name": "StatsBar.jsx",
+      "filePath": "frontend/src/components/StatsBar.jsx",
+      "summary": "React component showing real-time system statistics (FPS, active cameras, active tracks, current time) received over a WebSocket connection to the backend.",
+      "tags": ["component", "real-time", "monitoring"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:frontend/src/components/StatsBar.jsx:StatsBar",
+      "type": "function",
+      "name": "StatsBar",
+      "filePath": "frontend/src/components/StatsBar.jsx",
+      "lineRange": [4, 36],
+      "summary": "Subscribes to the /ws/stats WebSocket via useWebSocket, parses JSON stats messages, and displays FPS, camera count, and track count in a top bar.",
+      "tags": ["component", "real-time", "monitoring"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:frontend/src/hooks/useIncidents.js",
+      "type": "file",
+      "name": "useIncidents.js",
+      "filePath": "frontend/src/hooks/useIncidents.js",
+      "summary": "Custom React hook that manages the incident list for the dashboard by listening on a WebSocket channel, playing severity-appropriate audio alerts, triggering a CSS flash animation on new incidents, and providing an acknowledge callback.",
+      "tags": ["hook", "incident-management", "real-time", "audio-alert"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/hooks/useIncidents.js:useIncidents",
+      "type": "function",
+      "name": "useIncidents",
+      "filePath": "frontend/src/hooks/useIncidents.js",
+      "lineRange": [13, 53],
+      "summary": "Returns the current incidents array, an acknowledge function, and unacknowledged count; internally uses useWebSocket for /ws/incidents, maintains an Audio ref per severity level, and caps the list at 50 entries.",
+      "tags": ["hook", "incident-management", "real-time"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/hooks/useWebSocket.js",
+      "type": "file",
+      "name": "useWebSocket.js",
+      "filePath": "frontend/src/hooks/useWebSocket.js",
+      "summary": "Generic custom React hook that manages a WebSocket connection to a given backend path, with auto-reconnect on disconnect, exposing the last received message and connection status.",
+      "tags": ["hook", "websocket", "real-time", "utility"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/hooks/useWebSocket.js:useWebSocket",
+      "type": "function",
+      "name": "useWebSocket",
+      "filePath": "frontend/src/hooks/useWebSocket.js",
+      "lineRange": [8, 39],
+      "summary": "Establishes a WebSocket connection on mount, reconnects with a 2-second delay on close, clears timeouts on unmount, and returns { lastMessage, connected }.",
+      "tags": ["hook", "websocket", "real-time"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/main.jsx",
+      "type": "file",
+      "name": "main.jsx",
+      "filePath": "frontend/src/main.jsx",
+      "summary": "Vite/React application entry point that mounts the root App component into the DOM element with id 'root', applying React StrictMode.",
+      "tags": ["entry-point", "bootstrap"],
+      "complexity": "simple",
+      "languageNotes": "Standard Vite React bootstrap; imports global CSS from index.css in a sibling batch."
+    },
+    {
+      "id": "file:frontend/src/pages/AlertManagement.jsx",
+      "type": "file",
+      "name": "AlertManagement.jsx",
+      "filePath": "frontend/src/pages/AlertManagement.jsx",
+      "summary": "Full-page React view for browsing and managing traffic violation alerts, with severity and type filter controls, paginated alert cards, and an acknowledge action that marks alerts as resolved via the backend API.",
+      "tags": ["component", "api-handler", "incident-management", "filtering"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:frontend/src/pages/AlertManagement.jsx:AlertManagement",
+      "type": "function",
+      "name": "AlertManagement",
+      "filePath": "frontend/src/pages/AlertManagement.jsx",
+      "lineRange": [11, 131],
+      "summary": "Loads alerts from api.getAlerts with query params, renders filter tabs and an alert list, and calls api.acknowledgeAlert on user action, navigating back to the dashboard on back-button click.",
+      "tags": ["api-handler", "incident-management", "filtering"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:frontend/src/pages/Dashboard.jsx",
+      "type": "file",
+      "name": "Dashboard.jsx",
+      "filePath": "frontend/src/pages/Dashboard.jsx",
+      "summary": "Main dashboard page composing the camera grid, incident panel, scenario control panel, and stats bar into a unified monitoring view, fetching camera and system state from the API on mount.",
+      "tags": ["component", "entry-point", "monitoring", "layout"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:frontend/src/pages/Dashboard.jsx:Dashboard",
+      "type": "function",
+      "name": "Dashboard",
+      "filePath": "frontend/src/pages/Dashboard.jsx",
+      "lineRange": [10, 109],
+      "summary": "Fetches camera list and system stats on mount, manages selected camera state, and composes CameraGrid, IncidentPanel, ScenarioPanel, and StatsBar into a responsive multi-pane layout.",
+      "tags": ["component", "monitoring", "api-handler"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:frontend/src/pages/IncidentDetail.jsx",
+      "type": "file",
+      "name": "IncidentDetail.jsx",
+      "filePath": "frontend/src/pages/IncidentDetail.jsx",
+      "summary": "Detail page displaying full information for a tracked vehicle object identified by global track ID, showing first/last seen timestamps, violation types, confidence, and per-camera appearance history.",
+      "tags": ["component", "api-handler", "incident-management"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/pages/IncidentDetail.jsx:IncidentDetail",
+      "type": "function",
+      "name": "IncidentDetail",
+      "filePath": "frontend/src/pages/IncidentDetail.jsx",
+      "lineRange": [11, 94],
+      "summary": "Reads the incident ID from URL params, extracts the numeric global track ID, fetches track data via api.getTrackById, and renders a structured detail card with camera history table.",
+      "tags": ["component", "api-handler", "incident-management"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/pages/MapView.jsx",
+      "type": "file",
+      "name": "MapView.jsx",
+      "filePath": "frontend/src/pages/MapView.jsx",
+      "summary": "Interactive Leaflet map page displaying real-time positions of tracked vehicles and camera locations, with trajectory route overlays, vehicle marking functionality, and a goal-direction prediction panel showing per-direction probabilities.",
+      "tags": ["component", "map", "real-time", "tracking"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:frontend/src/pages/MapView.jsx:MapView",
+      "type": "function",
+      "name": "MapView",
+      "filePath": "frontend/src/pages/MapView.jsx",
+      "lineRange": [24, 237],
+      "summary": "Initializes a Leaflet map with OpenStreetMap tiles, polls api.getMapState every 500ms to refresh vehicle markers and camera icons, renders cross-camera route polylines, and displays a side panel with goal-prediction probabilities for a marked vehicle.",
+      "tags": ["component", "map", "real-time", "api-handler"],
+      "complexity": "complex",
+      "languageNotes": "Uses Leaflet.js (L.*) directly via CDN import rather than react-leaflet, coordinating imperative layer management with React refs to avoid stale closures."
+    },
+    {
+      "id": "file:frontend/src/pages/ObjectHistory.jsx",
+      "type": "file",
+      "name": "ObjectHistory.jsx",
+      "filePath": "frontend/src/pages/ObjectHistory.jsx",
+      "summary": "Page displaying the cross-camera travel history of a specific tracked object identified by its global ID, showing first/last seen times, total camera count, and a per-camera appearance timeline with Vietnamese locale formatting.",
+      "tags": ["component", "api-handler", "tracking"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/pages/ObjectHistory.jsx:ObjectHistory",
+      "type": "function",
+      "name": "ObjectHistory",
+      "filePath": "frontend/src/pages/ObjectHistory.jsx",
+      "lineRange": [5, 72],
+      "summary": "Fetches track data by global_id URL param via api.getTrackById and renders a summary card plus a list of camera hop entries with Vietnamese-locale timestamps.",
+      "tags": ["component", "api-handler", "tracking"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/services/api.js",
+      "type": "file",
+      "name": "api.js",
+      "filePath": "frontend/src/services/api.js",
+      "summary": "Centralized API client module exporting an `api` object with methods for all backend REST endpoints: camera list, stream URL, stats, map state, alerts, track lookup, object marking, scenario triggering, and alert acknowledgement.",
+      "tags": ["service", "api-handler", "utility", "http-client"],
+      "complexity": "moderate"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:frontend/src/App.jsx",
+      "target": "function:frontend/src/App.jsx:App",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:frontend/src/App.jsx",
+      "target": "function:frontend/src/App.jsx:App",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:frontend/src/App.jsx",
+      "target": "file:frontend/src/pages/AlertManagement.jsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/App.jsx",
+      "target": "file:frontend/src/pages/Dashboard.jsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/App.jsx",
+      "target": "file:frontend/src/pages/IncidentDetail.jsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/App.jsx",
+      "target": "file:frontend/src/pages/MapView.jsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/App.jsx",
+      "target": "file:frontend/src/pages/ObjectHistory.jsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/components/CameraFeed.jsx",
+      "target": "function:frontend/src/components/CameraFeed.jsx:CameraFeed",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:frontend/src/components/CameraFeed.jsx",
+      "target": "function:frontend/src/components/CameraFeed.jsx:CameraFeed",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:frontend/src/components/CameraFeed.jsx",
+      "target": "file:frontend/src/services/api.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/components/CameraGrid.jsx",
+      "target": "function:frontend/src/components/CameraGrid.jsx:CameraGrid",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:frontend/src/components/CameraGrid.jsx",
+      "target": "function:frontend/src/components/CameraGrid.jsx:CameraGrid",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:frontend/src/components/CameraGrid.jsx",
+      "target": "file:frontend/src/components/CameraFeed.jsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/components/IncidentCard.jsx",
+      "target": "function:frontend/src/components/IncidentCard.jsx:IncidentCard",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:frontend/src/components/IncidentCard.jsx",
+      "target": "function:frontend/src/components/IncidentCard.jsx:IncidentCard",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:frontend/src/components/IncidentPanel.jsx",
+      "target": "function:frontend/src/components/IncidentPanel.jsx:IncidentPanel",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:frontend/src/components/IncidentPanel.jsx",
+      "target": "function:frontend/src/components/IncidentPanel.jsx:IncidentPanel",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:frontend/src/components/IncidentPanel.jsx",
+      "target": "file:frontend/src/components/IncidentCard.jsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/components/ScenarioPanel.jsx",
+      "target": "function:frontend/src/components/ScenarioPanel.jsx:ScenarioPanel",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:frontend/src/components/ScenarioPanel.jsx",
+      "target": "function:frontend/src/components/ScenarioPanel.jsx:ScenarioPanel",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:frontend/src/components/StatsBar.jsx",
+      "target": "function:frontend/src/components/StatsBar.jsx:StatsBar",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:frontend/src/components/StatsBar.jsx",
+      "target": "function:frontend/src/components/StatsBar.jsx:StatsBar",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:frontend/src/hooks/useIncidents.js",
+      "target": "function:frontend/src/hooks/useIncidents.js:useIncidents",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:frontend/src/hooks/useIncidents.js",
+      "target": "function:frontend/src/hooks/useIncidents.js:useIncidents",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:frontend/src/hooks/useIncidents.js",
+      "target": "file:frontend/src/services/api.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/hooks/useWebSocket.js",
+      "target": "function:frontend/src/hooks/useWebSocket.js:useWebSocket",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:frontend/src/hooks/useWebSocket.js",
+      "target": "function:frontend/src/hooks/useWebSocket.js:useWebSocket",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:frontend/src/main.jsx",
+      "target": "file:frontend/src/App.jsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/AlertManagement.jsx",
+      "target": "function:frontend/src/pages/AlertManagement.jsx:AlertManagement",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:frontend/src/pages/AlertManagement.jsx",
+      "target": "function:frontend/src/pages/AlertManagement.jsx:AlertManagement",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:frontend/src/pages/AlertManagement.jsx",
+      "target": "file:frontend/src/services/api.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/Dashboard.jsx",
+      "target": "function:frontend/src/pages/Dashboard.jsx:Dashboard",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:frontend/src/pages/Dashboard.jsx",
+      "target": "function:frontend/src/pages/Dashboard.jsx:Dashboard",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:frontend/src/pages/Dashboard.jsx",
+      "target": "file:frontend/src/components/CameraGrid.jsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/Dashboard.jsx",
+      "target": "file:frontend/src/components/IncidentPanel.jsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/Dashboard.jsx",
+      "target": "file:frontend/src/components/ScenarioPanel.jsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/Dashboard.jsx",
+      "target": "file:frontend/src/components/StatsBar.jsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/Dashboard.jsx",
+      "target": "file:frontend/src/hooks/useIncidents.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/Dashboard.jsx",
+      "target": "file:frontend/src/hooks/useWebSocket.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/Dashboard.jsx",
+      "target": "file:frontend/src/services/api.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/IncidentDetail.jsx",
+      "target": "function:frontend/src/pages/IncidentDetail.jsx:IncidentDetail",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:frontend/src/pages/IncidentDetail.jsx",
+      "target": "function:frontend/src/pages/IncidentDetail.jsx:IncidentDetail",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:frontend/src/pages/IncidentDetail.jsx",
+      "target": "file:frontend/src/services/api.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/MapView.jsx",
+      "target": "function:frontend/src/pages/MapView.jsx:MapView",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:frontend/src/pages/MapView.jsx",
+      "target": "function:frontend/src/pages/MapView.jsx:MapView",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:frontend/src/pages/MapView.jsx",
+      "target": "file:frontend/src/services/api.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ObjectHistory.jsx",
+      "target": "function:frontend/src/pages/ObjectHistory.jsx:ObjectHistory",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:frontend/src/pages/ObjectHistory.jsx",
+      "target": "function:frontend/src/pages/ObjectHistory.jsx:ObjectHistory",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:frontend/src/pages/ObjectHistory.jsx",
+      "target": "file:frontend/src/services/api.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/hooks/useIncidents.js",
+      "target": "file:frontend/src/hooks/useWebSocket.js",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:frontend/src/components/StatsBar.jsx",
+      "target": "file:frontend/src/hooks/useWebSocket.js",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    }
+  ]
+}

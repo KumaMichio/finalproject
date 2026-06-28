@@ -1,10 +1,10 @@
 @startuml usecase_uc4
-' Hình 2.5 - Use case phân rã UC4
+' Hình 2.4 - Use case phân rã UC4
 left to right direction
 skinparam packageStyle rectangle
 skinparam shadowing false
 skinparam actorStyle awesome
-title Hình 2.5 - Use case phân rã: UC4 - Dự đoán & hiển thị hành trình
+title Hình 2.4 - Use case phân rã: UC4 - Dự đoán & hiển thị hành trình
 
 actor "Bản đồ mạng lưới\nđường thực tế" as Map
 actor "Người vận hành" as Operator

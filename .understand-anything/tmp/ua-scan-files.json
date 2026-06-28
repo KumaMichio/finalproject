@@ -1,0 +1,1502 @@
+{
+  "scriptCompleted": true,
+  "files": [
+    {
+      "path": ".gitattributes",
+      "language": "unknown",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": ".understand-anything/.understandignore",
+      "language": "unknown",
+      "sizeLines": 65,
+      "fileCategory": "code"
+    },
+    {
+      "path": "bao_cao_cuoi_cung.md",
+      "language": "markdown",
+      "sizeLines": 899,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "component_for_final/README.md",
+      "language": "markdown",
+      "sizeLines": 90,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "component_for_final/screenshots/capture_ui.mjs",
+      "language": "javascript",
+      "sizeLines": 43,
+      "fileCategory": "code"
+    },
+    {
+      "path": "component_for_final/screenshots/README.md",
+      "language": "markdown",
+      "sizeLines": 43,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "component_for_final/uml/01_usecase_tong_quat.puml",
+      "language": "puml",
+      "sizeLines": 30,
+      "fileCategory": "code"
+    },
+    {
+      "path": "component_for_final/uml/02_usecase_uc1_phat_hien_theo_doi.puml",
+      "language": "puml",
+      "sizeLines": 20,
+      "fileCategory": "code"
+    },
+    {
+      "path": "component_for_final/uml/03_usecase_uc2_xuyen_camera.puml",
+      "language": "puml",
+      "sizeLines": 16,
+      "fileCategory": "code"
+    },
+    {
+      "path": "component_for_final/uml/04_usecase_uc3_su_co.puml",
+      "language": "puml",
+      "sizeLines": 21,
+      "fileCategory": "code"
+    },
+    {
+      "path": "component_for_final/uml/05_usecase_uc4_hanh_trinh.puml",
+      "language": "puml",
+      "sizeLines": 22,
+      "fileCategory": "code"
+    },
+    {
+      "path": "component_for_final/uml/06_activity_quy_trinh_truy_vet.puml",
+      "language": "puml",
+      "sizeLines": 25,
+      "fileCategory": "code"
+    },
+    {
+      "path": "component_for_final/uml/07_activity_pipeline_1frame.puml",
+      "language": "puml",
+      "sizeLines": 38,
+      "fileCategory": "code"
+    },
+    {
+      "path": "component_for_final/uml/08_sequence_tracking_xuyen_camera.puml",
+      "language": "puml",
+      "sizeLines": 33,
+      "fileCategory": "code"
+    },
+    {
+      "path": "component_for_final/uml/09_sequence_danh_dau_route_map.puml",
+      "language": "puml",
+      "sizeLines": 34,
+      "fileCategory": "code"
+    },
+    {
+      "path": "component_for_final/uml/10_class_diagram.puml",
+      "language": "puml",
+      "sizeLines": 130,
+      "fileCategory": "code"
+    },
+    {
+      "path": "component_for_final/uml/11_package_diagram.puml",
+      "language": "puml",
+      "sizeLines": 43,
+      "fileCategory": "code"
+    },
+    {
+      "path": "component_for_final/uml/12_component_kien_truc_tong_the.puml",
+      "language": "puml",
+      "sizeLines": 59,
+      "fileCategory": "code"
+    },
+    {
+      "path": "component_for_final/uml/13_deployment.puml",
+      "language": "puml",
+      "sizeLines": 42,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/__init__.py",
+      "language": "python",
+      "sizeLines": 32,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/auto_label_itd.py",
+      "language": "python",
+      "sizeLines": 416,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/carla_bridge/server.py",
+      "language": "python",
+      "sizeLines": 173,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/carla_cam_det_v2.yaml",
+      "language": "yaml",
+      "sizeLines": 5,
+      "fileCategory": "config"
+    },
+    {
+      "path": "custom_tracking_system/config/camera_config_6cam.yaml",
+      "language": "yaml",
+      "sizeLines": 74,
+      "fileCategory": "config"
+    },
+    {
+      "path": "custom_tracking_system/config/camera_config_pho_hue.yaml",
+      "language": "yaml",
+      "sizeLines": 102,
+      "fileCategory": "config"
+    },
+    {
+      "path": "custom_tracking_system/config/camera_config_uc2_test.yaml",
+      "language": "yaml",
+      "sizeLines": 24,
+      "fileCategory": "config"
+    },
+    {
+      "path": "custom_tracking_system/config/camera_config.yaml",
+      "language": "yaml",
+      "sizeLines": 182,
+      "fileCategory": "config"
+    },
+    {
+      "path": "custom_tracking_system/constraints.txt",
+      "language": "txt",
+      "sizeLines": 3,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "custom_tracking_system/docs/assets/eval_real/summary.csv",
+      "language": "csv",
+      "sizeLines": 3,
+      "fileCategory": "data"
+    },
+    {
+      "path": "custom_tracking_system/docs/assets/mot_eval_v2/summary.csv",
+      "language": "csv",
+      "sizeLines": 8,
+      "fileCategory": "data"
+    },
+    {
+      "path": "custom_tracking_system/docs/assets/mot_eval/summary.csv",
+      "language": "csv",
+      "sizeLines": 5,
+      "fileCategory": "data"
+    },
+    {
+      "path": "custom_tracking_system/docs/assets/yolo11m_vn_carla6/results.csv",
+      "language": "csv",
+      "sizeLines": 16,
+      "fileCategory": "data"
+    },
+    {
+      "path": "custom_tracking_system/docs/error.md",
+      "language": "markdown",
+      "sizeLines": 380,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "custom_tracking_system/georeference.py",
+      "language": "python",
+      "sizeLines": 121,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/main.py",
+      "language": "python",
+      "sizeLines": 727,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/modules/alert_system.py",
+      "language": "python",
+      "sizeLines": 246,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/modules/calibration.py",
+      "language": "python",
+      "sizeLines": 237,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/modules/camera_controller.py",
+      "language": "python",
+      "sizeLines": 140,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/modules/detector.py",
+      "language": "python",
+      "sizeLines": 208,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/modules/evidence_package.py",
+      "language": "python",
+      "sizeLines": 218,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/modules/global_tracking.py",
+      "language": "python",
+      "sizeLines": 368,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/modules/goal_classifier.py",
+      "language": "python",
+      "sizeLines": 298,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/modules/ground_truth.py",
+      "language": "python",
+      "sizeLines": 235,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/modules/incident_detector.py",
+      "language": "python",
+      "sizeLines": 804,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/modules/incident_snapshot.py",
+      "language": "python",
+      "sizeLines": 58,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/modules/plate_ocr.py",
+      "language": "python",
+      "sizeLines": 197,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/modules/reid.py",
+      "language": "python",
+      "sizeLines": 477,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/modules/scenario_controller.py",
+      "language": "python",
+      "sizeLines": 588,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/modules/tracker.py",
+      "language": "python",
+      "sizeLines": 382,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/modules/traffic_generator.py",
+      "language": "python",
+      "sizeLines": 476,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/modules/traffic_light_classifier.py",
+      "language": "python",
+      "sizeLines": 107,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/modules/trajectory_gru.py",
+      "language": "python",
+      "sizeLines": 228,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/modules/trajectory_predictor.py",
+      "language": "python",
+      "sizeLines": 607,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/modules/video_source.py",
+      "language": "python",
+      "sizeLines": 398,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/README.md",
+      "language": "markdown",
+      "sizeLines": 212,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "custom_tracking_system/requirements_cpu.txt",
+      "language": "txt",
+      "sizeLines": 51,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "custom_tracking_system/requirements.txt",
+      "language": "txt",
+      "sizeLines": 53,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "custom_tracking_system/route_predictor.py",
+      "language": "python",
+      "sizeLines": 383,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/run.bat",
+      "language": "batch",
+      "sizeLines": 42,
+      "fileCategory": "script"
+    },
+    {
+      "path": "custom_tracking_system/scripts/autolabel_turning.py",
+      "language": "python",
+      "sizeLines": 341,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/benchmark_pipeline.py",
+      "language": "python",
+      "sizeLines": 204,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/collect/collect_carla_cam_data.py",
+      "language": "python",
+      "sizeLines": 349,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/collect/collect_carla_cam_det_v2.py",
+      "language": "python",
+      "sizeLines": 479,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/collect/collect_carla_detection_data.py",
+      "language": "python",
+      "sizeLines": 487,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/collect/collect_trajectory_data.py",
+      "language": "python",
+      "sizeLines": 657,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/demo_accident_scenario.py",
+      "language": "python",
+      "sizeLines": 404,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/demo_real_video_scenario.py",
+      "language": "python",
+      "sizeLines": 252,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/eval_plate_chars_detector.py",
+      "language": "python",
+      "sizeLines": 79,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/eval_yolo11s_autolabel.py",
+      "language": "python",
+      "sizeLines": 102,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/eval_yolo11s_vn_plate.py",
+      "language": "python",
+      "sizeLines": 121,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/eval_yolo11s.py",
+      "language": "python",
+      "sizeLines": 59,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/eval/apply_id_corrections.py",
+      "language": "python",
+      "sizeLines": 91,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/eval/detect_road_lines.py",
+      "language": "python",
+      "sizeLines": 204,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/eval/eval_route_predictor_priors.py",
+      "language": "python",
+      "sizeLines": 176,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/eval/eval_trajectory_gru.py",
+      "language": "python",
+      "sizeLines": 113,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/eval/eval_veri_reid.py",
+      "language": "python",
+      "sizeLines": 156,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/eval/evaluate_tracking.py",
+      "language": "python",
+      "sizeLines": 106,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/eval/multiframe_plate_fusion.py",
+      "language": "python",
+      "sizeLines": 165,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/eval/plot_veri_results.py",
+      "language": "python",
+      "sizeLines": 64,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/eval/pseudo_label_plates.py",
+      "language": "python",
+      "sizeLines": 203,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/eval/reid_pipeline_benchmark.py",
+      "language": "python",
+      "sizeLines": 171,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/eval/render_pred_review.py",
+      "language": "python",
+      "sizeLines": 101,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/eval/smoke_test_dual_reid.py",
+      "language": "python",
+      "sizeLines": 115,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/eval/test_plate_ocr_feasibility_v2.py",
+      "language": "python",
+      "sizeLines": 253,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/eval/test_plate_ocr_feasibility_v3.py",
+      "language": "python",
+      "sizeLines": 266,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/eval/test_plate_ocr_feasibility.py",
+      "language": "python",
+      "sizeLines": 270,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/eval/test_traffic_light_feasibility.py",
+      "language": "python",
+      "sizeLines": 96,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/eval/tune_incident_thresholds.py",
+      "language": "python",
+      "sizeLines": 191,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/extract_real_trajectories.py",
+      "language": "python",
+      "sizeLines": 364,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/parse_xodr.py",
+      "language": "python",
+      "sizeLines": 136,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/preview_cameras.py",
+      "language": "python",
+      "sizeLines": 284,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/test_georeference.py",
+      "language": "python",
+      "sizeLines": 22,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/test_load_opendrive.py",
+      "language": "python",
+      "sizeLines": 136,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/test_map_integration.py",
+      "language": "python",
+      "sizeLines": 53,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/test_route_predictor.py",
+      "language": "python",
+      "sizeLines": 39,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/tools/pick_polygon_points.py",
+      "language": "python",
+      "sizeLines": 89,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/trace_single_track.py",
+      "language": "python",
+      "sizeLines": 111,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/train/continue_train.py",
+      "language": "python",
+      "sizeLines": 13,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/train/merge_detection_datasets.py",
+      "language": "python",
+      "sizeLines": 143,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/train/prepare_synthetic_char_data.py",
+      "language": "python",
+      "sizeLines": 150,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/train/prepare_visdrone_dataset.py",
+      "language": "python",
+      "sizeLines": 177,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/train/resume_carla6.py",
+      "language": "python",
+      "sizeLines": 5,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/train/resume_stage2.py",
+      "language": "python",
+      "sizeLines": 5,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/train/resume_train.py",
+      "language": "python",
+      "sizeLines": 5,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/train/train_goal_classifier_real.py",
+      "language": "python",
+      "sizeLines": 755,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/train/train_goal_classifier.py",
+      "language": "python",
+      "sizeLines": 675,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/train/train_trajectory_predictor.py",
+      "language": "python",
+      "sizeLines": 236,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/train/train_veri.py",
+      "language": "python",
+      "sizeLines": 319,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/train/train_yolo_detector.py",
+      "language": "python",
+      "sizeLines": 87,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/visualize_goal_predictions.py",
+      "language": "python",
+      "sizeLines": 147,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/scripts/viz/visualize_trajectories.py",
+      "language": "python",
+      "sizeLines": 474,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/smoke_test_itd.py",
+      "language": "python",
+      "sizeLines": 391,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/utils/data_writer.py",
+      "language": "python",
+      "sizeLines": 302,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/utils/metrics.py",
+      "language": "python",
+      "sizeLines": 232,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/utils/mot_evaluator.py",
+      "language": "python",
+      "sizeLines": 131,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/utils/visualization.py",
+      "language": "python",
+      "sizeLines": 384,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/weights/_backup_horizon1.0/goal_classifier_real.pkl",
+      "language": "pkl",
+      "sizeLines": 9853,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/weights/_backup_horizon1.0/goal_feature_names_real.json",
+      "language": "json",
+      "sizeLines": 34,
+      "fileCategory": "config"
+    },
+    {
+      "path": "custom_tracking_system/weights/_backup_horizon1.0/goal_label_encoder_real.pkl",
+      "language": "pkl",
+      "sizeLines": 0,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/weights/_backup_horizon1.0/goal_scaler_real.pkl",
+      "language": "pkl",
+      "sizeLines": 4,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/weights/goal_classifier.pkl",
+      "language": "pkl",
+      "sizeLines": 18999,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/weights/goal_feature_names_real.json",
+      "language": "json",
+      "sizeLines": 34,
+      "fileCategory": "config"
+    },
+    {
+      "path": "custom_tracking_system/weights/goal_label_encoder_real.pkl",
+      "language": "pkl",
+      "sizeLines": 0,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/weights/goal_scaler_real.pkl",
+      "language": "pkl",
+      "sizeLines": 6,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/weights/osnet_veri776_v2.pth",
+      "language": "pth",
+      "sizeLines": 94974,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/weights/osnet_veri776.pth",
+      "language": "pth",
+      "sizeLines": 97727,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/weights/trajectory_gru.pth",
+      "language": "pth",
+      "sizeLines": 844,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/weights/yolo11m_vn.pt",
+      "language": "pt",
+      "sizeLines": 95728,
+      "fileCategory": "code"
+    },
+    {
+      "path": "custom_tracking_system/weights/yolo11s_carla_v2.pt",
+      "language": "pt",
+      "sizeLines": 43834,
+      "fileCategory": "code"
+    },
+    {
+      "path": "demo/incident_state.json",
+      "language": "json",
+      "sizeLines": 147,
+      "fileCategory": "config"
+    },
+    {
+      "path": "demo/map_view.html",
+      "language": "html",
+      "sizeLines": 269,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "demo/server.py",
+      "language": "python",
+      "sizeLines": 100,
+      "fileCategory": "code"
+    },
+    {
+      "path": "docs/assets/benchmark_pipeline.json",
+      "language": "json",
+      "sizeLines": 18,
+      "fileCategory": "config"
+    },
+    {
+      "path": "docs/assets/goal_classifier_real/metrics_v0_baseline.json",
+      "language": "json",
+      "sizeLines": 54,
+      "fileCategory": "config"
+    },
+    {
+      "path": "docs/assets/goal_classifier_real/metrics_v1_jf065_balanced.json",
+      "language": "json",
+      "sizeLines": 190,
+      "fileCategory": "config"
+    },
+    {
+      "path": "docs/assets/goal_classifier_real/metrics.json",
+      "language": "json",
+      "sizeLines": 209,
+      "fileCategory": "config"
+    },
+    {
+      "path": "docs/assets/osnet_veri776_v2/reid_eval_veri_test.json",
+      "language": "json",
+      "sizeLines": 64,
+      "fileCategory": "config"
+    },
+    {
+      "path": "docs/assets/osnet_veri776_v2/results.csv",
+      "language": "csv",
+      "sizeLines": 49,
+      "fileCategory": "data"
+    },
+    {
+      "path": "docs/assets/plate_chars_detector/train_results.csv",
+      "language": "csv",
+      "sizeLines": 51,
+      "fileCategory": "data"
+    },
+    {
+      "path": "docs/assets/plate_ocr_feasibility_v2/feasibility_v2_summary.json",
+      "language": "json",
+      "sizeLines": 3025,
+      "fileCategory": "config"
+    },
+    {
+      "path": "docs/assets/plate_ocr_feasibility_v3/feasibility_v3_summary.json",
+      "language": "json",
+      "sizeLines": 2577,
+      "fileCategory": "config"
+    },
+    {
+      "path": "docs/assets/plate_ocr_feasibility/feasibility_summary.json",
+      "language": "json",
+      "sizeLines": 1594,
+      "fileCategory": "config"
+    },
+    {
+      "path": "docs/assets/trajectory_gru/ade_fde_results.json",
+      "language": "json",
+      "sizeLines": 51,
+      "fileCategory": "config"
+    },
+    {
+      "path": "docs/assets/trajectory_gru/train_log.txt",
+      "language": "txt",
+      "sizeLines": 54,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/assets/yolo11m_vn_carla/results.csv",
+      "language": "csv",
+      "sizeLines": 19,
+      "fileCategory": "data"
+    },
+    {
+      "path": "docs/assets/yolo11m_vn_carla5/results.csv",
+      "language": "csv",
+      "sizeLines": 11,
+      "fileCategory": "data"
+    },
+    {
+      "path": "docs/assets/yolo11s_carla_v2/forgetting_check_vs_visdrone_carla_vn.txt",
+      "language": "txt",
+      "sizeLines": 30,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/assets/yolo11s_carla_v2/results.csv",
+      "language": "csv",
+      "sizeLines": 31,
+      "fileCategory": "data"
+    },
+    {
+      "path": "docs/assets/yolo11s_vn_plate/train_results.csv",
+      "language": "csv",
+      "sizeLines": 31,
+      "fileCategory": "data"
+    },
+    {
+      "path": "docs/bao_cao_tien_do.md",
+      "language": "markdown",
+      "sizeLines": 1108,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/build_carla_from_ue4_source.md",
+      "language": "markdown",
+      "sizeLines": 511,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/chuong1_gioi_thieu_de_tai.md",
+      "language": "markdown",
+      "sizeLines": 160,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/chuong2_khao_sat_phan_tich_yeu_cau.md",
+      "language": "markdown",
+      "sizeLines": 458,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/chuong3_nen_tang_ly_thuyet_va_cong_nghe.md",
+      "language": "markdown",
+      "sizeLines": 412,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/chuong4_phan_tich_thiet_ke_trien_khai_danh_gia.md",
+      "language": "markdown",
+      "sizeLines": 377,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/chuong5_cac_giai_phap_dong_gop_noi_bat.md",
+      "language": "markdown",
+      "sizeLines": 702,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/chuong6_ket_luan_huong_phat_trien.md",
+      "language": "markdown",
+      "sizeLines": 336,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/demo.md",
+      "language": "markdown",
+      "sizeLines": 274,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/description.md",
+      "language": "markdown",
+      "sizeLines": 178,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/development_roadmap.md",
+      "language": "markdown",
+      "sizeLines": 1188,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/execute.md",
+      "language": "markdown",
+      "sizeLines": 1274,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/finetune_cloud_prompt.md",
+      "language": "markdown",
+      "sizeLines": 116,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/gpu_cloud_tasks.md",
+      "language": "markdown",
+      "sizeLines": 131,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/instruction.txt",
+      "language": "txt",
+      "sizeLines": 210,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/MUST.md",
+      "language": "markdown",
+      "sizeLines": 333,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/plan_thu_thap_gt_bytetrack.md",
+      "language": "markdown",
+      "sizeLines": 127,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/plan_tinh_chinh_nguong_incident.md",
+      "language": "markdown",
+      "sizeLines": 179,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/plan.md",
+      "language": "markdown",
+      "sizeLines": 1033,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/post_accident_prediction.md",
+      "language": "markdown",
+      "sizeLines": 258,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/production_model_stack.md",
+      "language": "markdown",
+      "sizeLines": 863,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/project_context.md",
+      "language": "markdown",
+      "sizeLines": 374,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/qa_auto_label.md",
+      "language": "markdown",
+      "sizeLines": 117,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/report.md",
+      "language": "markdown",
+      "sizeLines": 488,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/tomorrow.md",
+      "language": "markdown",
+      "sizeLines": 146,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/upgrade.md",
+      "language": "markdown",
+      "sizeLines": 1464,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/workflow.md",
+      "language": "markdown",
+      "sizeLines": 141,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "frontend/index.html",
+      "language": "html",
+      "sizeLines": 13,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/package.json",
+      "language": "json",
+      "sizeLines": 25,
+      "fileCategory": "config"
+    },
+    {
+      "path": "frontend/postcss.config.js",
+      "language": "javascript",
+      "sizeLines": 3,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/App.jsx",
+      "language": "javascript",
+      "sizeLines": 19,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/components/CameraFeed.jsx",
+      "language": "javascript",
+      "sizeLines": 52,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/components/CameraGrid.jsx",
+      "language": "javascript",
+      "sizeLines": 32,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/components/IncidentCard.jsx",
+      "language": "javascript",
+      "sizeLines": 71,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/components/IncidentPanel.jsx",
+      "language": "javascript",
+      "sizeLines": 62,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/components/ScenarioPanel.jsx",
+      "language": "javascript",
+      "sizeLines": 57,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/components/StatsBar.jsx",
+      "language": "javascript",
+      "sizeLines": 36,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/hooks/useIncidents.js",
+      "language": "javascript",
+      "sizeLines": 53,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/hooks/useWebSocket.js",
+      "language": "javascript",
+      "sizeLines": 39,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/index.css",
+      "language": "css",
+      "sizeLines": 17,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/main.jsx",
+      "language": "javascript",
+      "sizeLines": 11,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/pages/AlertManagement.jsx",
+      "language": "javascript",
+      "sizeLines": 131,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/pages/Dashboard.jsx",
+      "language": "javascript",
+      "sizeLines": 109,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/pages/IncidentDetail.jsx",
+      "language": "javascript",
+      "sizeLines": 94,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/pages/MapView.jsx",
+      "language": "javascript",
+      "sizeLines": 237,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/pages/ObjectHistory.jsx",
+      "language": "javascript",
+      "sizeLines": 72,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/services/api.js",
+      "language": "javascript",
+      "sizeLines": 52,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/tailwind.config.js",
+      "language": "javascript",
+      "sizeLines": 14,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/vite.config.js",
+      "language": "javascript",
+      "sizeLines": 13,
+      "fileCategory": "code"
+    },
+    {
+      "path": "Map/buildings_hanoi_district3.json",
+      "language": "json",
+      "sizeLines": 1809,
+      "fileCategory": "config"
+    },
+    {
+      "path": "Map/buildings_render.py",
+      "language": "python",
+      "sizeLines": 60,
+      "fileCategory": "code"
+    },
+    {
+      "path": "Map/extract_buildings.py",
+      "language": "python",
+      "sizeLines": 88,
+      "fileCategory": "code"
+    },
+    {
+      "path": "Map/fit_camera_pose.py",
+      "language": "python",
+      "sizeLines": 92,
+      "fileCategory": "code"
+    },
+    {
+      "path": "Map/georeference.py",
+      "language": "python",
+      "sizeLines": 62,
+      "fileCategory": "code"
+    },
+    {
+      "path": "Map/hanoi_district3.xodr",
+      "language": "xodr",
+      "sizeLines": 19478,
+      "fileCategory": "code"
+    },
+    {
+      "path": "Map/inspect_opendrive3.py",
+      "language": "python",
+      "sizeLines": 83,
+      "fileCategory": "code"
+    },
+    {
+      "path": "Map/junction_graph.json",
+      "language": "json",
+      "sizeLines": 14439,
+      "fileCategory": "config"
+    },
+    {
+      "path": "Map/map3_smaller.osm",
+      "language": "osm",
+      "sizeLines": 4155,
+      "fileCategory": "code"
+    },
+    {
+      "path": "Map/pho_hue_tkc_junction_graph.json",
+      "language": "json",
+      "sizeLines": 22291,
+      "fileCategory": "config"
+    },
+    {
+      "path": "Map/pho_hue_tkc.osm",
+      "language": "osm",
+      "sizeLines": 79026,
+      "fileCategory": "code"
+    },
+    {
+      "path": "Map/pho_hue_tkc.xodr",
+      "language": "xodr",
+      "sizeLines": 31349,
+      "fileCategory": "code"
+    },
+    {
+      "path": "Map/test_buildings_grey.py",
+      "language": "python",
+      "sizeLines": 78,
+      "fileCategory": "code"
+    },
+    {
+      "path": "Map/test_buildings.py",
+      "language": "python",
+      "sizeLines": 103,
+      "fileCategory": "code"
+    },
+    {
+      "path": "Map/test_traffic_lights.py",
+      "language": "python",
+      "sizeLines": 97,
+      "fileCategory": "code"
+    },
+    {
+      "path": "Map/test_traffic.py",
+      "language": "python",
+      "sizeLines": 96,
+      "fileCategory": "code"
+    },
+    {
+      "path": "Map/traffic_light_sim.py",
+      "language": "python",
+      "sizeLines": 85,
+      "fileCategory": "code"
+    },
+    {
+      "path": "qa_autolabel.py",
+      "language": "python",
+      "sizeLines": 81,
+      "fileCategory": "code"
+    },
+    {
+      "path": "server/__init__.py",
+      "language": "python",
+      "sizeLines": 0,
+      "fileCategory": "code"
+    },
+    {
+      "path": "server/app.py",
+      "language": "python",
+      "sizeLines": 196,
+      "fileCategory": "code"
+    },
+    {
+      "path": "server/config.py",
+      "language": "python",
+      "sizeLines": 30,
+      "fileCategory": "code"
+    },
+    {
+      "path": "server/middleware/__init__.py",
+      "language": "python",
+      "sizeLines": 0,
+      "fileCategory": "code"
+    },
+    {
+      "path": "server/models/__init__.py",
+      "language": "python",
+      "sizeLines": 0,
+      "fileCategory": "code"
+    },
+    {
+      "path": "server/models/database.py",
+      "language": "python",
+      "sizeLines": 146,
+      "fileCategory": "code"
+    },
+    {
+      "path": "server/models/schemas.py",
+      "language": "python",
+      "sizeLines": 170,
+      "fileCategory": "code"
+    },
+    {
+      "path": "server/requirements.txt",
+      "language": "txt",
+      "sizeLines": 11,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "server/routers/__init__.py",
+      "language": "python",
+      "sizeLines": 0,
+      "fileCategory": "code"
+    },
+    {
+      "path": "server/routers/alerts.py",
+      "language": "python",
+      "sizeLines": 63,
+      "fileCategory": "code"
+    },
+    {
+      "path": "server/routers/cameras.py",
+      "language": "python",
+      "sizeLines": 51,
+      "fileCategory": "code"
+    },
+    {
+      "path": "server/routers/maproute.py",
+      "language": "python",
+      "sizeLines": 40,
+      "fileCategory": "code"
+    },
+    {
+      "path": "server/routers/rois.py",
+      "language": "python",
+      "sizeLines": 59,
+      "fileCategory": "code"
+    },
+    {
+      "path": "server/routers/scenarios.py",
+      "language": "python",
+      "sizeLines": 27,
+      "fileCategory": "code"
+    },
+    {
+      "path": "server/routers/stats.py",
+      "language": "python",
+      "sizeLines": 38,
+      "fileCategory": "code"
+    },
+    {
+      "path": "server/routers/stream.py",
+      "language": "python",
+      "sizeLines": 81,
+      "fileCategory": "code"
+    },
+    {
+      "path": "server/routers/tracks.py",
+      "language": "python",
+      "sizeLines": 59,
+      "fileCategory": "code"
+    },
+    {
+      "path": "server/routers/websocket.py",
+      "language": "python",
+      "sizeLines": 98,
+      "fileCategory": "code"
+    },
+    {
+      "path": "server/run_server.bat",
+      "language": "batch",
+      "sizeLines": 48,
+      "fileCategory": "script"
+    },
+    {
+      "path": "server/services/__init__.py",
+      "language": "python",
+      "sizeLines": 0,
+      "fileCategory": "code"
+    },
+    {
+      "path": "server/services/ai_processor.py",
+      "language": "python",
+      "sizeLines": 1049,
+      "fileCategory": "code"
+    },
+    {
+      "path": "server/services/alert_service.py",
+      "language": "python",
+      "sizeLines": 75,
+      "fileCategory": "code"
+    },
+    {
+      "path": "server/services/camera_service.py",
+      "language": "python",
+      "sizeLines": 51,
+      "fileCategory": "code"
+    },
+    {
+      "path": "server/services/stream_service.py",
+      "language": "python",
+      "sizeLines": 70,
+      "fileCategory": "code"
+    },
+    {
+      "path": "server/services/tracking_service.py",
+      "language": "python",
+      "sizeLines": 103,
+      "fileCategory": "code"
+    },
+    {
+      "path": "start.bat",
+      "language": "batch",
+      "sizeLines": 143,
+      "fileCategory": "script"
+    },
+    {
+      "path": "stop.bat",
+      "language": "batch",
+      "sizeLines": 22,
+      "fileCategory": "script"
+    },
+    {
+      "path": "things_to_do.md",
+      "language": "markdown",
+      "sizeLines": 179,
+      "fileCategory": "docs"
+    }
+  ],
+  "totalFiles": 244,
+  "filteredByIgnore": 104,
+  "estimatedComplexity": "large",
+  "stats": {
+    "filesScanned": 244,
+    "byCategory": {
+      "code": 167,
+      "docs": 39,
+      "config": 21,
+      "data": 10,
+      "script": 4,
+      "markup": 3
+    },
+    "byLanguage": {
+      "unknown": 2,
+      "markdown": 32,
+      "javascript": 20,
+      "puml": 13,
+      "python": 117,
+      "yaml": 5,
+      "txt": 7,
+      "csv": 10,
+      "batch": 4,
+      "pkl": 6,
+      "json": 16,
+      "pth": 3,
+      "pt": 2,
+      "html": 2,
+      "css": 1,
+      "xodr": 2,
+      "osm": 2
+    }
+  }
+}

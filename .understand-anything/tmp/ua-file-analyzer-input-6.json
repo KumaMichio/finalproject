@@ -1,0 +1,9 @@
+{
+  "projectRoot": "E:/School_project/finalproject",
+  "batchFiles": [
+    {"path": "custom_tracking_system/modules/trajectory_gru.py", "language": "python", "sizeLines": 228, "fileCategory": "code"},
+    {"path": "custom_tracking_system/scripts/eval/eval_trajectory_gru.py", "language": "python", "sizeLines": 113, "fileCategory": "code"},
+    {"path": "custom_tracking_system/scripts/train/train_trajectory_predictor.py", "language": "python", "sizeLines": 236, "fileCategory": "code"}
+  ],
+  "batchImportData": {"custom_tracking_system/modules/trajectory_gru.py":[],"custom_tracking_system/scripts/eval/eval_trajectory_gru.py":["custom_tracking_system/modules/trajectory_gru.py"],"custom_tracking_system/scripts/train/train_trajectory_predictor.py":["custom_tracking_system/modules/trajectory_gru.py"]}
+}
