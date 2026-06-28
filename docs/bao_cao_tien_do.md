@@ -5,7 +5,7 @@
 
 **Môi trường mô phỏng:** CARLA Simulator 0.9.14 (Town10HD_Opt + hanoi_district3.xodr)
 
-**Cập nhật lần cuối:** 2026-06-20 (xem Phụ Lục ở cuối tài liệu cho tiến độ từng giai đoạn: 2026-06-13/14, 2026-06-18, 2026-06-19, và 2026-06-20)
+**Cập nhật lần cuối:** 2026-06-27 (xem Phụ Lục ở cuối tài liệu cho tiến độ từng giai đoạn: 2026-06-13/14, 2026-06-18, 2026-06-19, 2026-06-20, và 2026-06-27 — mục 3.6 Nhận diện biển số)
 
 ---
 
@@ -189,12 +189,77 @@ proactive alerts đã được kích hoạt (trước đó bị lỗi do thiếu
 
 ---
 
-### 3.6 Tổng hợp tiến độ các model AI
+### 3.6 Nhận Diện Biển Số — 2 Giai Đoạn (YOLO11s_vn_plate + plate_chars_detector)
+
+| | |
+|---|---|
+| **Vai trò** | Nhận diện biển số xe theo kiểu character-as-object-detection (không dùng OCR sequence) |
+| **Stage 1** | Thêm class `license_plate` (id=5) vào detector chính → fine-tune từ `weights/yolo11s_vn.pt` trên dataset gộp `auto_label` (15.957 ảnh CCTV thật, 5 class gốc) + `plate_pseudolabel` (256 ảnh, đã review tay) → `data/yolo11s_vn_plate_merged` (16.213 ảnh, nc=6) |
+| **Stage 2** | Model riêng `YOLO11n`, 30 class = từng ký tự biển số VN (`1-9, A-H, K-N, P, S, T, U, V, X, Y, Z, 0`), train từ base COCO trên dataset gộp `plate_chars_pseudolabel` (329 ảnh thật) + `plate_chars_external` (6.849 ảnh synthetic) → `data/plate_chars_merged` (7.178 ảnh, nc=30) |
+| **Checkpoint** | `weights/yolo11s_vn_plate.pt` (Stage 1, 30 epoch), `weights/plate_chars_detector.pt` (Stage 2, 50 epoch) |
+
+**Kết quả Stage 1 — catastrophic-forgetting check (so với baseline yolo11s_vn mAP50=89.5%, đo trên cùng 800 ảnh auto_label, seed=42):**
+
+| Class cũ | mAP50 mới | So với baseline |
+|---|---|---|
+| person | 89.91% | +0.41pp |
+| car | 98.88% | +9.38pp |
+| motorcycle | 98.35% | +8.85pp |
+| bus | 95.29% | +5.79pp |
+| truck | 89.22% | −0.28pp |
+
+→ **Không có catastrophic forgetting** — trộn `auto_label` vào lúc fine-tune giữ nguyên (thậm chí nhúc nhích tăng) hiệu năng 5 class gốc.
+
+**Kết quả Stage 1 — class `license_plate` (mới, val split held-out riêng, 2.437 ảnh, 742 box):**
+
+| Metric | Giá trị |
+|---|---|
+| mAP50 | **1.35%** |
+| mAP50-95 | 0.52% |
+| Precision | 100% |
+| Recall | **0%** |
+
+⚠️ **License_plate gần như không học được** — model hầu như không phát hiện biển số nào (recall≈0%). Nguyên nhân nhiều khả năng: chỉ 212/13.776 ảnh train (≈1.5%) có nhãn `license_plate`, kết hợp với biển số là vật thể rất nhỏ trong khung CCTV — 30 epoch không đủ để học một class hiếm+nhỏ khi bị áp đảo bởi 5 class cũ. **Chưa khắc phục** (cần thêm epoch tập trung ảnh có biển số, tăng class weight, hoặc tăng `imgsz`/oversampling — để lại cho vòng sau).
+
+**Kết quả Stage 2 — plate_chars_detector (val split, 1.026 ảnh, 8.650 box, 30 class):**
+
+| Metric | Giá trị |
+|---|---|
+| mAP50 | **97.41%** |
+| mAP50-95 | 73.46% |
+| Precision | 96.89% |
+| Recall | ≈95.5% |
+
+Per-class — các ký tự hiếm trong dữ liệu thực (B/C/K/L/M/P/S/T/Z, chủ yếu được synthetic data bù):
+
+| Class | mAP50 | Ghi chú |
+|---|---|---|
+| **M** | **70.47%** | Thấp nhất — điểm yếu thật |
+| K | 93.50% | Tạm ổn |
+| C | 97.97% | Tốt |
+| L, B, P, S, T, Z | 99.0–99.5% | Tốt — synthetic bù hiệu quả |
+
+Ngoài danh sách trên, **D (84.8%)** và **H (93.1%)** cũng thấp hơn mặt bằng chung (99%+) dù không hiếm trong dữ liệu thực.
+
+**Trạng thái:** Stage 1 ✅ train xong, ✅ không forgetting, ❌ license_plate chưa hoạt động (chưa fix).
+Stage 2 ✅ train xong, ✅ chất lượng cao (97.4% mAP50), 1 class yếu (M).
+Plots/metrics đầy đủ tại `docs/assets/yolo11s_vn_plate/` và `docs/assets/plate_chars_detector/`.
+
+> **Lưu ý training trên máy local:** cả 2 lần train đều bị ngắt giữa chừng do
+> tiến trình bị kill khi phiên làm việc kết thúc (epoch 24/30 và epoch 40/50) —
+> không phải lỗi code/OOM. Đã resume thành công từ checkpoint mỗi lần
+> (`YOLO(last.pt).train(resume=True, workers=2)`), không mất tiến độ.
+
+---
+
+### 3.7 Tổng hợp tiến độ các model AI
 
 | Model | Vai trò | Trạng thái | Ghi chú |
 |---|---|---|---|
 | **YOLO11s_vn** ⭐ (production) | Detection (5 lớp VN) | ✅ Fine-tune hoàn thành | CARLA domain: mAP50=2.32%, P=80.5%, R=3.96% (domain gap); `weights/yolo11s_vn.pt` |
 | **YOLO11m_vn** (fallback) | Detection (5 lớp VN, legacy) | ✅ Fine-tune hoàn thành (18+10 epoch) | VisDrone val: mAP50=55.75%; CARLA domain: mAP50=2.66% — tương đương yolo11s |
+| **YOLO11s_vn_plate** (Stage 1) | Detection (5 lớp VN + license_plate) | ✅ Train hoàn thành, ❌ license_plate chưa hoạt động | Không forgetting (5 class cũ ≈ baseline 89.5%); license_plate mAP50=1.35%, recall≈0% |
+| **plate_chars_detector** (Stage 2) | Nhận diện ký tự biển số (30 class) | ✅ Train + validate hoàn thành | mAP50=97.41%, mAP50-95=73.46%; class `M` yếu nhất (70.47%) |
 | **ByteTrack** | Tracking trong camera | ✅ Hoàn thành | MOTA overall=−23.6% (CARLA, 100 frames, bị ảnh hưởng bởi domain gap detection) |
 | **OSNet (Market-1501)** | Re-ID người | ✅ Hoàn thành | Pretrained, không cần train thêm |
 | **OSNet/VeRi-776** | Re-ID xe | ✅ Đã train, tích hợp xong | ⚠️ Re-train cần tải lại dataset VeRi-776 (~1.1GB) |
@@ -257,6 +322,7 @@ proactive alerts đã được kích hoạt (trước đó bị lỗi do thiếu
 | 4 | YOLO pretrained COCO nhận diện kém xe máy VN | Fine-tune YOLO11m trên VisDrone-VN + dữ liệu CARLA tự thu thập (đang chạy) |
 | 5 | Huấn luyện trên máy local RAM/VRAM hạn chế gây OOM | Giảm batch size (16→8), giảm dataloader workers (8→4), resume từ checkpoint khi crash |
 | 6 | Domain gap YOLO11s_vn.pt trên CARLA renders → Recall≈0% | Đã eval 4 cấu hình: COCO model tệ hơn VN (max conf=0.098); hạ threshold không giúp (FP tăng nhanh hơn FN giảm); conf=0.35 VN tốt nhất (MOTA=-23.6%). Fix: **fine-tune trên `carla_cam_det_v2/`** (16,247 ảnh, 6 camera TL-mounted, sẵn sàng — cần GPU cloud ~1-2h T4; class weights [1.0, 0.5, 3.0, 1.0, 0.5] để bù motorcycle underrepresentation) |
+| 7 | Class `license_plate` mới chỉ chiếm ≈1.5% ảnh train (212/13.776) + là vật thể nhỏ → Stage 1 gần như không học được (mAP50=1.35%, recall≈0%) | **Chưa khắc phục** — đã ghi nhận số liệu, để lại cho vòng huấn luyện sau (hướng khả thi: oversampling ảnh có biển số, tăng class weight, tăng `imgsz`) |
 
 ---
 

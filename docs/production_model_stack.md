@@ -5,7 +5,7 @@
 >
 > **Liên kết:** Xem thêm `upgrade.md` (lộ trình implement) và `bao_cao_tien_do.md` (tiến độ tổng thể).
 >
-> **Cập nhật lần cuối:** 2026-05-29
+> **Cập nhật lần cuối:** 2026-06-27
 
 ---
 
@@ -639,6 +639,48 @@ score = clf.predict([[speed, accel, turn, density, hour]])
 
 ---
 
+### 3.6 Nhận Diện Biển Số — 2 Giai Đoạn ✅ Train xong (2026-06-27)
+
+> Character-as-object-detection (không dùng OCR sequence). Stage 1 thêm class
+> `license_plate` vào detector chính để khoanh vùng biển số; Stage 2 là model
+> riêng nhận diện từng ký tự trong crop biển số.
+
+**Stage 1 — `yolo11s_vn_plate.pt`:** fine-tune từ `weights/yolo11s_vn.pt` (KHÔNG
+train từ đầu, để tránh catastrophic forgetting) trên dataset gộp
+`merge_detection_datasets.py --datasets auto_label=data/auto_label
+plate=data/plate_pseudolabel --names person car motorcycle bus truck
+license_plate` → `data/yolo11s_vn_plate_merged` (16,213 ảnh: 15,957 ảnh CCTV
+gốc + 256 ảnh có biển số đã review tay). 30 epoch, batch=8-16, RTX 4060.
+
+| Kết quả | Giá trị |
+|---|---|
+| 5 class cũ (so baseline mAP50=89.5%, đúng 800 ảnh auto_label) | person 89.91% (+0.41pp), car 98.88% (+9.38pp), motorcycle 98.35% (+8.85pp), bus 95.29% (+5.79pp), truck 89.22% (−0.28pp) — **không forgetting** |
+| `license_plate` (val held-out, 742 box) | mAP50=**1.35%**, recall≈**0%** — ⚠️ chưa học được, chưa khắc phục |
+
+**Stage 2 — `plate_chars_detector.pt`:** YOLO11n train từ base COCO (model nhỏ
+riêng, không liên quan đến Stage 1) trên dataset gộp
+`real=data/plate_chars_pseudolabel synth=data/plate_chars_external` →
+`data/plate_chars_merged` (7,178 ảnh, nc=30 ký tự biển số VN). 50 epoch,
+batch=32, RTX 4060.
+
+| Kết quả | Giá trị |
+|---|---|
+| Overall (val 1,026 ảnh, 8,650 box) | mAP50=**97.41%**, mAP50-95=73.46%, P=96.89%, R≈95.5% |
+| Class hiếm (B/C/K/L/M/P/S/T/Z, synthetic-backed) | Tốt nhất 99.0-99.5% (B/L/P/S/T/Z), C=97.97%, K=93.50%; **M=70.47%** yếu nhất |
+| Khác (không hiếm nhưng vẫn thấp) | D=84.8%, H=93.1% |
+
+Plots (`results.png`, `confusion_matrix.png`, `BoxPR_curve.png`, ...) đã lưu
+tại `docs/assets/yolo11s_vn_plate/` và `docs/assets/plate_chars_detector/`.
+
+> **Lưu ý hạ tầng training local:** cả 2 lần train bị tiến trình kill giữa
+> chừng khi phiên làm việc Claude Code kết thúc (epoch 24/30 và epoch 40/50) —
+> không phải OOM/lỗi code. Khắc phục bằng cách launch training như một
+> **process tách biệt thật** (PowerShell `Start-Process` độc lập khỏi tiến
+> trình agent, không phải background task của harness) và resume từ
+> `last.pt` (`YOLO(last.pt).train(resume=True, workers=2)`) — không mất tiến độ.
+
+---
+
 ## 4. Tóm Tắt Production Stack
 
 | Tầng | CARLA *(hiện tại)* | **Production Stack** | VRAM | Trạng thái |
@@ -818,4 +860,4 @@ os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:128'
 
 ---
 
-*Tài liệu tạo: 2026-05-27. Cập nhật: 2026-05-29 (Detection: YOLOv5s → YOLOv8s hoàn thành; Tracking: IoU Greedy → ByteTrack hoàn thành). Xem thêm: `upgrade.md` (lộ trình chi tiết), `bao_cao_tien_do.md` (tiến độ tổng thể).*
+*Tài liệu tạo: 2026-05-27. Cập nhật: 2026-05-29 (Detection: YOLOv5s → YOLOv8s hoàn thành; Tracking: IoU Greedy → ByteTrack hoàn thành); 2026-06-27 (Nhận diện biển số 2 giai đoạn: Stage 1 `yolo11s_vn_plate` + Stage 2 `plate_chars_detector` train xong, xem mục 3.6). Xem thêm: `upgrade.md` (lộ trình chi tiết), `bao_cao_tien_do.md` (tiến độ tổng thể).*

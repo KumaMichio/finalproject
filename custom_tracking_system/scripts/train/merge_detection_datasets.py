@@ -19,32 +19,69 @@ Usage:
 """
 
 import argparse
+import random
 import shutil
 from pathlib import Path
 
 VN_CLASS_NAMES = ['person', 'car', 'motorcycle', 'bus', 'truck']
 
+# Datasets without a pre-existing images/{train,val} split (flat images/ +
+# labels/ instead) get this deterministic split applied on the fly, so they
+# can still be merged without mutating the source directory.
+FLAT_VAL_RATIO = 0.15
+FLAT_SPLIT_SEED = 42
+
+
+def _flat_split_stems(src_root: Path) -> dict[str, list[str]]:
+    images_dir = src_root / 'images'
+    labels_dir = src_root / 'labels'
+    stems = [
+        p.stem for p in sorted(images_dir.glob('*.jpg'))
+        if (labels_dir / (p.stem + '.txt')).exists()
+    ]
+    rng = random.Random(FLAT_SPLIT_SEED)
+    rng.shuffle(stems)
+    n_val = int(len(stems) * FLAT_VAL_RATIO)
+    val_stems = set(stems[:n_val])
+    return {
+        'val': sorted(val_stems),
+        'train': sorted(s for s in stems if s not in val_stems),
+    }
+
 
 def merge_split(name: str, src_root: Path, out_root: Path, split: str) -> int:
     src_images = src_root / 'images' / split
     src_labels = src_root / 'labels' / split
-    if not src_images.exists():
-        return 0
 
     out_images = out_root / 'images' / split
     out_labels = out_root / 'labels' / split
+
+    if src_images.exists():
+        stems = [
+            p.stem for p in sorted(src_images.glob('*.jpg'))
+            if (src_labels / (p.stem + '.txt')).exists()
+        ]
+        flat_images, flat_labels = src_images, src_labels
+    else:
+        # No images/{train,val} subdirs — fall back to a flat images/ +
+        # labels/ layout and carve out a deterministic split ourselves
+        # (e.g. data/auto_label, which has no train/val split on disk).
+        flat_images, flat_labels = src_root / 'images', src_root / 'labels'
+        if not flat_images.exists():
+            return 0
+        stems = _flat_split_stems(src_root)[split]
+
+    if not stems:
+        return 0
+
     out_images.mkdir(parents=True, exist_ok=True)
     out_labels.mkdir(parents=True, exist_ok=True)
 
     n = 0
-    for img_path in sorted(src_images.glob('*.jpg')):
-        label_path = src_labels / (img_path.stem + '.txt')
-        if not label_path.exists():
-            continue
-
-        dest_stem = f"{name}_{img_path.stem}"
-        shutil.copy(img_path, out_images / f"{dest_stem}.jpg")
-        shutil.copy(label_path, out_labels / f"{dest_stem}.txt")
+    for stem in stems:
+        dest_stem = f"{name}_{stem}"
+        shutil.copy(flat_images / f"{stem}.jpg", out_images / f"{dest_stem}.jpg")
+        shutil.copy(flat_labels / f"{stem}.txt", out_labels / f"{dest_stem}.txt")
         n += 1
 
     return n
