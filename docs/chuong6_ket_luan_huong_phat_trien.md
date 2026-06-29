@@ -1,329 +1,183 @@
 # CHƯƠNG 6. KẾT LUẬN VÀ HƯỚNG PHÁT TRIỂN
 
-> Chương 5 đã trình bày năm vấn đề kỹ thuật cụ thể phát hiện được trong quá
-> trình xây dựng hệ thống, giải pháp đã áp dụng và kết quả định lượng tương
-> ứng. Chương 6 tổng kết lại toàn bộ quá trình thực hiện đề tài: mục 6.1 đánh
-> giá những gì đã đạt được và những hạn chế còn tồn tại sau các cải thiện ở
-> Chương 5; mục 6.2 đề xuất các hướng phát triển tiếp theo, tổng hợp từ các
-> hạn chế đã xác định và từ những phần việc đã được khảo sát nhưng chưa thực
-> hiện trong phạm vi đề tài này.
+> Chương 5 đã trình bày các đóng góp và giải pháp kỹ thuật nổi bật rút ra
+> trong quá trình thực hiện đề tài. Chương 6 tổng kết lại toàn bộ quá trình:
+> mục 6.1 đánh giá những gì đã đạt được, đặt cạnh các hệ thống/công trình
+> tương tự, nhìn nhận trung thực những hạn chế còn tồn tại và rút ra bài học
+> kinh nghiệm; mục 6.2 đề xuất hướng phát triển, trước hết là các phần việc
+> cần thiết để hoàn thiện các chức năng đã làm, sau đó là các hướng nâng cấp
+> và mở rộng mới.
 
 ---
 
 ## 6.1 Kết luận
 
-Đề tài tập trung vào **dự đoán hướng đi dài hạn của phương tiện trên bản đồ
-đường thực tế** (UC4) — đặt cạnh công trình gần nhất cùng bối cảnh giao thông
-hỗn loạn, nhiều xe máy tại Việt Nam (Chau et al. [1] — dự đoán toạ
-độ ngắn hạn trong một camera, không suy diễn nhiều ngã tư), đề tài này đi xa
-hơn ở việc kết hợp phân loại hướng rẽ tại từng ngã tư (Gradient Boosting có
-hiệu chỉnh xác suất, accuracy=60,12% trên tập kiểm thử thật) với suy diễn
-liên tiếp qua nhiều ngã tư trên đồ thị đường thực xây dựng từ OpenStreetMap
-(Route Predictor), rồi hiển thị trực tiếp lên bản đồ. Để vận hành UC4 trên dữ
-liệu thật, đề tài xây dựng đầy đủ hạ tầng hỗ trợ: phát hiện và theo dõi đối
-tượng trong từng camera (UC1, YOLO11s_vn + ByteTrack), theo dõi xuyên camera
-bằng nhận diện lại (OSNet fine-tune trên VeRi-776 — **năng lực hạ tầng hỗ
-trợ việc truy vết sau đánh dấu, không đặc tả như một use case riêng — mục
-2.4 Chương 2 — và không phải tiêu chí đánh giá thành công chính**;
-có hạn chế đã biết và đo được với xe máy, mục 6.1 dưới và Chương 5 mục
-5.5.8), phát hiện và đánh dấu sự cố (UC3, hệ luật suy diễn kết hợp đánh dấu
-thủ công — bổ sung 2026-06-26: lưu ảnh crop đối tượng vào CSDL ngay khi đánh
-dấu, giải quyết một phần hạn chế "không thể truy quét lại object sau khi mất
-Global ID" phát hiện khi rà soát lại UC3.2, xem mục 4.2.2), giám sát qua
-dashboard thời gian thực (UC5, FastAPI + React +
-WebSocket/MJPEG), và quản lý camera/vùng quan tâm (UC6). Toàn bộ pipeline đã
-được vận hành thử trực tiếp trên video CCTV thật tại giao lộ Phố Huế – Trần
-Khát Chân (mục 4.5), không chỉ trong môi trường mô phỏng — đáp ứng đúng mục
-tiêu đặt ra ban đầu là một hệ thống có thể triển khai trên hạ tầng camera
-giám sát giao thông thực tế của Việt Nam, đặc biệt với cơ cấu phương tiện có
-tỷ trọng xe máy cao.
+Đề tài đã xây dựng và vận hành thử một **hệ thống camera AI giám sát giao
+thông** trên video CCTV thật tại giao lộ Phố Huế – Trần Khát Chân (Hà Nội),
+hiện thực hoá đầy đủ bốn use case: phát hiện và theo dõi phương tiện trong từng
+luồng video (UC1, YOLO11s_vn + ByteTrack), phát hiện vi phạm vượt đèn đỏ/vượt
+vạch dừng/đi sai làn theo hệ luật (UC2), dự đoán hướng di chuyển dài hạn của
+phương tiện trên bản đồ đường thực (UC3, Gradient Boosting + Route Predictor
+trên đồ thị OpenStreetMap), và cấu hình hệ thống (UC4). Toàn bộ pipeline được
+kiểm chứng trực tiếp trên dữ liệu CCTV thật, không chỉ trong môi trường mô
+phỏng — đáp ứng đúng mục tiêu ban đầu là một hệ thống triển khai được trên hạ
+tầng camera giao thông thực tế của Việt Nam, đặc biệt với cơ cấu phương tiện
+có tỷ trọng xe máy rất cao.
 
-Các kết quả định lượng chính trên dữ liệu thật (Bảng 4.4): YOLO11s_vn đạt
-mAP50 = 89,5% (đo trên auto-label, chưa hand-verify toàn bộ); OSNet fine-tune
-VeRi-776 đạt mAP = 71,89%, Rank-1 = 94,16% trên giao thức ReID mở chuẩn; Goal
-Classifier real-world đạt accuracy = 60,12%, balanced accuracy = 54,18% trên
-tập kiểm thử tách riêng khỏi tập huấn luyện. Quá trình xây dựng cũng phát
-hiện và xử lý được năm vấn đề kỹ thuật cụ thể (Chương 5): sửa lỗi tìm đường
-gần nhất và thay giả định cứng bằng prior thực nghiệm cho Route Predictor;
-phát hiện và sửa lệch tham số horizon giữa huấn luyện/suy luận của Goal
-Classifier (cải thiện accuracy 59,73% → 60,12%); tách bạch đúng phương pháp
-đo lường huấn luyện và đánh giá ReID chuẩn cho OSNet; nhận diện và quản lý
-hiện tượng quên thảm khốc khi fine-tune YOLO11 trên domain hẹp; và sửa một
-lỗi đồng hồ thời gian gây cảnh báo giả ở bộ phát hiện sự cố.
+**So sánh với các hệ thống/công trình tương tự.** Các hệ thống "phạt nguội"
+đang triển khai tại Việt Nam tập trung vào *ghi nhận vi phạm và đọc biển số để
+xử phạt* tại một điểm cố định, nhưng không theo dõi liên tục hành trình phương
+tiện và không dự đoán hướng đi tương lai. Ở chiều nghiên cứu, công trình gần
+nhất cùng bối cảnh giao thông hỗn loạn nhiều xe máy tại Việt Nam là Chau et al.
+[1], dự đoán *toạ độ ngắn hạn* của phương tiện trong phạm vi một camera bằng
+CNN-LSTM/CNN-GRU, nhưng không suy diễn hành trình qua nhiều ngã tư. Đề tài này
+đi xa hơn ở chỗ kết hợp ba khối thường tách rời trong các hệ thống trên thành
+một luồng hoàn chỉnh chạy thật: phát hiện vi phạm theo hệ luật minh bạch (UC2),
+phân loại hướng rẽ tại từng ngã tư rồi *suy diễn liên tiếp qua nhiều ngã tư*
+trên đồ thị đường thực và vẽ lên bản đồ (UC3), tất cả trên cùng một hạ tầng
+theo dõi đa luồng thời gian thực (UC1) — và quan trọng hơn, mỗi thành phần đều
+được đánh giá định lượng *trên dữ liệu thật* kèm thừa nhận trung thực về độ
+tin cậy của từng con số, thay vì chỉ báo cáo kết quả mô phỏng.
 
-Bên cạnh các kết quả đạt được, một số hạn chế vẫn còn tồn tại, cần được ghi
-nhận trung thực:
+**Những gì đã làm được.** Về định lượng (Bảng 4.5): YOLO11s_vn đạt mAP50 =
+89,5%; Goal Classifier real-world đạt accuracy = 60,12%, balanced accuracy =
+54,18% trên tập kiểm thử tách riêng khỏi tập huấn luyện. Về kỹ thuật, đề tài
+giải quyết được bốn vấn đề/đóng góp đáng chú ý (Chương 5): (1) vượt rào cản
+thiếu dữ liệu bằng quy trình tự động gán nhãn + kiểm định mẫu (15.957 ảnh/
+623.329 box); (2) phát hiện và sửa lệch tham số horizon của Goal Classifier
+(accuracy 59,73% → 60,12%) kèm so sánh kiến trúc và hiệu chỉnh xác suất; (3)
+làm cho dự đoán hành trình *minh bạch* bằng cách sửa lỗi tìm đường và thay giả
+định "100% đi thẳng" bằng prior; (4) xây dựng quy trình đo MOTA/IDF1 trên CCTV
+thật cùng việc chỉ rõ giới hạn cấu trúc của nó.
 
+**Những gì chưa làm được (ghi nhận trung thực).** Một số hạn chế vẫn còn,
+phần lớn nằm ở *quy mô dữ liệu kiểm thử thật* hơn là ở kiến trúc hệ thống:
+
+- **Đánh giá phát hiện chưa độc lập.** mAP50 = 89,5% được đo lại trên 800 ảnh
+  lấy ngẫu nhiên từ chính pool huấn luyện (không lưu được val split gốc), nên
+  có thể lạc quan hơn năng lực tổng quát hoá thật; chưa có tập đánh giá độc lập
+  gán nhãn tay ở địa điểm/thời điểm khác. Đường cong Loss/mAP theo epoch của
+  YOLO11s_vn cũng chưa trình bày được do nhật ký huấn luyện gốc (`results.csv`)
+  không được lưu lại.
+- **MOTA/IDF1 thật cho ByteTrack chưa hoàn tất.** Quy trình và công cụ đã xây
+  xong (mục 5.4) nhưng ground-truth bán tự động có hạn chế cấu trúc (FN/FP ≈ 0
+  → MOTA bị thổi phồng, chỉ IDF1/số lần đổi ID có ý nghĩa); cần hoàn tất gán
+  nhãn toàn bộ video và bổ sung một bộ ground-truth độc lập để đo đúng tỷ lệ
+  bỏ sót phát hiện.
+- **Hai trong ba loại vi phạm UC2 chưa bật trên camera Phố Huế.** Đi sai làn
+  (`LANE_VIOLATION`) đã hoạt động và minh hoạ được trên dữ liệu thật (Hình
+  4.15); còn vượt đèn đỏ/vượt vạch dừng (`RED_LIGHT_VIOLATION`) tạm thời bị tắt
+  do vùng quan tâm (ROI) vạch dừng/đèn tín hiệu được hiệu chỉnh thủ công từ một
+  khung hình mẫu đang đặt chưa đúng vị trí, cần xác định lại từ một đoạn video
+  đủ thoáng trước khi bật lại (xem 6.2.1).
 - **Recall lớp "quay đầu" của Goal Classifier còn thấp (36,11%)** và đo trên
-  một tập kiểm thử rất nhỏ (36 mẫu) — số liệu này chưa đủ độ tin cậy thống kê
-  để khẳng định chắc chắn về chất lượng thật của lớp này; nguyên nhân kỹ
-  thuật đã biết là tín hiệu chuyển động đặc trưng của hành vi quay đầu chỉ
-  thật sự rõ khi phương tiện đã đi vào trong lòng giao lộ, không quan sát
-  được rõ từ giai đoạn tiếp cận.
-- **Goal Classifier chưa thể tận dụng dữ liệu mô phỏng để cải thiện mô hình
-  thật**: dữ liệu CARLA (world-space, mét) và dữ liệu CCTV thật (pixel-space,
-  chuẩn hoá theo khung bao) dùng hai không gian đặc trưng hoàn toàn khác
-  nhau, không thể fine-tune trực tiếp một mô hình từ domain này sang domain
-  kia — cải thiện mô hình thật chỉ có thể đến từ nhiều dữ liệu thật hơn,
-  đặc trưng tốt hơn, hoặc augment dữ liệu thật bằng một mô hình chiếu camera
-  mô phỏng (chưa thực hiện).
-- **Hiệu năng ReID trên crop thật, nhiễu — có số liệu sơ bộ, đáng lo ngại**
-  (Chương 5, mục 5.5.8): số mAP/Rank-1/Rank-5 ở Bảng 4.4 là benchmark truy
-  hồi ngoại tuyến trên crop sạch VeRi-776. Đo sơ bộ (cỡ mẫu nhỏ, n=2 cặp
-  cùng xe) trên crop thật từ pipeline cho thấy độ tương đồng cosine giữa
-  "cùng xe máy" và "khác xe máy" gần như không phân biệt được (0,601 vs
-  0,604) — khả năng do nhánh phương tiện chỉ fine-tune trên VeRi-776 (toàn
-  bộ ô tô, không có xe máy). Ô tô phân biệt khá hơn (0,565, dải 0,41–0,68)
-  nhưng vẫn chồng lấn nhiều. Đây mới là phép đo trong-một-camera (dùng dữ
-  liệu gán nhãn cho ByteTrack), chưa phải benchmark xuyên camera đúng nghĩa
-  — vẫn cần video 2 camera liền tuyến để đo đầy đủ.
-- **MOTA/IDF1 cho ByteTrack trên video CCTV thật đang được đo, chưa có số
-  liệu chính thức** (Chương 5, mục 5.4 — mô phỏng; mục 5.5.8 — quy trình đo
-  trên dữ liệu thật, đang gán nhãn tay phần còn lại). Quy trình tái dùng
-  track đã chạy + sửa tay cột ID (không gán nhãn từ đầu) có một hạn chế cấu
-  trúc đã xác nhận: vì ground-truth là bản copy của track dự đoán, FN/FP
-  luôn xấp xỉ 0, nên MOTA tổng hợp sẽ luôn bị thổi phồng — chỉ IDF1/số lần
-  đổi ID là số liệu đáng tin từ quy trình này, cần một bộ ground-truth độc
-  lập (gán nhãn từ đầu, không tái dùng pred) mới đo được đúng tỷ lệ bỏ sót
-  phát hiện thật.
-- **Ngưỡng tuyệt đối của Incident Detector (`SUDDEN_STOP`, `SUDDEN_ACCEL`,
-  `VEHICLE_PROXIMITY`, `PREDICTED_COLLISION`, `OVERSPEED`) sai 100% trên mẫu
-  thật đã kiểm chứng bằng tay tại camera Phố Huế** (Chương 5, mục 5.5.7) —
-  đã tắt tạm cả 5 loại này cho camera này; hệ luật suy diễn cho phát hiện sự
-  cố (mục 3.4) vẫn đúng về kiến trúc, nhưng các hằng số ngưỡng cụ thể cần
-  hiệu chỉnh lại theo đơn vị thực tế và đặc thù từng camera trước khi tin
-  dùng được trên dữ liệu thật.
-- **Việc vận hành thử trên video CCTV thật (mục 4.5) đã được kiểm tra đầu-cuối
-  nhưng chưa được diễn tập trực tiếp trước hội đồng.**
-- **GRU huấn luyện trên CARLA đang được blend vào dự đoán quỹ đạo hiển thị
-  live cho camera có calibration (đúng trường hợp Phố Huế), không phải một
-  thành phần "để dành tương lai" như tài liệu trước đây ngụ ý** (Chương 5, mục
-  5.5.10) — phát hiện khi đọc lại trực tiếp `EnsembleTrajectoryPredictor`.
-  Mức độ ảnh hưởng vào kết quả hiển thị hiện dựa trên độ tự tin nội tại của
-  GRU, không dựa trên bằng chứng độ chính xác thật nào (GRU chưa từng được đo
-  ADE/FDE ngoài CARLA) — cần tắt nhánh blend này (Kalman-only) cho tới khi có
-  số liệu thật, xem mục 6.2(B).
+  tập kiểm thử rất nhỏ (36 mẫu) — chưa đủ tin cậy thống kê; nguyên nhân kỹ
+  thuật đã biết là tín hiệu chuyển động đặc trưng của hành vi quay đầu chỉ rõ
+  khi phương tiện đã đi vào trong lòng giao lộ.
+- **Demo chưa diễn tập trực tiếp trước hội đồng** dù đã kiểm tra đầu-cuối
+  (mục 4.5).
+
+**Bài học kinh nghiệm.** Xuyên suốt quá trình, hai bài học nổi lên rõ nhất.
+Thứ nhất, *một hệ thống "chạy không lỗi" không có nghĩa là chạy đúng*: nhiều
+lỗi đáng kể nhất (lệch tham số horizon giữa huấn luyện/suy luận, giả định hiển
+thị tin cậy 100% cho dự đoán xa) không hề gây exception, chỉ lộ ra khi đối
+chiếu với dữ liệu/hành vi thật. Thứ hai, *thừa nhận đúng mức bất định và giới
+hạn của từng phép đo* (mAP đo trên chính pool huấn luyện, MOTA bị thổi phồng
+theo cấu trúc của ground-truth bán tự động) là điều kiện để báo cáo trung
+thực, quan trọng không kém việc đạt được con số đẹp.
 
 ## 6.2 Hướng phát triển
 
-Các hướng phát triển dưới đây được tổng hợp từ các hạn chế đã xác định ở mục
-6.1 và từ các phần việc đã khảo sát nhưng chưa thực hiện trong phạm vi đề tài
-này, ưu tiên theo nhóm: (A) bổ sung dữ liệu/đánh giá còn thiếu, (B) cải thiện
-mô hình, (C) nhận diện biển số — đang tiếp tục đầu tư cải thiện. Vì
-trọng tâm đóng góp của đề tài là dự đoán hướng đi dài hạn (UC4, mục 6.1), các
-mục liên quan trực tiếp đến UC4 trong (A)/(B) — cải thiện Goal Classifier,
-prior Route Predictor, dự đoán quỹ đạo học sâu — có độ ưu tiên cao hơn các
-mục thuộc hạ tầng hỗ trợ (MOTA/ByteTrack, ReID xuyên camera), dù thứ tự trình
-bày dưới đây vẫn theo nhóm chức năng để dễ tra cứu.
+Các hướng dưới đây chia làm ba nhóm: (A) hoàn thiện các chức năng đã làm —
+xuất phát trực tiếp từ các hạn chế ở mục 6.1; (B) cải thiện và nâng cấp các
+chức năng hiện có; (C) các hướng đi mới mở rộng phạm vi hệ thống.
 
-**(A) Bổ sung dữ liệu và đánh giá định lượng còn thiếu trên dữ liệu thật**
+### 6.2.1 Hoàn thiện các chức năng đã làm
 
-- **Hoàn tất đo MOTA/IDF1 thật trên video CCTV** (đang thực hiện, mục 5.5.8):
-  quy trình và công cụ (`render_pred_review.py`, `apply_id_corrections.py`)
-  đã xây xong, đang gán nhãn tay phần còn lại của video (192 khung hình).
-  Việc còn thiếu: (a) hoàn tất sửa cột ID cho toàn bộ video, không chỉ một
-  phần; (b) xây thêm một bộ ground-truth **độc lập** (gán nhãn từ đầu, không
-  tái dùng track dự đoán) cho ít nhất một đoạn ngắn, để đo đúng tỷ lệ bỏ sót
-  phát hiện (FN) — hạn chế cấu trúc của quy trình tái dùng-pred hiện tại là
-  không bao giờ phát hiện được trường hợp ByteTrack bỏ sót hoàn toàn một
-  đối tượng.
-- **Chứng minh theo dõi xuyên camera trên video thật**: quay đồng thời
-  (hoặc lệch không quá 1–2 phút) hai video tại hai giao lộ liền kề trên cùng
-  một trục đường, camera cố định, tối thiểu 10–15 phút mỗi video, để có dữ
-  liệu kiểm chứng Re-ID xuyên camera trên điều kiện triển khai thật — demo
-  hiện tại (mục 4.5) mới dùng một camera. Đã rà các video CCTV thật có sẵn
-  trong `data/datasets/traffic_intersection/` (`Ngã tư Xã Đàn-Phạm Ngọc
-  Thạch`, `Giao thông nội đô HN`, `Clip tuyến cao tốc`, `NB-LC`) — không có
-  cặp nào đạt điều kiện: 2 folder cao tốc (`NB-LC`/`Clip tuyến cao tốc`) là
-  camera tuyến Nội Bài–Lào Cai, giao thông quá thưa và đồng hồ hiển thị giữa
-  các file lệch nhau bất thường (không xác minh được đồng bộ thời gian); các
-  folder còn lại đều có vẻ là một camera cố định/một địa điểm (nhiều file chỉ
-  khác ngày quay), không phải cặp camera liền tuyến. Vẫn cần quay mới hoặc
-  tìm nguồn khác.
-- **Tập đánh giá YOLO độc lập**: thu thêm 2–3 video ngắn ở địa điểm hoặc thời
-  điểm khác với 4 nơi đã dùng để huấn luyện, gán nhãn tay (không qua
-  auto-label), để đo khả năng tổng quát hoá thật của detector, tránh nguy cơ
-  "học vẹt" đặc điểm của các địa điểm đã quen.
-- **Đánh giá lại OSNet trên crop nhiễu thật**: dùng video đã có sẵn, lấy crop
-  trực tiếp từ đầu ra detection/tracking của pipeline (không phải crop sạch
-  như VeRi-776), gán nhãn đúng/sai cho một số cặp track cùng đối tượng để đo
-  lại độ chính xác ghép cặp trong điều kiện thực tế.
-- **Hiệu chỉnh lại ngưỡng tuyệt đối của Incident Detector theo từng camera**:
-  kiểm chứng bằng dữ liệu thật có gán nhãn tay (Chương 5, mục 5.5.7) cho thấy
-  `SUDDEN_STOP`, `SUDDEN_ACCEL`, `VEHICLE_PROXIMITY`, `PREDICTED_COLLISION`,
-  `OVERSPEED` đều sai 100% trên mẫu đã xem ở camera Phố Huế — không chỉ do
-  nhiễu vận tốc tức thời (đã có cơ chế làm mượt/duy trì liên tục), mà nhiều
-  khả năng do các ngưỡng tuyệt đối (`min_moving_speed`, `proximity_px`, giới
-  hạn tốc độ theo lớp xe, đơn vị pixel/giây) chưa được hiệu chỉnh theo đúng
-  khoảng cách/độ phân giải của camera cụ thể này. Đã tắt tạm cả 5 loại này
-  cho camera Phố Huế (`incident_detection.disabled_types`) như giải pháp
-  trước mắt. Hướng giải quyết triệt để: hiệu chỉnh lại ngưỡng theo đơn vị
-  thực tế (m/s thay vì px/s, dựa trên phép quy đổi pixel↔mét đã có sẵn cho
-  Goal Classifier — `modules/goal_classifier.py`, các đặc trưng
-  `speed_ms_*`/`px_per_m_mean`) thay vì hằng số pixel cố định không khả chuyển
-  giữa các camera/khoảng cách khác nhau; sau đó thu thêm cảnh quay tại các
-  giao lộ đông đúc, gán nhãn tay true/false positive cho từng cảnh báo phát
-  sinh để có cả hai nhóm dữ liệu cần cho việc chọn ngưỡng bằng phương pháp
-  precision/recall (`scripts/eval/tune_incident_thresholds.py` đã viết sẵn,
-  chưa chạy được vì thiếu mẫu true positive) — có thể cần dàn dựng nhẹ một
-  vài tình huống thật để có ca dương tính rõ ràng kiểm tra từng quy tắc.
-- **Thêm mẫu "quay đầu" cho Goal Classifier**: quay thêm 2–3 video tại các vị
+- **Hoàn tất đo MOTA/IDF1 thật cho ByteTrack:** hoàn thành gán nhãn (sửa cột
+  ID) cho toàn bộ video Phố Huế, đồng thời xây thêm một bộ ground-truth *độc
+  lập* (gán nhãn box từ đầu, không tái dùng track dự đoán) cho ít nhất một đoạn
+  ngắn để đo đúng tỷ lệ bỏ sót phát hiện (FN) — khắc phục hạn chế cấu trúc đã
+  nêu ở mục 5.4.
+- **Xây tập đánh giá phát hiện độc lập:** thu thêm 2–3 video ngắn ở địa
+  điểm/thời điểm khác với dữ liệu huấn luyện, gán nhãn tay (không qua
+  auto-label), để đo khả năng tổng quát hoá thật của YOLO11s_vn và thay con số
+  mAP đo-trên-pool-huấn-luyện hiện tại bằng một con số held-out đáng tin. Lưu
+  lại đầy đủ nhật ký huấn luyện (`results.csv`) ở lần huấn luyện tới để bổ sung
+  đường cong Loss/mAP cho báo cáo.
+- **Hoàn thiện phát hiện vượt đèn đỏ/vượt vạch dừng (UC2):** xác định lại đúng
+  vùng vạch dừng và đèn tín hiệu chính điều khiển làn xe — quay hoặc tìm một
+  đoạn video tại đúng camera này lúc đường thoáng đủ lâu để dò được đúng vạch
+  sơn/vị trí đèn — rồi bật lại `RED_LIGHT_VIOLATION` (hiện đang tắt tạm), kèm
+  bổ sung dữ liệu có gán nhãn đúng/sai để hiệu chỉnh và kiểm chứng luật theo
+  từng camera trước khi tin dùng.
+- **Bổ sung mẫu "quay đầu" cho Goal Classifier:** quay thêm video tại các vị
   trí có dải phân cách cho phép quay đầu, nơi hành vi này xuất hiện thường
-  xuyên hơn giao lộ thường, để tăng số mẫu kiểm thử (hiện chỉ 36 mẫu) lên mức
-  đủ tin cậy thống kê cho recall của lớp này.
-- **Bổ sung ảnh giao diện thực tế và diễn tập demo trước hội đồng**: chạy hệ
-  thống trực tiếp để chụp ba ảnh UI còn thiếu (dashboard, bản đồ hành trình,
-  quản lý cảnh báo) thay cho placeholder ở Chương 4, đồng thời diễn tập lại
-  toàn bộ kịch bản demo trên video Phố Huế – Trần Khát Chân.
+  xuyên hơn, để tăng số mẫu kiểm thử (hiện 36 mẫu) lên mức đủ tin cậy thống kê.
+- **Diễn tập demo trước hội đồng** trên đúng video Phố Huế – Trần Khát Chân.
 
-**(B) Cải thiện mô hình**
+### 6.2.2 Cải thiện và nâng cấp các chức năng hiện có
 
-- **YOLO11 — fine-tune hợp nhất đa domain**: thay vì duy trì hai checkpoint
-  riêng (Chương 5, mục 5.4), thử fine-tune trộn dữ liệu CCTV thật với dữ liệu
-  domain hẹp, đóng băng backbone nhiều hơn và giảm learning rate/số epoch, để
-  tìm một checkpoint vừa giữ được hiệu năng trên dữ liệu thật vừa không quên
-  domain bổ sung; mở rộng thêm các bộ dữ liệu camera giám sát công khai
-  (VisDrone, DriveIndia, UA-DETRAC) để tăng đa dạng domain huấn luyện.
-- **Goal Classifier — cải thiện recall "quay đầu" và "rẽ trái"**: hướng khả
-  thi nhất cho "quay đầu" là chuyển sang dự đoán *trong* giao lộ (in-junction
-  traversal prediction) thay vì chỉ dựa vào giai đoạn tiếp cận, vì tín hiệu
-  đặc trưng của hành vi này chỉ rõ khi xe đã vào trong; với "rẽ trái", cần bổ
-  sung đặc trưng cấu trúc đường (ví dụ ID làn vào, kết nối giao lộ) thay vì
-  chỉ dựa vào động học chuyển động quan sát được.
-- **Dự đoán quỹ đạo học sâu cho horizon ngắn**: bộ dự đoán quỹ đạo dạng
-  Seq2Seq GRU đa giả thuyết (`modules/trajectory_gru.py`) được huấn luyện trên
-  dữ liệu mô phỏng CARLA (world-space, mét). Tài liệu trước đây mô tả model
-  này "chưa được tích hợp, cần số liệu thật trước khi triển khai" — đọc lại
-  trực tiếp `EnsembleTrajectoryPredictor`/`ai_processor.py` (Chương 5, mục
-  5.5.10) cho thấy mô tả này **sai**: với camera có calibration (Phố Huế),
-  GRU này **đang được blend trực tiếp vào dự đoán hiển thị live**, trọng số
-  blend = độ tự tin nội tại của chính GRU, không dựa trên độ chính xác đo
-  được nào. Việc cần làm trước, ưu tiên cao hơn cả việc huấn luyện lại: **tắt
-  ngay nhánh blend này** (Kalman-only) cho tới khi có số liệu ADE/FDE thật để
-  quyết định nên dùng hay không. Sau đó mới tới việc huấn luyện lại trên dữ
-  liệu/đặc trưng không gian-ảnh thật (không phải world-space từ simulator) —
-  Chau et al. [1] huấn luyện trực tiếp CNN-LSTM/CNN-GRU trên toạ độ
-  pixel-space từ YOLOv7+DeepSORT trên video CCTV Việt Nam, đúng dạng dữ liệu
-  còn thiếu cho GRU của đề tài này; có thể tham khảo cách chuẩn bị dữ liệu của
-  công trình đó, cùng cân nhắc so sánh CNN-LSTM vs CNN-GRU (bài báo không tách
-  riêng số liệu hai kiến trúc trong phần tóm tắt công khai) trên đúng dữ liệu
-  pixel-space của đề tài trước khi quyết định kiến trúc cuối.
-- **Prior thực nghiệm cho Route Predictor ở hop ≥ 1 trên dữ liệu thật**: prior
-  hiện tại (mục 5.1) đo trên dữ liệu mô phỏng vì dữ liệu CCTV thật hiện mỗi
-  đoạn video chỉ quan sát được một giao lộ, chưa có chuỗi quỹ đạo qua nhiều
-  giao lộ liên tiếp; khi đã có dữ liệu theo dõi xuyên camera thật (mục A), có
-  thể đo lại prior này trực tiếp trên hành vi giao thông thật tại khu vực
-  triển khai.
+- **YOLO11 — tăng đa dạng domain huấn luyện:** mở rộng thêm các bộ dữ liệu
+  camera giám sát công khai (VisDrone, UA-DETRAC...) và kiểm tra chéo trên
+  nhiều địa điểm/góc camera khác nhau để nâng khả năng tổng quát hoá của
+  detector, giảm rủi ro mô hình "học vẹt" đặc điểm của các địa điểm đã quen.
+- **Goal Classifier — cải thiện recall "quay đầu" và "rẽ trái":** hướng khả
+  thi nhất cho "quay đầu" là dự đoán *trong* giao lộ (in-junction) thay vì chỉ
+  dựa vào giai đoạn tiếp cận; với "rẽ trái", bổ sung đặc trưng cấu trúc đường
+  (ID làn vào, kết nối giao lộ) thay vì chỉ dựa vào động học quan sát được.
+- **Dự đoán quỹ đạo bằng học sâu trên dữ liệu thật:** bổ sung một mô hình dự
+  đoán quỹ đạo tuần tự (CNN-LSTM/CNN-GRU) huấn luyện trực tiếp trên toạ độ
+  *pixel-space* trích từ chính pipeline (YOLO11s_vn + ByteTrack) — đúng dạng
+  dữ liệu mà Chau et al. [1] đã dùng trên video CCTV Việt Nam — để dự đoán
+  toạ độ ngắn hạn chính xác hơn bộ lọc Kalman hiện tại, bổ trợ cho dự đoán
+  hướng rẽ dài hạn của Goal Classifier.
+- **Ước lượng prior của Route Predictor trên dữ liệu thật:** prior phân bố
+  hướng đi tại các ngã tư xa (mục 5.3) cần được đo trên dữ liệu quỹ đạo qua
+  nhiều giao lộ liên tiếp của giao thông thật; khi đã có dữ liệu theo dõi xuyên
+  nhiều giao lộ (xem hướng Re-ID ở 6.2.3), có thể ước lượng prior này trực tiếp
+  tại khu vực triển khai thay cho giá trị tạm hiện nay.
+- **Mở rộng quy mô và tối ưu hiệu năng:** xác minh mục tiêu ~15–20 FPS trên
+  đúng cấu hình 6 camera đồng thời (hiện đã áp dụng phát hiện theo lô và điều
+  tiết tần suất — mục 4.5), cân nhắc lượng tử hóa/triển khai biên (edge) để
+  giảm tải máy chủ khi nhân rộng số camera.
 
-**(C) Nhận diện biển số — đã thử nghiệm, đang tiếp tục đầu tư cải thiện (chưa có kết luận cuối)**
+### 6.2.3 Các hướng đi mới
 
-Đề tài đã thiết kế và thử nghiệm việc dùng **OCR biển số** làm tín hiệu bổ trợ
-veto-only cho nhận diện lại xuyên camera (chỉ dùng để loại bỏ một cặp match đã
-được ReID chấp nhận khi hai biển số đọc được rõ và khác nhau, không bao giờ
-dùng để tự tạo match). Ba vòng kiểm tra đầu trên dữ liệu thật (tổng cộng ~235
-mẫu phương tiện, bao gồm kiểm tra trực tiếp trên đúng video/khoảng cách camera
-dùng cho demo ở mục 4.5), dùng EasyOCR (OCR văn bản cảnh tổng quát), cho kết
-quả 0% biển số xe máy đọc được và chỉ một tỷ lệ nhỏ ô tô/xe tải ở cự ly gần
-đọc được, quy nguyên nhân cho khoảng cách/độ phân giải camera.
-
-**Hai vòng kiểm tra bổ sung sau đó cho thấy kết luận trên chỉ đúng một phần.**
-Vòng 4 khoanh vùng biển số trong crop bằng màu sắc (trắng/vàng) kết hợp mật độ
-biên (phân biệt biển thật với phản xạ kim loại/đèn xe — vốn đánh lừa lần
-khoanh vùng đầu), rồi xác nhận lại bằng mắt: nhiều biển — kể cả biển 2 dòng
-của xe máy — sau khi khoanh đúng vùng thì **đọc được rõ bằng mắt người**,
-nhưng EasyOCR (dù đã thêm allowlist ký tự và ghép các đoạn text theo dòng)
-vẫn đọc sai ngay trên ảnh rõ nét, ở độ tin cậy sát ngưỡng (ví dụ đọc
-"729-E2" cho biển thật "29-E2", dao động qua/không qua ngưỡng tuỳ chi tiết
-tiền xử lý). Tỷ lệ đọc được *một phần văn bản* tăng từ 0% lên 3,1% cho xe máy,
-nhưng tỷ lệ đọc được *biển hợp lệ đầy đủ* vẫn 0% cho cả hai loại xe — cho thấy
-khoanh vùng không còn là nút thắt, nút thắt nằm ở chính năng lực nhận diện ký
-tự của OCR tổng quát.
-
-Vòng 5 thay EasyOCR bằng kiến trúc 2 giai đoạn chuyên biệt cho biển Việt Nam
-(YOLOv5 phát hiện vùng biển + một YOLOv5 riêng phát hiện từng ký tự như một
-class, tham khảo từ mã nguồn và trọng số đã huấn luyện sẵn của một repo cộng
-đồng — `github.com/trungdinh22/License-Plate-Recognition`, không có file
-license rõ ràng nên chỉ dùng cho mục đích kiểm chứng tính khả thi, không tích
-hợp vào sản phẩm). Kết quả cải thiện rõ rệt và **lần đầu có đọc đúng tuyệt
-đối, xác nhận được bằng mắt**: ô tô — 12,0% phát hiện được vùng biển, 8,0%
-đọc đúng biển hợp lệ đầy đủ (ví dụ một biển đọc đúng "30G12794" khớp 100% với
-ảnh gốc, lặp lại nhất quán ở 3 khung hình khác nhau của cùng xe); xe máy —
-30,9% phát hiện được vùng biển (so với gần như 0% ở các vòng trước) nhưng chỉ
-0,7% đọc đúng đầy đủ. Phân tích sâu hơn lý do xe máy còn thấp: trong các vùng
-biển xe máy phát hiện được, 73% có kích thước thật chỉ 14–33 pixel chiều
-ngang — kiểm chứng bằng cách phóng to 1–4 lần trước khi đưa vào model, không
-cải thiện ở bất kỳ tỷ lệ phóng nào — xác nhận đây đúng là **sàn vật lý/cảm
-biến** (không còn đủ pixel để phân giải 7–9 ký tự), không phải hạn chế của
-model; phần còn lại (~27%, kích thước 30–42px) đọc được một phần (1–6/7–9 ký
-tự), cho thấy đây là vùng có dư địa cải thiện bằng cách huấn luyện lại trên dữ
-liệu đúng độ phân giải/khoảng cách camera thực tế — nhưng dữ liệu gán nhãn ký
-tự ở đúng độ phân giải này hiện không có sẵn (các bộ dữ liệu biển số Việt Nam
-công khai tìm được trên Kaggle/GitHub nhiều khả năng cùng nguồn dữ liệu cự ly
-gần hơn đã dùng để huấn luyện sẵn model thử ở vòng 5), nên việc fine-tune
-chưa được thực hiện trong phạm vi đề tài.
-
-**Kết luận cập nhật sau vòng 5, thay cho kết luận "0% do cảm biến" ở ba vòng
-đầu**: với phương tiện đủ gần/đủ lớn trong khung hình (ô tô, một phần xe máy),
-một model chuyên biệt huấn luyện đúng định dạng biển Việt Nam đọc được biển số
-ở mức độ đáng kể, không phải một tín hiệu vô dụng như kết luận ban đầu; nhưng
-73% vùng biển xe máy detect được chỉ rộng 14–33px — kiểm chứng bằng phóng to
-1–4 lần không cải thiện gì — xác nhận đây là sàn vật lý/cảm biến, chỉ camera
-zoom/PTZ chuyên chụp biển số mới giải quyết được; phần còn lại (~27%, 30–42px)
-đọc được một phần, là vùng có dư địa cải thiện bằng huấn luyện đúng độ phân
-giải.
-
-**Vòng 6 (sau vòng 5, đang thực hiện) — hai hướng không cần huấn luyện lại đo
-trước:**
-
-- **Multi-frame fusion**: thay vì đọc biển trên một khung hình rời rạc, tận
-  dụng việc một track tồn tại qua nhiều chục khung hình — thử đọc ở nhiều
-  khung hình của cùng track, nhận kết quả đầu tiên đọc đúng. Đo trên 300 khung
-  hình thật (458 track xe, dùng đúng detector/tracker của pipeline): tỷ lệ
-  đọc-đúng-theo-track tăng **~6 lần** so với đọc-theo-khung-hình — ô tô từ
-  4,1% lên **25,0%** (9/36 xe), xe máy từ 0,4% lên **2,5%** (8/314 xe) — không
-  cần thêm dữ liệu/huấn luyện nào.
-- **Tái tạo ý tưởng (không dùng trực tiếp code/weight) của repo cộng đồng
-  bằng YOLO11** đang dùng sẵn trong project, để tránh 3 vấn đề của vòng 5
-  (license không rõ, thêm framework YOLOv5 thứ hai, nguy cơ tự ý pip-install
-  phá version pin trong venv — đã gặp thật 2 lần khi thử nghiệm vòng 5): thêm
-  class `license_plate` vào chính `yolo11s_vn.pt` đang dùng (detect vùng biển
-  "đi kèm miễn phí" trong lượt detect xe mỗi khung hình, không tốn thêm FPS),
-  cộng một `YOLO11n` riêng, nhỏ, detect từng ký tự (30 class, giữ đúng bộ ký
-  tự của model tham khảo). Dữ liệu huấn luyện: pseudo-label trên 4 đoạn video
-  Phố Huế thật (giờ khác nhau) bằng chính 2 model tham khảo của vòng 5, người
-  review/sửa lại bằng `labelImg` (256 khung hình/894 box vùng biển cho Stage
-  1; 329 crop/1360 box ký tự cho Stage 2 trước review) — bổ sung thêm dữ liệu
-  synthetic (giảm độ phân giải có kiểm soát một dataset biển số Việt Nam công
-  khai khác, đã lọc bỏ ~28% mẫu lẫn biển nước ngoài phát hiện được trong
-  dataset đó) để bù các chữ cái hiếm gặp trong mẫu thật. **Đang trong quá
-  trình review nhãn tại thời điểm viết mục này — chưa có số liệu vòng 6 chính
-  thức.**
-
-Vì việc này vẫn đang tiếp diễn, đề tài **chưa đưa ra kết luận cuối** về việc
-có tích hợp OCR biển số vào sản phẩm hay không — quyết định sẽ dựa trên số
-liệu vòng 6 (so với baseline 8%/0,7% theo-khung-hình của vòng 5, và 25%/2,5%
-theo-track của multi-frame fusion) đối chiếu với ngân sách FPS (mục 6.2(A) —
-vẫn còn treo, xem thêm yêu cầu hiệu năng 6 camera/15–20fps). Mã nguồn các vòng
-kiểm tra (`modules/plate_ocr.py`, `scripts/eval/test_plate_ocr_feasibility.py`
-đến `_v3.py`, `multiframe_plate_fusion.py`, `pseudo_label_plates.py`,
-`prepare_synthetic_char_data.py`) đều giữ trong repo. Trọng số/mã nguồn mượn
-ở vòng 5 (`trungdinh22/License-Plate-Recognition` + `ultralytics/yolov5`)
-**không commit vào repo** do chưa rõ license — chỉ dùng offline làm
-pseudo-labeler (cùng quy ước với `best_xl_ITD_v1.2.pt` đã có), không nằm
-trong sản phẩm cuối; cần tải lại theo đúng nguồn đã trích dẫn nếu muốn tái
-lập bước pseudo-label.
+- **Đánh dấu đối tượng và lưu biển số (mark & plate capture):** đề tài đã thử
+  nghiệm OCR biển số qua nhiều vòng nhưng *chưa tích hợp vào sản phẩm cuối* do
+  số liệu còn thấp. Kết luận khảo sát: với phương tiện đủ gần/đủ lớn (ô tô,
+  một phần xe máy), một mô hình chuyên biệt cho biển Việt Nam đọc được ở mức
+  đáng kể, và kỹ thuật hợp nhất nhiều khung hình theo track (multi-frame
+  fusion) nâng tỷ lệ đọc đúng theo-track lên ~25% cho ô tô; nhưng phần lớn vùng
+  biển xe máy phát hiện được chỉ rộng 14–33 px — xác nhận là *sàn vật lý cảm
+  biến* (không đủ điểm ảnh để phân giải ký tự), chỉ camera zoom/PTZ chuyên chụp
+  biển số mới giải quyết triệt để. Đây là hướng mở rộng tự nhiên cho năng lực
+  "đánh dấu đối tượng nghi vấn", phụ thuộc vào việc nâng cấp phần cứng camera
+  hoặc huấn luyện lại trên dữ liệu đúng độ phân giải.
+- **Theo dõi xuyên camera (Re-Identification):** mở rộng UC1 từ một luồng sang
+  nhiều camera liền tuyến để truy vết phương tiện qua các giao lộ liên tiếp —
+  cần quay đồng thời ít nhất hai video tại hai giao lộ liền kề (chưa có trong
+  dữ liệu hiện có) để kiểm chứng. Cần lưu ý một hạn chế đã biết: khả năng phân
+  biệt lại của đặc trưng hình ảnh với *xe máy* còn yếu (do thiếu bộ dữ liệu
+  Re-ID chuyên cho xe máy — các bộ công khai chủ yếu là ô tô), nên hướng này
+  cần đầu tư thêm dữ liệu xe máy trước khi tin dùng cho loại phương tiện chiếm
+  tỷ trọng lớn nhất tại Việt Nam.
+- **Phát hiện vi phạm bằng học máy không giám sát:** khi đã tích lũy đủ dữ liệu
+  vận hành thật, bổ sung một hướng phát hiện bất thường không giám sát
+  (Isolation Forest, autoencoder — mục 3.4) song song với hệ luật, để bắt các
+  hành vi bất thường chưa được mô hình hoá thành luật cụ thể.
 
 ---
 
-Đề tài đã hoàn thành một hệ thống giám sát và truy vết phương tiện giao thông
-đa camera hoạt động được trên video CCTV thật, với từng thành phần (phát
-hiện, theo dõi, nhận diện lại, dự đoán hành vi, suy diễn hành trình, phát
-hiện sự cố, giao diện thời gian thực) đều có số liệu đánh giá định lượng đo
-trên dữ liệu thật, không chỉ dừng ở kết quả mô phỏng. Các hạn chế còn tồn tại
-chủ yếu nằm ở quy mô dữ liệu kiểm thử thật (đặc biệt cho lớp "quay đầu" và
-cho đánh giá MOTA/IDF1/ReID xuyên camera) hơn là ở kiến trúc hệ thống, và các
-hướng phát triển đề xuất ở mục 6.2 đều là phần việc cụ thể, khả thi để tiếp
-tục thực hiện sau đề tài này.
+Đề tài đã hoàn thành một hệ thống camera AI giám sát giao thông đa luồng hoạt
+động được trên video CCTV thật, với cả bốn use case (phát hiện & theo dõi,
+phát hiện vi phạm, dự đoán hướng di chuyển trên bản đồ, cấu hình) đều có minh
+hoạ và số liệu đo trên dữ liệu thật — không dừng ở kết quả mô phỏng. Các hạn
+chế còn tồn tại chủ yếu nằm ở quy mô dữ liệu kiểm thử thật và việc hiệu chỉnh
+tham số theo từng camera, hơn là ở kiến trúc hệ thống; và các hướng phát triển
+đề xuất ở mục 6.2 đều là những phần việc cụ thể, khả thi để tiếp tục hoàn thiện
+sau đề tài này.
 
 ---
 

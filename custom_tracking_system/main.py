@@ -13,6 +13,9 @@ import cv2
 import yaml
 from pathlib import Path
 
+os.environ.setdefault('PYTHONUTF8', '1')
+os.environ.setdefault('PYTHONIOENCODING', 'utf-8')
+
 # Add project root to path
 project_root = Path(__file__).parent
 sys.path.append(str(project_root))
@@ -39,8 +42,8 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('tracking_system.log'),
-        logging.StreamHandler()
+        logging.FileHandler('tracking_system.log', encoding='utf-8'),
+        logging.StreamHandler(sys.stdout)
     ]
 )
 logger = logging.getLogger(__name__)

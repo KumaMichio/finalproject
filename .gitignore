@@ -108,3 +108,14 @@ env/
 *.swp
 .DS_Store
 Thumbs.db
+
+# ============================================================
+#  Báo cáo LaTeX + sản phẩm tổng hợp (giữ ngoài git theo yêu cầu)
+# ============================================================
+Bao_cao_do_an_tot_nghiep/
+component_for_final/
+
+# ============================================================
+#  Output công cụ phân tích understand-anything (rác/tạm)
+# ============================================================
+.understand-anything/

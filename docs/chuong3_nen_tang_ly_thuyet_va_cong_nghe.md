@@ -1,330 +1,358 @@
 # CHƯƠNG 3. NỀN TẢNG LÝ THUYẾT VÀ CÔNG NGHỆ SỬ DỤNG
 
-> Chương 2 đã xác định các yêu cầu chức năng của hệ thống — phát hiện và theo
-> dõi đối tượng trong từng camera (UC1.1–UC1.2), phát hiện và đánh dấu sự cố
-> (UC3), dự đoán hướng rẽ và suy diễn hành trình dài hạn trên bản đồ thực tế
-> (UC4.1–UC4.3) — cùng các yêu cầu phi chức năng về hiệu năng thời gian thực,
-> khả năng mở rộng nguồn camera (gồm năng lực duy trì định danh xuyên
-> camera, mục 2.4), tính minh bạch của dự đoán và khả năng triển khai trực
-> tiếp trên dữ liệu CCTV thật.
-> Chương 3 trình bày các nền tảng lý thuyết và công nghệ được lựa chọn để
-> hiện thực hoá từng yêu cầu trên, đồng thời phân tích các hướng tiếp cận
-> thay thế đã được xem xét và lý do lựa chọn cuối cùng. Nội dung được trình
-> bày theo đúng thứ tự luồng xử lý đã giới thiệu ở Chương 2: phát hiện đối
-> tượng (3.1), theo dõi trong một camera (3.2), nhận diện lại xuyên camera
-> (3.3), phát hiện sự cố (3.4), dự đoán hành vi phương tiện (3.5), xây dựng
-> mạng lưới đường thực tế và suy diễn hành trình dài hạn (3.6), và kiến trúc
-> dịch vụ thời gian thực/trực quan hoá (3.7).
-
----
+Chương 2 đã xác định các yêu cầu chức năng và phi chức năng của hệ thống: phát
+hiện và theo dõi phương tiện trong từng luồng video (UC1), phát hiện vi phạm
+giao thông gồm vượt đèn đỏ, vượt vạch dừng và đi sai làn (UC2), dự đoán hướng
+di chuyển của phương tiện và trực quan hoá trên bản đồ (UC3), cùng khả năng cấu
+hình hệ thống (UC4); kèm theo các yêu cầu phi chức năng về xử lý thời gian thực
+nhiều luồng camera (~15–20 FPS), tính minh bạch của kết quả và khả năng triển
+khai trực tiếp trên dữ liệu CCTV mô phỏng. Chương 3 trình bày các nền tảng lý
+thuyết và công nghệ được lựa chọn để hiện thực hoá từng yêu cầu trên, kèm theo
+lý do lựa chọn và các hướng tiếp cận thay thế đã được cân nhắc. Nội dung được
+trình bày theo đúng thứ tự luồng xử lý: phát hiện đối tượng (phần 3.1), kiến
+trúc YOLO11 (phần 3.2), theo dõi đa đối tượng trong một camera (phần 3.3), phát
+hiện vi phạm giao thông (phần 3.4), dự đoán hướng di chuyển và suy diễn hành
+trình (phần 3.5) và kiến trúc dịch vụ thời gian thực – trực quan hoá (phần 3.6).
 
 ## 3.1 Phát hiện đối tượng
 
 Bài toán phát hiện đối tượng (object detection) yêu cầu đồng thời xác định vị
-trí (qua khung bao — bounding box) và phân loại đối tượng xuất hiện trong
-ảnh. Đây là nền tảng trực tiếp cho UC1.1 (Chương 2), vì mọi mô-đun phía sau
-(theo dõi, nhận diện lại, dự đoán hành vi) đều chỉ hoạt động được trên đầu ra
-của bước phát hiện này; đồng thời tốc độ xử lý ở bước này quyết định phần
-lớn khả năng đáp ứng yêu cầu hiệu năng thời gian thực đã đặt ra ở mục 2.4.
+trí (qua khung bao – bounding box) và phân loại các đối tượng xuất hiện trong
+ảnh. Trong hệ thống, bài toán này phục vụ trực tiếp UC1 và là nền tảng cho mọi
+mô-đun phía sau: theo dõi, phát hiện vi phạm và dự đoán hướng đi đều chỉ hoạt
+động được trên đầu ra của bước phát hiện. Đồng thời, tốc độ xử lý ở bước này
+quyết định phần lớn khả năng đáp ứng yêu cầu thời gian thực trên nhiều luồng
+camera (mục 2.4). Các hướng tiếp cận phổ biến hiện nay gồm:
 
-Các hướng tiếp cận phổ biến cho bài toán này gồm: (i) kiến trúc hai giai
-đoạn (two-stage) như Faster R-CNN/Mask R-CNN, trong đó một mạng đề xuất vùng
-(region proposal) chạy trước một mạng phân loại/định vị tinh, cho độ chính
-xác cao nhưng tốc độ suy luận chậm, không phù hợp xử lý nhiều luồng camera
-đồng thời theo thời gian thực [1]; (ii) kiến trúc một giai đoạn (one-stage)
-như SSD và EfficientDet, dự đoán trực tiếp khung bao và lớp trên một lượt
-duyệt mạng, nhanh hơn rõ rệt nhưng thường đánh đổi độ chính xác trên các đối
-tượng nhỏ — vấn đề đáng kể với xe máy quan sát từ xa qua camera CCTV; và
-(iii) họ mô hình YOLO (You Only Look Once) [2], cũng thuộc nhóm một giai
-đoạn nhưng liên tục được cải tiến qua các phiên bản để thu hẹp khoảng cách
-độ chính xác với mô hình hai giai đoạn trong khi vẫn giữ tốc độ suy luận
-cao.
+- **Mask R-CNN và họ hai giai đoạn (two-stage)** [1]: một mạng đề xuất vùng
+  (region proposal) chạy trước một mạng phân loại/định vị tinh. Độ chính xác
+  cao nhưng tốc độ suy luận chậm (khoảng vài khung hình/giây trên GPU máy tính),
+  không khả thi cho xử lý nhiều luồng camera đồng thời theo thời gian thực.
+- **SSD và EfficientDet (one-stage)** [4]: dự đoán trực tiếp khung bao và lớp
+  trong một lượt duyệt mạng, nhanh hơn rõ rệt. Tuy nhiên độ chính xác trên các
+  đối tượng nhỏ thường kém hơn — một hạn chế đáng kể với xe máy quan sát từ xa
+  qua camera CCTV.
+- **Họ mô hình YOLO (You Only Look Once)** [2]: cũng thuộc nhóm một giai đoạn,
+  nhưng liên tục được cải tiến qua các phiên bản để thu hẹp khoảng cách độ chính
+  xác với mô hình hai giai đoạn trong khi vẫn giữ tốc độ suy luận cao.
 
-Đề tài lựa chọn **YOLO11** (Ultralytics) [3], cụ thể là biến thể nhỏ
-(*small*), cho mô-đun phát hiện. Kiến trúc YOLO11 gồm ba phần: một backbone
-trích xuất đặc trưng đa tỉ lệ, một neck tổng hợp đặc trưng theo kiểu kim tự
-tháp đặc trưng (feature pyramid) để vừa giữ ngữ nghĩa cấp cao vừa giữ chi
-tiết không gian cấp thấp — quan trọng để phát hiện được xe máy nhỏ và xa lẫn
-ô tô/xe buýt lớn trong cùng một khung hình — và một detection head theo
-kiểu *anchor-free*, dự đoán trực tiếp toạ độ khung bao mà không cần các hộp
-neo cố định được thiết kế trước. Lý do lựa chọn YOLO11 thay cho hai hướng
-còn lại: (1) tốc độ suy luận đủ nhanh để xử lý nhiều camera trên phần cứng
-thông thường, không yêu cầu máy chủ GPU chuyên dụng — đáp ứng trực tiếp yêu
-cầu hiệu năng và khả năng triển khai trên dữ liệu thực tế (mục 2.4); (2) hệ
-sinh thái Ultralytics cung cấp sẵn công cụ huấn luyện lại (fine-tuning) trên
-bộ nhãn tuỳ chỉnh, cho phép huấn luyện lại mô hình theo đúng 5 lớp đối tượng
-đặc trưng giao thông Việt Nam (người đi bộ, xe máy, ô tô, xe buýt, xe tải)
-thay vì dùng nguyên bộ nhãn COCO gốc; (3) so với các phiên bản YOLO trước
-(YOLOv5/v8), YOLO11 cải thiện độ chính xác trên vật thể nhỏ mà không tăng
-đáng kể độ trễ suy luận — phù hợp đặc thù xe máy chiếm tỷ trọng lớn nhưng
-kích thước nhỏ trong ảnh CCTV.
+Đề tài lựa chọn **YOLO11** (Ultralytics, 2024) [3], cụ thể là biến thể nhỏ
+(*small*), cho mô-đun phát hiện, vì ba lý do. Thứ nhất, tốc độ suy luận đủ nhanh
+để xử lý nhiều luồng camera trên phần cứng thông thường mà không yêu cầu máy chủ
+GPU chuyên dụng — đáp ứng trực tiếp yêu cầu hiệu năng và khả năng triển khai
+(mục 2.4). Thứ hai, hệ sinh thái Ultralytics cung cấp sẵn công cụ huấn luyện lại
+(fine-tuning) trên bộ nhãn tuỳ chỉnh, cho phép huấn luyện mô hình theo đúng các
+lớp đối tượng đặc trưng giao thông Việt Nam (người, xe máy, ô tô, xe buýt, xe
+tải) thay vì dùng nguyên bộ nhãn COCO gốc [23]. Thứ ba, so với các phiên bản
+YOLO trước (YOLOv5/v8), YOLO11 cải thiện độ chính xác trên vật thể nhỏ mà không
+tăng đáng kể độ trễ suy luận — phù hợp với đặc thù xe máy chiếm tỷ trọng lớn
+nhưng kích thước nhỏ trong ảnh CCTV.
 
-## 3.2 Theo dõi đa đối tượng trong một camera
+## 3.2 Kiến trúc YOLO11
 
-Sau khi có danh sách đối tượng phát hiện ở mỗi khung hình, hệ thống cần liên
-kết các phát hiện đó qua các khung hình liên tiếp để biết "đây vẫn là cùng
-một đối tượng" — đây chính là yêu cầu của UC1.2. Bài toán theo dõi đa đối
-tượng (Multi-Object Tracking — MOT) trong một camera thường theo mô hình
-*tracking-by-detection*: dùng một bộ lọc chuyển động (thường là Kalman
-Filter [4]) để dự đoán vị trí tiếp theo của các đối tượng đang theo dõi, rồi
-ghép cặp các phát hiện mới với các dự đoán đó bằng thuật toán tối ưu hoá
-ghép cặp hai phía (Hungarian matching).
+YOLO11 có kiến trúc ba phần chính: backbone, neck và head [3].
 
-Các hướng tiếp cận khác nhau ở chỗ ngoài chuyển động, có sử dụng thêm đặc
-trưng hình ảnh (appearance) để ghép cặp hay không. SORT chỉ dùng độ chồng
-lấp khung bao (IoU) và Kalman Filter, đơn giản và nhanh nhưng dễ mất dấu khi
-đối tượng bị che khuất. DeepSORT và StrongSORT bổ sung một mạng trích đặc
-trưng hình ảnh riêng cho từng đối tượng ở *mỗi khung hình* để ghép cặp chính
-xác hơn khi chuyển động không đủ tin cậy, nhưng phải trả giá bằng chi phí
-tính toán tăng thêm đáng kể vì phải chạy một mạng trích đặc trưng cho từng
-đối tượng liên tục — chi phí này có thể chấp nhận được cho một bài toán đơn
-camera, nhưng sẽ dư thừa cho hệ thống của đề tài vì một mạng trích đặc trưng
-chuyên biệt khác (OSNet, mục 3.3) đã được dùng riêng cho bước theo dõi xuyên
-camera. ByteTrack [5] đại diện cho một cải tiến khác: thay vì chỉ giữ các
-phát hiện có độ tin cậy cao, ByteTrack giữ và ghép cặp *toàn bộ* khung bao
-phát hiện được, kể cả các khung bao có độ tin cậy thấp (chiến lược BYTE),
-dựa trên lập luận rằng một phát hiện điểm tin cậy thấp do bị che khuất một
-phần vẫn là tín hiệu hữu ích để duy trì track, chỉ cần không dùng nó để khởi
-tạo track mới.
+**Backbone** đảm nhận việc trích xuất đặc trưng từ ảnh đầu vào, sử dụng các khối
+tích chập kiểu Cross Stage Partial kết hợp gộp đa tỉ lệ (SPPF – Spatial Pyramid
+Pooling Fast) để trích đặc trưng ở nhiều mức độ phân giải. So với YOLOv8,
+backbone của YOLO11 ít tham số hơn nhưng khả năng biểu diễn gần như tương đương.
 
-Đề tài lựa chọn **ByteTrack**, triển khai qua thư viện `boxmot` [6]. Việc
-giữ lại các phát hiện độ tin cậy thấp đặc biệt phù hợp với giao thông Việt
-Nam, nơi xe máy di chuyển sát nhau và thường xuyên che khuất lẫn nhau một
-phần trong khung hình CCTV, khiến độ tin cậy phát hiện dao động liên tục —
-nếu loại bỏ các phát hiện độ tin cậy thấp như SORT, track của xe máy bị che
-khuất tạm thời sẽ dễ bị ngắt quãng và tạo ra ID mới một cách không cần
-thiết. Đồng thời, vì ByteTrack chỉ dựa vào chuyển động (không cần mạng trích
-đặc trưng hình ảnh riêng), chi phí tính toán ở bước theo dõi trong một
-camera được giữ tối thiểu, dành tài nguyên tính toán cho bước nhận diện lại
-xuyên camera ở mục 3.3 — vốn mới là nơi thực sự cần đặc trưng hình ảnh.
+**Neck** tổng hợp đặc trưng từ các tầng khác nhau của backbone theo kiến trúc
+kim tự tháp đặc trưng (FPN – Feature Pyramid Network) [5] kết hợp mạng tổng hợp
+theo đường dẫn (PAN – Path Aggregation Network) [6]. Sự kết hợp này giữ được cả
+đặc trưng ngữ nghĩa cấp cao (từ tầng sâu) lẫn đặc trưng không gian cấp thấp (từ
+tầng nông), nhờ vậy mô hình bắt được đối tượng ở nhiều kích thước — đặc biệt
+quan trọng để cùng lúc phát hiện xe máy nhỏ và xa lẫn ô tô/xe buýt lớn trong
+một khung hình CCTV.
 
-## 3.3 Nhận diện lại xuyên camera (Re-Identification)
+**Head** dùng kiến trúc *anchor-free*, dự đoán trực tiếp toạ độ khung bao, xác
+suất lớp và điểm tin cậy cho từng đối tượng mà không cần các hộp neo cố định
+được thiết kế trước.
 
-Năng lực hạ tầng duy trì định danh xuyên camera (mục 2.4) yêu cầu hệ thống
-nhận ra cùng một đối tượng khi nó xuất hiện ở một camera khác — bài toán này
-được gọi là nhận diện lại (Re-Identification — ReID). Khác với theo dõi trong một camera (mục 3.2), ReID không có thông tin
-chuyển động liên tục giữa hai camera (đối tượng "biến mất" khỏi camera này
-một khoảng thời gian trước khi "xuất hiện" ở camera kia), nên phải dựa hoàn
-toàn vào đặc trưng hình ảnh: trích một vector đặc trưng (embedding) đại diện
-cho "diện mạo" của đối tượng, sao cho hai lần quan sát cùng một đối tượng dù
-ở góc camera khác nhau vẫn cho ra hai vector gần nhau, còn hai đối tượng
-khác nhau cho ra hai vector cách xa nhau — sau đó so khớp bằng độ tương đồng
-cô-sin (cosine similarity).
+Đề tài sử dụng biến thể *small* của YOLO11 với kích thước đầu vào 640×640 pixel —
+một cấu hình cân bằng tốt giữa độ chính xác và tốc độ suy luận khi phải chạy
+song song nhiều luồng camera.
 
-Các hướng tiếp cận trích đặc trưng khác nhau ở mức độ chuyên biệt hoá cho
-bài toán ReID. Dùng trực tiếp một mạng phân loại ảnh tổng quát (ví dụ
-ResNet-50 huấn luyện trên ImageNet) làm bộ trích đặc trưng là cách đơn giản
-nhất nhưng cho chất lượng phân biệt thấp vì mạng không được tối ưu cho việc
-phân biệt các cá thể cùng lớp (cùng là "xe máy" nhưng là hai xe khác nhau).
-Các kiến trúc theo hướng học đặc trưng theo từng phần cơ thể/phương tiện
-(part-based, ví dụ PCB) hoặc kiến trúc Transformer cho ReID (TransReID) cho
-độ chính xác cao hơn nhưng đòi hỏi nhiều tham số và dữ liệu huấn luyện lớn
-hơn, gây khó khăn khi cần suy luận thời gian thực trên nhiều đối tượng ở
-nhiều camera đồng thời.
+### 3.2.1 Học chuyển giao và huấn luyện trên dữ liệu giao thông Việt Nam
 
-Đề tài lựa chọn **OSNet** (Omni-Scale Network) [7], một kiến trúc CNN được
-thiết kế riêng cho bài toán ReID với cơ chế tổng hợp đặc trưng đa tỉ lệ qua
-các cổng tổng hợp thống nhất (unified aggregation gates), cho phép mạng học
-được cả đặc trưng cục bộ chi tiết (màu sắc, hoa văn) và đặc trưng toàn cục
-(hình dạng tổng thể) trong cùng một nhánh mạng nhẹ (~2,2 triệu tham số). Lý
-do lựa chọn OSNet: (1) số tham số nhỏ giúp trích đặc trưng cho nhiều đối
-tượng từ nhiều camera đồng thời mà không vượt quá khả năng phần cứng thông
-thường, trực tiếp đáp ứng yêu cầu khả năng mở rộng số lượng camera (mục
-2.4); (2) đã có sẵn trọng số huấn luyện trước (pretrained) trên bộ dữ liệu
-Market-1501 [8] cho người đi bộ, đồng thời có thể huấn luyện lại (fine-tune)
-trên VeRi-776 [9] — bộ dữ liệu ReID chuyên cho phương tiện cơ giới (ô tô,
-xe máy) — thông qua thư viện `torchreid` [10], phù hợp với yêu cầu hạ tầng
-Re-ID cần phân biệt nhiều loại đối tượng khác nhau (người đi bộ và nhiều
-loại phương tiện) chứ không chỉ một loại duy nhất. Để giảm tỷ lệ ghép sai khi hai đối tượng có
-diện mạo tương tự (ví dụ hai xe máy cùng màu, cùng kiểu), việc so khớp đặc
-trưng còn được kết hợp với một bộ lọc thời gian–không gian: chỉ chấp nhận
-một cặp match nếu khoảng thời gian giữa hai lần quan sát phù hợp với thời
-gian di chuyển thực tế tối thiểu/tối đa giữa hai camera tương ứng (được khai
-báo trước theo cấu trúc bố trí camera) — đây là một kỹ thuật ràng buộc theo
-ngữ cảnh không gian–thời gian phổ biến trong các hệ thống theo dõi đa camera
-quy mô lớn [11].
+Học chuyển giao (transfer learning) là kỹ thuật tận dụng tri thức từ một mô hình
+đã được huấn luyện trên tập dữ liệu lớn (pretrained model) cho một bài toán mới
+với dữ liệu nhỏ hơn [7], giúp rút ngắn thời gian huấn luyện và bù lại sự thiếu
+hụt dữ liệu đặc thù. Đề tài khởi tạo mô hình từ trọng số đã huấn luyện trước
+trên bộ dữ liệu COCO [23], sau đó tinh chỉnh (fine-tune) trên bộ dữ liệu giao
+thông Việt Nam tự thu thập và gán nhãn từ video CCTV thực tế. Bộ nhãn gốc của
+COCO được hợp nhất lại về các lớp đối tượng giao thông cần thiết (người, xe máy,
+ô tô, xe buýt, xe tải), giúp mô hình tập trung học đúng các lớp xuất hiện trong
+bối cảnh sử dụng thay vì toàn bộ 80 lớp tổng quát của COCO. Chiến lược này cho
+phép mô hình thích nghi với đặc thù giao thông địa phương (mật độ xe máy cao,
+góc nhìn từ trên cao của camera CCTV) mà không đánh mất khả năng nhận diện đã
+học được từ tập dữ liệu lớn.
 
-## 3.4 Phát hiện sự cố giao thông
+### 3.2.2 Hậu xử lý đầu ra
 
-UC3 yêu cầu hệ thống tự động phát hiện các tình huống bất thường (dừng đột
-ngột, đi ngược chiều, vượt đèn đỏ, phương tiện áp sát nhau, người đi bộ vào
-vùng nguy hiểm...) từ dữ liệu track output của các bước trên. Có hai hướng
-tiếp cận chính cho bài toán phát hiện bất thường trong giám sát giao thông
-[12]. Hướng thứ nhất là học máy không giám sát (unsupervised anomaly
-detection): huấn luyện một mô hình (ví dụ Isolation Forest [13] hoặc bộ tự
-mã hoá — autoencoder) để tự học "thế nào là hành vi bình thường" từ một
-lượng lớn dữ liệu track quan sát được, rồi đánh dấu bất thường là những mẫu
-sai khác nhiều so với phân phối đã học. Hướng thứ hai là hệ luật suy diễn
-(rule-based reasoning): định nghĩa trực tiếp các ngưỡng/điều kiện cụ thể
-(vận tốc, gia tốc, vị trí tương đối với vùng cấm...) ứng với từng loại sự cố
-cần phát hiện.
+Đầu ra thô của YOLO11 là một tập hợp lớn các khung bao ứng viên kèm điểm tin cậy
+và xác suất lớp; hậu xử lý gồm hai bước để chuyển tập này thành danh sách phát
+hiện sạch.
 
-Đề tài lựa chọn **hệ luật suy diễn** cho UC3.1. Lý do chính nằm ở yêu cầu
-minh bạch của dự đoán (mục 2.4): với hướng học máy không giám sát, hệ thống
-chỉ có thể báo "hành vi này khác thường" mà khó giải thích rõ vì sao, gây
-khó khăn khi người vận hành cần hiểu căn cứ của một cảnh báo trước khi quyết
-định hành động; trong khi với hệ luật, mỗi cảnh báo gắn liền với một điều
-kiện cụ thể, có thể diễn giải trực tiếp (ví dụ "vận tốc giảm từ X xuống gần 0
-trong dưới 1 giây" cho luật dừng đột ngột) và dễ điều chỉnh ngưỡng theo từng
-camera/tuyến đường cụ thể mà không cần huấn luyện lại. Ngoài ra, hướng học
-máy không giám sát đòi hỏi một lượng dữ liệu quan sát "bình thường" đủ lớn
-và đặc thù cho từng địa điểm camera để mô hình học đúng phân phối nền —
-trong khi sự cố giao thông thật vốn hiếm và khó thu thập đủ để kiểm chứng mô
-hình học máy một cách tin cậy. Cơ chế thời gian nghỉ (cooldown) giữa hai lần
-cảnh báo liên tiếp cho cùng một loại sự cố trên cùng một đối tượng được áp
-dụng thêm để đáp ứng yêu cầu chống nhiễu cảnh báo. Hướng học máy không giám
-sát vẫn được ghi nhận là một hướng nâng cấp khả thi trong tương lai khi đã
-tích lũy đủ dữ liệu vận hành thực tế (trình bày lại ở Chương 6).
+Bước thứ nhất là lọc theo ngưỡng tin cậy (confidence threshold). Hệ thống dùng
+một ngưỡng tin cậy tương đối thấp (mặc định 0,35) khi triển khai trên dữ liệu
+CCTV, xuất phát từ đặc thù bài toán: trong giám sát giao thông, việc bỏ sót một
+phương tiện gây ra hậu quả nghiêm trọng hơn (mất dấu, bỏ lọt vi phạm) so với một
+lần phát hiện nhầm vốn dễ bị các bước theo dõi và lọc thời gian phía sau loại
+bỏ. Để giảm chi phí bộ nhớ khi chạy nhiều luồng đồng thời, mô hình được suy luận
+ở độ chính xác bán phần (FP16) khi phần cứng hỗ trợ.
 
-## 3.5 Dự đoán hành vi phương tiện
+Bước thứ hai là khử trùng lặp bằng Non-Maximum Suppression (NMS): hai khung bao
+có độ chồng lấp (IoU – Intersection over Union) vượt ngưỡng sẽ được gộp lại, giữ
+lại phát hiện có điểm tin cậy cao hơn, nhằm tránh việc một vật thể bị gán nhiều
+khung bao chồng nhau.
 
-UC4.1 yêu cầu dự đoán hướng đi (đi thẳng/rẽ trái/rẽ phải/quay đầu) của một
-phương tiện tại ngã tư sắp tới, dựa trên một cửa sổ quan sát chuyển động gần
-nhất. Đây bản chất là một bài toán phân loại chuỗi thời gian (time-series
-classification). Hai nhóm hướng tiếp cận thường được dùng: (i) mạng học sâu
-hồi quy/tuần tự xử lý trực tiếp chuỗi toạ độ thô, như LSTM/GRU hoặc các kiến
-trúc Transformer cho dự báo chuyển động, có khả năng tự học biểu diễn thời
-gian phức tạp nhưng đòi hỏi lượng dữ liệu huấn luyện lớn để tránh quá khớp;
-và (ii) các mô hình học máy cổ điển trên một tập đặc trưng được thiết kế thủ
-công (engineered features) rút ra từ chuỗi quan sát — ví dụ vận tốc trung
-bình, tổng biến động hướng đi, tỉ lệ giảm tốc trong cửa sổ quan sát — rồi
-đưa vào một mô hình phân loại dạng bảng như Random Forest hay Gradient
-Boosting [14].
+## 3.3 Theo dõi đa đối tượng trong một camera
 
-Đề tài lựa chọn hướng (ii): **Gradient Boosting Classifier**, kết hợp một
-bước hiệu chỉnh xác suất đầu ra (`CalibratedClassifierCV`, dựa trên nguyên
-lý Platt scaling [15]). Lý do chính là quy mô dữ liệu gán nhãn thật hiện có
-(thu được từ việc tự động gán nhãn hướng rẽ cho các track quan sát từ video
-CCTV thật) còn ở mức vài nghìn track — đủ để một mô hình cây tăng cường học
-tốt trên một tập đặc trưng đã được thiết kế có chủ đích bám sát bản chất vật
-lý của việc rẽ hướng (biến động hướng đi, giảm tốc trước khi rẽ...), nhưng
-chưa đủ lớn để một mạng hồi quy sâu học biểu diễn từ đầu một cách tin cậy mà
-không quá khớp. Bước hiệu chỉnh xác suất (calibration) được thêm vào vì lý
-do trực tiếp liên quan đến yêu cầu minh bạch dự đoán ở mục 2.4: một mô hình
-phân loại thông thường có thể cho ra xác suất "quá tự tin" so với độ chính
-xác thật của nó; Platt scaling ánh xạ lại các điểm số thô của mô hình thành
-xác suất phản ánh đúng hơn tần suất đúng thực tế, đo bằng chỉ số sai số hiệu
-chỉnh kỳ vọng (Expected Calibration Error — ECE) [16] — cho phép hiển thị
-một mức tin cậy cho người vận hành mà không phóng đại.
+Sau khi có danh sách phát hiện ở mỗi khung hình, hệ thống cần liên kết các phát
+hiện đó qua các khung hình liên tiếp để xác định "đây vẫn là cùng một phương
+tiện" và gán cho nó một định danh ổn định trong phạm vi một luồng video — đây
+chính là phần còn lại của UC1. Bài toán theo dõi đa đối tượng (Multi-Object
+Tracking – MOT) thường theo mô hình *tracking-by-detection*: dùng một bộ lọc
+chuyển động (thường là bộ lọc Kalman [8]) để dự đoán vị trí tiếp theo của các
+đối tượng đang theo dõi, rồi ghép cặp các phát hiện mới với các dự đoán đó bằng
+thuật toán ghép cặp tối ưu hai phía (Hungarian matching). Các hướng tiếp cận
+khác nhau chủ yếu ở chỗ có dùng thêm đặc trưng hình ảnh (appearance) để ghép cặp
+hay không:
 
-Song song, để có một ước lượng vị trí/hướng đi tức thời (đầu vào cho UC4.1
-và UC4.2) ngay cả khi chưa đủ lịch sử cho mô hình phân loại ở trên, hệ thống
-dùng một bộ lọc Kalman (Kalman Filter) [4] mô hình hoá theo gia tốc không
-đổi (constant-acceleration), ước lượng vị trí/vận tốc tiếp theo của đối
-tượng từ các quan sát rời rạc có nhiễu. So với các phương án thay thế (mạng
-dự đoán quỹ đạo học sâu đa giả thuyết kiểu Social-LSTM hoặc Transformer dự
-báo chuyển động), Kalman Filter có ưu điểm không phụ thuộc dữ liệu huấn
-luyện — hoạt động ngay trên một camera/khu vực mới mà không cần thu thập và
-gán nhãn trước — và đủ chính xác cho horizon ngắn (vài giây), trong khi bài
-toán dự đoán cho horizon dài (nhiều ngã tư) được xử lý bằng một cơ chế khác,
-trình bày ở mục 3.6, để tránh việc một mô hình học sâu phải gánh đồng thời
-cả dự đoán ngắn hạn chính xác và dự đoán dài hạn vốn cần dữ liệu lớn hơn
-nhiều mới đáng tin cậy.
+- **SORT**: chỉ dùng độ chồng lấp khung bao (IoU) và bộ lọc Kalman; đơn giản,
+  nhanh, nhưng dễ mất dấu khi đối tượng bị che khuất.
+- **DeepSORT / StrongSORT**: bổ sung một mạng trích đặc trưng hình ảnh riêng cho
+  từng đối tượng ở *mỗi khung hình* để ghép cặp chính xác hơn khi chuyển động
+  không đủ tin cậy, nhưng trả giá bằng chi phí tính toán tăng đáng kể — dư thừa
+  với một hệ thống cần theo dõi nhiều đối tượng trên nhiều luồng đồng thời, trong
+  khi yêu cầu chỉ là duy trì định danh trong phạm vi một luồng video.
+- **ByteTrack** [9]: thay vì chỉ giữ các phát hiện có độ tin cậy cao, ByteTrack
+  giữ và ghép cặp *toàn bộ* khung bao phát hiện được, kể cả các khung bao có độ
+  tin cậy thấp (chiến lược BYTE), dựa trên lập luận rằng một phát hiện điểm tin
+  cậy thấp do bị che khuất một phần vẫn là tín hiệu hữu ích để duy trì track,
+  chỉ cần không dùng nó để khởi tạo track mới.
 
-## 3.6 Xây dựng mạng lưới đường thực tế và suy diễn hành trình dài hạn
+Đề tài lựa chọn **ByteTrack**, triển khai qua thư viện `boxmot` [10]. Việc giữ
+lại các phát hiện độ tin cậy thấp đặc biệt phù hợp với giao thông Việt Nam, nơi
+xe máy di chuyển sát nhau và thường xuyên che khuất lẫn nhau một phần, khiến độ
+tin cậy phát hiện dao động liên tục — nếu loại bỏ các phát hiện độ tin cậy thấp
+như SORT, track của xe máy bị che khuất tạm thời sẽ dễ bị ngắt quãng và sinh ra
+định danh mới không cần thiết. Đồng thời, vì ByteTrack chỉ dựa vào chuyển động
+(không cần một mạng trích đặc trưng hình ảnh riêng), chi phí tính toán ở bước
+theo dõi được giữ tối thiểu, dành tài nguyên cho các bước phát hiện và dự đoán.
+Các tham số chính được cấu hình gồm: ngưỡng kích hoạt track 0,25, ngưỡng ghép
+cặp 0,8, bộ đệm giữ track đã mất 30 khung hình, và tốc độ khung hình đặt riêng
+theo từng camera.
 
-UC4.2 yêu cầu, từ hướng đi dự đoán ở ngã tư đầu tiên, tiếp tục suy diễn ra
-chuỗi các ngã tư/đoạn đường tiếp theo mà đối tượng có thể đi qua, dựa trên
-cấu trúc đường thực tế của khu vực giám sát — bài toán này cần một cấu trúc
-dữ liệu mô tả mạng lưới đường dưới dạng đồ thị (nút là giao lộ, cạnh là đoạn
-đường) để có thể duyệt tiếp.
+## 3.4 Phát hiện vi phạm giao thông
 
-Có ba hướng để xây dựng đồ thị này: (i) tự vẽ tay (manual annotation) toạ độ
-các giao lộ/đoạn đường cho riêng khu vực camera đang giám sát — khả thi cho
-một khu vực nhỏ nhưng không thể mở rộng nhanh sang khu vực mới; (ii) gọi một
-dịch vụ bản đồ thương mại có API truy vấn cấu trúc đường (ví dụ Google Roads
-API) — tiện lợi nhưng phụ thuộc vào hạn mức truy vấn/chi phí và định dạng dữ
-liệu trả về không phải lúc nào cũng có đủ thông tin kết nối giữa các giao lộ
-cần cho việc duyệt đồ thị; (iii) xây dựng từ dữ liệu bản đồ mở
-**OpenStreetMap** (OSM) [17], chuyển đổi qua công cụ `netconvert` của bộ mô
-phỏng giao thông **SUMO** [18] sang một mạng lưới đường có cấu trúc làn/giao
-lộ rõ ràng, rồi biểu diễn theo chuẩn **OpenDRIVE** [19] — một định dạng mô
-tả đường tiêu chuẩn trong đó thông tin kết nối giữa các giao lộ (junction
-connectivity) được khai báo rõ ràng, dễ phân tích trực tiếp thành đồ thị nút
-(giao lộ) – cạnh (đoạn đường) phục vụ thuật toán duyệt đồ thị.
+UC2 yêu cầu hệ thống tự động xác định ba loại vi phạm — vượt đèn đỏ, vượt vạch
+dừng và đi sai làn — từ dữ liệu track đầu ra của các bước trên. Có hai hướng
+tiếp cận chính cho bài toán phát hiện hành vi bất thường/vi phạm trong giám sát
+giao thông [11]:
 
-Đề tài lựa chọn hướng (iii). Lý do: dữ liệu OpenStreetMap cho khu vực đô thị
-Việt Nam (bao gồm khu vực giám sát thực tế của đề tài) có sẵn, miễn phí và
-đủ chi tiết về hình học đường; `netconvert` là công cụ đã được dùng rộng
-rãi trong nghiên cứu mô phỏng/phân tích giao thông để chuyển đổi dữ liệu OSM
-thô thành một mạng lưới có cấu trúc, xử lý sẵn các vấn đề như làn xe, hướng
-đi một chiều; còn OpenDRIVE cung cấp một lược đồ dữ liệu đã chuẩn hoá, có
-thể phân tích bằng công cụ tự viết để trích ra đúng đồ thị giao lộ cần cho
-UC4.2 mà không phụ thuộc dịch vụ bên thứ ba có thể giới hạn truy vấn hoặc
-thay đổi điều khoản sử dụng. Toạ độ trên đồ thị này được quy đổi hai chiều
-sang hệ toạ độ địa lý thực (vĩ độ/kinh độ) thông qua phép chiếu bản đồ UTM
-tiêu chuẩn, để có thể hiển thị trực tiếp lên nền bản đồ thực ở UC4.3.
+- **Học máy không giám sát (unsupervised anomaly detection)**: huấn luyện một mô
+  hình (ví dụ Isolation Forest [12] hoặc bộ tự mã hoá – autoencoder) để tự học
+  "thế nào là hành vi bình thường" từ một lượng lớn dữ liệu track, rồi đánh dấu
+  bất thường là những mẫu sai khác nhiều so với phân phối đã học.
+- **Hệ luật suy diễn (rule-based reasoning)**: định nghĩa trực tiếp các điều
+  kiện hình học và động học cụ thể (vị trí so với vạch dừng/làn đường, hướng di
+  chuyển, vận tốc, trạng thái đèn) ứng với từng loại vi phạm cần phát hiện.
 
-Một vấn đề liên quan là quy đổi toạ độ điểm ảnh (pixel) trên khung hình
-camera sang toạ độ thực trên mặt đất, cần thiết để biết vị trí hiện tại của
-đối tượng trên đồ thị giao lộ nói trên. Đề tài dùng một mô hình chiếu hình
-ảnh đơn giản theo mặt phẳng mặt đất (ground-plane projection, dựa trên mô
-hình camera lỗ kim — *pinhole camera*), với các tham số vị trí, góc nghiêng
-và góc nhìn (FOV) của camera được khớp bằng cách quan sát trực quan (đối
-chiếu mạng lưới đường đã biết với hình ảnh thực tế từ camera) thay vì hiệu
-chỉnh bằng thiết bị đo đạc chuyên dụng hoặc bảng caro hiệu chỉnh camera
-(camera calibration checkerboard). Hướng hiệu chỉnh đầy đủ bằng thiết bị
-chuyên dụng cho độ chính xác cao hơn nhưng không khả thi với phần lớn camera
-CCTV đang vận hành (không thể tiếp cận vật lý để hiệu chỉnh lại); lựa chọn
-khớp trực quan vì vậy phù hợp hơn với yêu cầu khả năng triển khai trực tiếp
-trên hạ tầng camera thực tế đã có sẵn (mục 2.4), đổi lại sai số vị trí ước
-lượng được ở mức một vài mét — đủ dùng để xác định đúng đoạn đường/giao lộ
-gần nhất trên đồ thị, dù chưa đạt độ chính xác phục vụ mục đích đo đạc kỹ
-thuật.
+Đề tài lựa chọn **hệ luật suy diễn**. Lý do chính nằm ở yêu cầu minh bạch của kết
+quả (mục 2.4): với hướng học máy không giám sát, hệ thống chỉ có thể báo "hành vi
+này khác thường" mà khó giải thích vì sao, gây khó khăn cho người vận hành khi
+cần hiểu căn cứ của một cảnh báo; trong khi với hệ luật, mỗi vi phạm gắn liền với
+một điều kiện cụ thể, có thể diễn giải trực tiếp ("phương tiện vượt qua vạch dừng
+trong khi đèn đang đỏ") và dễ điều chỉnh ngưỡng theo từng camera/tuyến đường mà
+không cần huấn luyện lại. Ngoài ra, hướng học máy không giám sát đòi hỏi một
+lượng dữ liệu "bình thường" đủ lớn và đặc thù cho từng địa điểm, trong khi vi
+phạm thực tế vốn hiếm và khó thu thập đủ để kiểm chứng mô hình một cách tin cậy.
+Hướng học máy không giám sát được ghi nhận là một hướng nâng cấp khả thi trong
+tương lai (Chương 6).
 
-## 3.7 Kiến trúc dịch vụ thời gian thực và trực quan hoá
+### 3.4.1 Xác định trạng thái đèn tín hiệu
 
-Cuối cùng, UC5 (giám sát qua dashboard) và UC4.3 (vẽ hành trình lên bản đồ)
-yêu cầu một lớp dịch vụ đẩy được kết quả xử lý (luồng video đã vẽ chú thích,
-danh sách cảnh báo, hành trình dự đoán) tới giao diện người dùng theo thời
-gian thực qua trình duyệt web, đúng như yêu cầu phi chức năng về giao diện
-vận hành thời gian thực (mục 2.4).
+Điều kiện tiên quyết để phát hiện vi phạm vượt đèn đỏ là biết được trạng thái
+đèn tín hiệu tại mỗi thời điểm. Đề tài xác định trạng thái đèn bằng phương pháp
+phân tích màu trực tiếp trên khung hình: người vận hành đánh dấu trước toạ độ vị
+trí của từng bóng đèn (đỏ/vàng/xanh) trong khung hình của mỗi camera (một phần
+của UC4 – cấu hình hệ thống); tại mỗi khung hình, hệ thống trích một vùng nhỏ
+quanh các toạ độ đó và so sánh độ sáng/sắc màu trong không gian màu HSV để xác
+định đèn nào đang bật. Để chống nhiễu do dao động ánh sáng tức thời, trạng thái
+đèn được làm trơn bằng cơ chế bỏ phiếu đa số trên một cửa sổ vài khung hình liên
+tiếp. Trong trường hợp bóng đèn không nằm trong tầm nhìn của camera, hệ thống cho
+phép khai báo trước **chu kỳ đèn tín hiệu** (thời lượng các pha) trong cấu hình
+UC4 và suy ra trạng thái đèn theo thời gian. Cách tiếp cận khai báo toạ
+độ/chu kỳ theo từng camera được chọn thay cho một mô hình học sâu nhận dạng đèn
+vì nó không cần dữ liệu huấn luyện riêng, hoạt động ngay khi triển khai trên một
+camera mới và minh bạch với người vận hành.
+
+### 3.4.2 Hệ luật phát hiện vi phạm
+
+Trên cơ sở trạng thái đèn và các vùng quan tâm (ROI) do người vận hành cấu hình,
+ba loại vi phạm được phát hiện như sau:
+
+- **Vượt đèn đỏ / vượt vạch dừng**: người vận hành khai báo vị trí vạch dừng và
+  vùng giao lộ tương ứng. Khi đèn đang ở trạng thái đỏ, nếu một phương tiện đang
+  di chuyển (vận tốc vượt ngưỡng tối thiểu) vượt qua vạch dừng tiến vào vùng giao
+  lộ, hệ thống ghi nhận vi phạm. Ngưỡng vận tốc tối thiểu giúp loại bỏ các phương
+  tiện đang dừng chờ đèn sát vạch.
+- **Đi sai làn**: mỗi làn được khai báo bằng một vùng đa giác (polygon) kèm hai
+  ràng buộc — *lớp phương tiện được phép* (ví dụ làn chỉ dành cho xe máy) và
+  *hướng di chuyển hợp lệ*. Hệ thống xác định phương tiện thuộc làn nào theo tâm
+  khung bao, rồi kiểm tra: nếu phương tiện sai lớp được phép, hoặc hướng di
+  chuyển (vector dịch chuyển giữa các khung hình) lệch quá ngưỡng so với hướng
+  hợp lệ của làn (đo bằng tích vô hướng – dot product), thì bị đánh dấu vi phạm.
+
+Để chống cảnh báo nhiễu, mọi luật đều yêu cầu điều kiện vi phạm duy trì ổn định
+qua một số khung hình liên tiếp tối thiểu trước khi xác nhận, đồng thời áp dụng
+cơ chế thời gian nghỉ (cooldown) giữa hai lần cảnh báo liên tiếp cho cùng một vi
+phạm trên cùng một phương tiện. Kết quả vi phạm được hiển thị trực tiếp trên giao
+diện giám sát (mục 3.6).
+
+## 3.5 Dự đoán hướng di chuyển và suy diễn hành trình
+
+UC3 yêu cầu, từ quỹ đạo chuyển động của phương tiện và cấu trúc giao lộ trên bản
+đồ, dự đoán hướng di chuyển tiếp theo của phương tiện và trực quan hoá trên bản
+đồ. Bài toán được chia thành hai phần: dự đoán hướng rẽ tại ngã tư kế tiếp (mục
+3.5.1) và suy diễn chuỗi đoạn đường tiếp theo trên mạng lưới đường thực tế (mục
+3.5.2).
+
+### 3.5.1 Dự đoán hướng rẽ tại ngã tư
+
+Dự đoán hướng đi (đi thẳng/rẽ trái/rẽ phải/quay đầu) của một phương tiện dựa trên
+một cửa sổ quan sát chuyển động gần nhất, về bản chất là một bài toán phân loại
+chuỗi thời gian (time-series classification). Hai nhóm hướng tiếp cận thường
+được dùng: (i) mạng học sâu tuần tự (LSTM/GRU, Transformer) xử lý trực tiếp chuỗi
+toạ độ thô, có khả năng tự học biểu diễn thời gian phức tạp nhưng đòi hỏi lượng
+dữ liệu huấn luyện lớn để tránh quá khớp; và (ii) các mô hình học máy cổ điển
+trên một tập đặc trưng được thiết kế thủ công (engineered features) rút ra từ
+chuỗi quan sát — như vận tốc trung bình, tổng biến động hướng đi, tỉ lệ giảm tốc
+— rồi đưa vào một mô hình phân loại dạng bảng như Random Forest hay Gradient
+Boosting [13].
+
+Đề tài lựa chọn hướng (ii): **Gradient Boosting Classifier** (thư viện
+`scikit-learn`), kết hợp một bước hiệu chỉnh xác suất đầu ra
+(`CalibratedClassifierCV`, dựa trên nguyên lý Platt scaling [14]), trên một tập
+33 đặc trưng thiết kế thủ công mô tả động học của phương tiện. Lý do chính là quy
+mô dữ liệu gán nhãn thật hiện có (thu được từ việc tự động gán nhãn hướng rẽ cho
+các track quan sát từ video CCTV thật) còn ở mức vài nghìn track — đủ để một mô
+hình cây tăng cường học tốt trên một tập đặc trưng bám sát bản chất vật lý của
+việc rẽ hướng, nhưng chưa đủ lớn để một mạng học sâu học biểu diễn từ đầu một
+cách tin cậy mà không quá khớp. Bước hiệu chỉnh xác suất được thêm vào vì lý do
+trực tiếp liên quan đến yêu cầu minh bạch (mục 2.4): một mô hình phân loại thông
+thường có thể cho ra xác suất "quá tự tin" so với độ chính xác thật; Platt
+scaling ánh xạ lại các điểm số thô thành xác suất phản ánh đúng hơn tần suất đúng
+thực tế, đo bằng chỉ số sai số hiệu chỉnh kỳ vọng (Expected Calibration Error –
+ECE) [15], cho phép hiển thị một mức tin cậy cho người vận hành mà không phóng
+đại.
+
+Song song, để có một ước lượng vị trí/hướng đi tức thời ngay cả khi chưa đủ lịch
+sử cho mô hình phân loại trên, hệ thống dùng một bộ lọc Kalman [8] mô hình hoá
+theo gia tốc không đổi (constant-acceleration), ước lượng vị trí/vận tốc tiếp
+theo của phương tiện từ các quan sát rời rạc có nhiễu. So với một mạng dự đoán
+quỹ đạo học sâu, bộ lọc Kalman có ưu điểm không phụ thuộc dữ liệu huấn luyện —
+hoạt động ngay trên một camera/khu vực mới — và đủ chính xác cho dự đoán ngắn hạn
+(vài giây), trong khi dự đoán dài hạn (qua nhiều ngã tư) được xử lý bằng cơ chế
+suy diễn trên đồ thị đường ở mục 3.5.2.
+
+### 3.5.2 Mạng lưới đường thực tế và chiếu toạ độ
+
+Để suy diễn chuỗi đoạn đường tiếp theo mà phương tiện có thể đi qua, cần một cấu
+trúc dữ liệu mô tả mạng lưới đường dưới dạng đồ thị (nút là giao lộ, cạnh là đoạn
+đường). Có ba hướng xây dựng đồ thị này: (i) tự vẽ tay toạ độ giao lộ/đoạn đường
+cho riêng khu vực camera — khả thi với khu vực nhỏ nhưng khó mở rộng; (ii) gọi
+một dịch vụ bản đồ thương mại có API truy vấn cấu trúc đường — tiện nhưng phụ
+thuộc hạn mức/chi phí và không phải lúc nào cũng có đủ thông tin kết nối giữa các
+giao lộ; (iii) xây dựng từ dữ liệu bản đồ mở **OpenStreetMap** (OSM) [16], chuyển
+đổi qua công cụ của bộ mô phỏng giao thông **SUMO** [17] sang một mạng lưới đường
+có cấu trúc làn/giao lộ rõ ràng và biểu diễn theo chuẩn **OpenDRIVE** [18] — một
+định dạng mô tả đường tiêu chuẩn trong đó thông tin kết nối giữa các giao lộ được
+khai báo rõ ràng, dễ phân tích trực tiếp thành đồ thị nút–cạnh.
+
+Đề tài lựa chọn hướng (iii). Dữ liệu OpenStreetMap cho khu vực đô thị Việt Nam
+(bao gồm khu vực giám sát thực tế của đề tài) có sẵn, miễn phí và đủ chi tiết về
+hình học đường; quy trình chuyển đổi qua SUMO/OpenDRIVE xử lý sẵn các vấn đề như
+làn xe và hướng đi một chiều, cho ra một đồ thị giao lộ có thể duyệt được mà
+không phụ thuộc dịch vụ bên thứ ba. Trên đồ thị này, hướng rẽ dự đoán ở ngã tư
+đầu tiên (mục 3.5.1) được khớp với hướng hình học của các đoạn đường nối ra khỏi
+giao lộ để chọn đoạn đường kế tiếp, lặp lại nhiều bước nhằm suy ra một hành trình
+khả dĩ. Toạ độ trên đồ thị được quy đổi sang hệ toạ độ địa lý thực (vĩ độ/kinh
+độ) để hiển thị trực tiếp lên nền bản đồ.
+
+Một vấn đề liên quan là quy đổi toạ độ điểm ảnh (pixel) trên khung hình camera
+sang toạ độ thực trên mặt đất, cần thiết để định vị phương tiện trên đồ thị giao
+lộ. Đề tài dùng một mô hình chiếu hình ảnh theo mặt phẳng mặt đất (ground-plane
+projection, dựa trên mô hình camera lỗ kim), với các tham số vị trí, góc nghiêng
+và góc nhìn của camera được khớp bằng cách quan sát trực quan (đối chiếu mạng
+lưới đường đã biết với hình ảnh thực tế từ camera) thay vì dùng thiết bị đo đạc
+hay bảng caro hiệu chỉnh. Hướng hiệu chỉnh đầy đủ bằng thiết bị chuyên dụng cho
+độ chính xác cao hơn nhưng không khả thi với phần lớn camera CCTV đang vận hành
+(không thể tiếp cận vật lý để hiệu chỉnh lại); lựa chọn khớp trực quan vì vậy phù
+hợp hơn với yêu cầu triển khai trên hạ tầng camera sẵn có (mục 2.4), đổi lại sai
+số vị trí ở mức một vài mét — đủ để xác định đúng đoạn đường/giao lộ gần nhất
+trên đồ thị.
+
+## 3.6 Kiến trúc dịch vụ thời gian thực và trực quan hoá
+
+UC2 (hiển thị vi phạm), UC3 (vẽ hành trình lên bản đồ) và UC4 (cấu hình hệ
+thống) đều yêu cầu một lớp dịch vụ đẩy kết quả xử lý (luồng video đã vẽ chú
+thích, danh sách vi phạm, hành trình dự đoán) tới giao diện người dùng theo thời
+gian thực qua trình duyệt web, đồng thời nhận lại các cấu hình từ người vận hành.
 
 Ở phía dịch vụ phía sau (backend), các lựa chọn phổ biến cho một dịch vụ Web
-Python gồm Django REST Framework (đầy đủ tính năng nhưng thiên về mô hình xử
-lý đồng bộ, không tối ưu cho việc duy trì nhiều kết nối streaming dài hạn),
-Flask kết hợp Flask-SocketIO, hoặc FastAPI [20]. Đề tài lựa chọn **FastAPI**
-vì hỗ trợ lập trình bất đồng bộ (async/await) một cách tự nhiên — phù hợp để
-vừa phục vụ API thông thường (REST, quản lý camera/vùng quan tâm/lịch sử cảnh
-báo), vừa duy trì kết nối **WebSocket** [21] đẩy cảnh báo và số liệu thống
-kê theo thời gian thực, vừa truyền luồng hình ảnh camera dưới dạng
-**MJPEG** (Motion JPEG nối tiếp qua HTTP, một kỹ thuật truyền hình ảnh đơn
-giản không cần codec video phức tạp, phù hợp hiển thị trực tiếp trên trình
-duyệt mà không cần plugin) — cả ba đều chạy trong cùng một dịch vụ Python,
-không cần tách riêng ngôn ngữ/dịch vụ với pipeline AI ở các mục 3.1–3.6.
+Python gồm Django REST Framework (đầy đủ nhưng thiên về xử lý đồng bộ, không tối
+ưu cho nhiều kết nối streaming dài hạn), Flask kết hợp Flask-SocketIO, hoặc
+FastAPI [19]. Đề tài lựa chọn **FastAPI** vì hỗ trợ lập trình bất đồng bộ
+(async/await) một cách tự nhiên — phù hợp để vừa phục vụ API thông thường (REST:
+quản lý nguồn video, vùng quan tâm, lịch sử vi phạm — phục vụ UC4), vừa duy trì
+kết nối **WebSocket** [20] đẩy cảnh báo vi phạm và số liệu thống kê theo thời
+gian thực, vừa truyền luồng hình ảnh camera dưới dạng **MJPEG** (Motion JPEG nối
+tiếp qua HTTP, một kỹ thuật truyền hình ảnh đơn giản, hiển thị trực tiếp trên
+trình duyệt mà không cần codec video phức tạp hay plugin). Pipeline AI (các mục
+3.1–3.5) chạy trên một luồng nền và chia sẻ trạng thái với lớp dịch vụ; nhờ kiến
+trúc bất đồng bộ, cả ba kênh dữ liệu trên cùng chạy trong một dịch vụ Python duy
+nhất.
 
-Ở phía giao diện người dùng (frontend), đề tài lựa chọn **React** [22] thay
-cho các framework khác như Vue.js hoặc Angular, vì mô hình quản lý trạng
-thái dựa trên hook phù hợp với việc đồng bộ nhiều luồng dữ liệu thời gian
-thực độc lập (hình ảnh camera, danh sách cảnh báo, số liệu thống kê) cùng
-lúc trên một giao diện, cùng hệ sinh thái thư viện thành phần (component)
-phong phú giúp xây dựng nhanh các phần hiển thị dạng lưới camera, panel cảnh
-báo. Để hiển thị hành trình dự đoán lên bản đồ (UC4.3), đề tài dùng
-**Leaflet** [23] — một thư viện bản đồ JavaScript mã nguồn mở, nhẹ — kết hợp
-nền bản đồ (tile layer) từ chính OpenStreetMap đã dùng để xây dựng đồ thị
-giao lộ ở mục 3.6, thay cho các dịch vụ bản đồ thương mại như Google Maps
-JavaScript API hay Mapbox GL JS. Lựa chọn này vừa không yêu cầu khoá API hay
-chi phí sử dụng, vừa giữ nhất quán một nguồn dữ liệu bản đồ duy nhất (OSM)
-cho cả phần suy diễn hành trình (mục 3.6) và phần hiển thị trực quan, tránh
-sai lệch có thể xảy ra nếu dùng hai nguồn bản đồ khác nhau cho hai mục đích
-liên quan trực tiếp đến nhau.
+Ở phía giao diện người dùng (frontend), đề tài lựa chọn **React** [21] (kết hợp
+công cụ đóng gói Vite và thư viện giao diện Tailwind CSS) thay cho Vue.js hay
+Angular, vì mô hình quản lý trạng thái dựa trên hook phù hợp với việc đồng bộ
+nhiều luồng dữ liệu thời gian thực độc lập (hình ảnh camera, danh sách vi phạm,
+số liệu thống kê) cùng lúc trên một giao diện, cùng hệ sinh thái thư viện thành
+phần phong phú giúp dựng nhanh lưới hiển thị nhiều camera và các panel cấu hình.
+Để hiển thị hành trình dự đoán lên bản đồ (UC3), đề tài dùng **Leaflet** [22] —
+một thư viện bản đồ JavaScript mã nguồn mở, nhẹ — kết hợp nền bản đồ (tile layer)
+từ chính OpenStreetMap đã dùng để xây dựng đồ thị giao lộ ở mục 3.5.2, thay cho
+các dịch vụ bản đồ thương mại. Lựa chọn này không yêu cầu khoá API hay chi phí sử
+dụng, đồng thời giữ nhất quán một nguồn dữ liệu bản đồ duy nhất (OSM) cho cả phần
+suy diễn hành trình và phần hiển thị, tránh sai lệch khi dùng hai nguồn bản đồ
+khác nhau cho hai mục đích liên quan trực tiếp với nhau.
+
+Về khả năng đáp ứng thời gian thực nhiều luồng camera (mục 2.4), pipeline áp dụng
+hai kỹ thuật chính. Thứ nhất, **phát hiện theo lô (batch detection)**: các khung
+hình từ nhiều camera được gom lại và đưa qua mô hình phát hiện trong một lượt suy
+luận, tận dụng tối đa năng lực song song của GPU thay vì chạy tuần tự từng
+camera. Thứ hai, **điều tiết tần suất các bước nặng**: các bước tốn tài nguyên
+được chạy thưa hơn (không nhất thiết mỗi khung hình) và tách khỏi luồng giao
+diện, giúp duy trì mức ~15–20 FPS trên cấu hình phần cứng thông thường khi xử lý
+nhiều luồng video mô phỏng CCTV đồng thời.
 
 ---
 
-Chương này đã trình bày các nền tảng lý thuyết và công nghệ được lựa chọn
-cho từng thành phần của hệ thống, cùng các hướng tiếp cận thay thế đã được
-cân nhắc. Có thể tổng kết lựa chọn theo bốn nguyên tắc xuyên suốt, bám sát
-các yêu cầu đã đặt ra ở Chương 2: ưu tiên mô hình nhẹ, suy luận nhanh để đáp
-ứng yêu cầu thời gian thực trên nhiều camera (YOLO11, ByteTrack, OSNet);
-ưu tiên các phương pháp không hoặc ít phụ thuộc dữ liệu huấn luyện lớn, phù
-hợp với lượng dữ liệu thật hiện có (Gradient Boosting có hiệu chỉnh xác
-suất, Kalman Filter, hệ luật suy diễn); ưu tiên tính minh bạch và khả năng
-diễn giải của kết quả đầu ra (hiệu chỉnh xác suất, hệ luật thay cho học máy
-không giám sát); và ưu tiên dữ liệu/công cụ mở, có thể áp dụng trực tiếp lên
-hạ tầng camera CCTV thật mà không cần thiết bị hay dịch vụ chuyên dụng
-(OpenStreetMap, SUMO, OpenDRIVE, Leaflet). Chương 4 sẽ trình bày chi tiết quá
-trình thiết kế, triển khai và đánh giá hệ thống dựa trên các nền tảng công
-nghệ đã giới thiệu ở chương này.
+Chương này đã trình bày các nền tảng lý thuyết và công nghệ được lựa chọn cho
+từng thành phần của hệ thống, cùng các hướng tiếp cận thay thế đã được cân nhắc.
+Có thể tổng kết lựa chọn theo bốn nguyên tắc xuyên suốt, bám sát các yêu cầu ở
+Chương 2: ưu tiên mô hình nhẹ, suy luận nhanh để đáp ứng yêu cầu thời gian thực
+trên nhiều camera (YOLO11, ByteTrack); ưu tiên các phương pháp ít phụ thuộc dữ
+liệu huấn luyện lớn, phù hợp với lượng dữ liệu thật hiện có (Gradient Boosting có
+hiệu chỉnh xác suất, bộ lọc Kalman, hệ luật suy diễn); ưu tiên tính minh bạch và
+khả năng diễn giải của kết quả (hiệu chỉnh xác suất, hệ luật thay cho học máy
+không giám sát); và ưu tiên dữ liệu/công cụ mở, áp dụng trực tiếp lên hạ tầng
+camera CCTV thật (OpenStreetMap, SUMO, OpenDRIVE, FastAPI, React, Leaflet).
+Chương 4 sẽ trình bày chi tiết quá trình thiết kế, triển khai và đánh giá hệ
+thống dựa trên các nền tảng công nghệ đã giới thiệu.
 
 ---
 
@@ -340,73 +368,72 @@ Vision and Pattern Recognition (CVPR)*, 2016, pp. 779–788.
 [3] G. Jocher, J. Qiu, "Ultralytics YOLO11." [Online]. Available:
 https://docs.ultralytics.com/models/yolo11/ (truy cập 06/2026).
 
-[4] R. E. Kalman, "A New Approach to Linear Filtering and Prediction
-Problems," *Journal of Basic Engineering*, vol. 82, no. 1, pp. 35–45, 1960.
+[4] W. Liu, D. Anguelov, D. Erhan, et al., "SSD: Single Shot MultiBox
+Detector," in *Proc. European Conference on Computer Vision (ECCV)*, 2016,
+pp. 21–37.
 
-[5] Y. Zhang, P. Sun, Y. Jiang, et al., "ByteTrack: Multi-Object Tracking by
+[5] T.-Y. Lin, P. Dollár, R. Girshick, K. He, B. Hariharan, S. Belongie,
+"Feature Pyramid Networks for Object Detection," in *Proc. IEEE Conference on
+Computer Vision and Pattern Recognition (CVPR)*, 2017, pp. 2117–2125.
+
+[6] S. Liu, L. Qi, H. Qin, J. Shi, J. Jia, "Path Aggregation Network for
+Instance Segmentation," in *Proc. IEEE Conference on Computer Vision and
+Pattern Recognition (CVPR)*, 2018, pp. 8759–8768.
+
+[7] S. J. Pan, Q. Yang, "A Survey on Transfer Learning," *IEEE Transactions on
+Knowledge and Data Engineering*, vol. 22, no. 10, pp. 1345–1359, 2010.
+
+[8] R. E. Kalman, "A New Approach to Linear Filtering and Prediction Problems,"
+*Journal of Basic Engineering*, vol. 82, no. 1, pp. 35–45, 1960.
+
+[9] Y. Zhang, P. Sun, Y. Jiang, et al., "ByteTrack: Multi-Object Tracking by
 Associating Every Detection Box," in *Proc. European Conference on Computer
 Vision (ECCV)*, 2022, pp. 1–21.
 
-[6] M. Broström, "BoxMOT: Pluggable SOTA Multi-Object Tracking Modules for
-Segmentation, Object Detection and Pose Estimation Models." [Online].
-Available: https://github.com/mikel-brostrom/boxmot (truy cập 06/2026).
+[10] M. Broström, "BoxMOT: Pluggable SOTA Multi-Object Tracking Modules."
+[Online]. Available: https://github.com/mikel-brostrom/boxmot (truy cập
+06/2026).
 
-[7] K. Zhou, Y. Yang, A. Cavallaro, T. Xiang, "Omni-Scale Feature Learning
-for Person Re-Identification," in *Proc. IEEE International Conference on
-Computer Vision (ICCV)*, 2019, pp. 3702–3712.
+[11] B. T. Morris, M. M. Trivedi, "A Survey of Vision-Based Trajectory Learning
+and Analysis for Surveillance," *IEEE Transactions on Circuits and Systems for
+Video Technology*, vol. 18, no. 8, pp. 1114–1127, 2008.
 
-[8] L. Zheng, L. Shen, L. Tian, S. Wang, J. Wang, Q. Tian, "Scalable Person
-Re-identification: A Benchmark," in *Proc. IEEE International Conference on
-Computer Vision (ICCV)*, 2015, pp. 1116–1124.
-
-[9] X. Liu, W. Liu, H. Ma, H. Fu, "Large-Scale Vehicle Re-Identification in
-Urban Surveillance Videos," in *Proc. IEEE International Conference on
-Multimedia and Expo (ICME)*, 2016, pp. 1–6.
-
-[10] K. Zhou, T. Xiang, "Torchreid: A Library for Deep Learning Person
-Re-Identification in Pytorch," *arXiv preprint arXiv:1910.10093*, 2019.
-
-[11] Z. Tang, M. Naphade, M.-Y. Liu, et al., "CityFlow: A City-Scale
-Benchmark for Multi-Target Multi-Camera Vehicle Tracking and
-Re-Identification," in *Proc. IEEE Conference on Computer Vision and
-Pattern Recognition (CVPR)*, 2019, pp. 8797–8806.
-
-[12] B. T. Morris, M. M. Trivedi, "A Survey of Vision-Based Trajectory
-Learning and Analysis for Surveillance," *IEEE Transactions on Circuits and
-Systems for Video Technology*, vol. 18, no. 8, pp. 1114–1127, 2008.
-
-[13] F. T. Liu, K. M. Ting, Z.-H. Zhou, "Isolation Forest," in *Proc. IEEE
+[12] F. T. Liu, K. M. Ting, Z.-H. Zhou, "Isolation Forest," in *Proc. IEEE
 International Conference on Data Mining (ICDM)*, 2008, pp. 413–422.
 
-[14] J. H. Friedman, "Greedy Function Approximation: A Gradient Boosting
+[13] J. H. Friedman, "Greedy Function Approximation: A Gradient Boosting
 Machine," *Annals of Statistics*, vol. 29, no. 5, pp. 1189–1232, 2001.
 
-[15] J. Platt, "Probabilistic Outputs for Support Vector Machines and
+[14] J. Platt, "Probabilistic Outputs for Support Vector Machines and
 Comparisons to Regularized Likelihood Methods," *Advances in Large Margin
 Classifiers*, vol. 10, no. 3, pp. 61–74, 1999.
 
-[16] C. Guo, G. Pleiss, Y. Sun, K. Q. Weinberger, "On Calibration of Modern
+[15] C. Guo, G. Pleiss, Y. Sun, K. Q. Weinberger, "On Calibration of Modern
 Neural Networks," in *Proc. International Conference on Machine Learning
 (ICML)*, 2017, pp. 1321–1330.
 
-[17] OpenStreetMap contributors, "OpenStreetMap." [Online]. Available:
+[16] OpenStreetMap contributors, "OpenStreetMap." [Online]. Available:
 https://www.openstreetmap.org (truy cập 06/2026).
 
-[18] P. A. Lopez, M. Behrisch, L. Bieker-Walz, et al., "Microscopic Traffic
-Simulation using SUMO," in *Proc. IEEE International Conference on
-Intelligent Transportation Systems (ITSC)*, 2018, pp. 2575–2582.
+[17] P. A. Lopez, M. Behrisch, L. Bieker-Walz, et al., "Microscopic Traffic
+Simulation using SUMO," in *Proc. IEEE International Conference on Intelligent
+Transportation Systems (ITSC)*, 2018, pp. 2575–2582.
 
-[19] ASAM e.V., "OpenDRIVE Format Specification," version 1.7, 2021.
+[18] ASAM e.V., "OpenDRIVE Format Specification," version 1.7, 2021.
 
-[20] S. Ramírez, "FastAPI." [Online]. Available:
-https://fastapi.tiangolo.com/ (truy cập 06/2026).
+[19] S. Ramírez, "FastAPI." [Online]. Available: https://fastapi.tiangolo.com/
+(truy cập 06/2026).
 
-[21] I. Fette, A. Melnikov, "The WebSocket Protocol," *RFC 6455, Internet
+[20] I. Fette, A. Melnikov, "The WebSocket Protocol," *RFC 6455, Internet
 Engineering Task Force (IETF)*, 2011.
 
-[22] Meta Platforms, Inc., "React – The Library for Web and Native User
+[21] Meta Platforms, Inc., "React – The Library for Web and Native User
 Interfaces." [Online]. Available: https://react.dev/ (truy cập 06/2026).
 
-[23] V. Agafonkin, "Leaflet – An Open-Source JavaScript Library for
-Mobile-Friendly Interactive Maps." [Online]. Available:
-https://leafletjs.com/ (truy cập 06/2026).
+[22] V. Agafonkin, "Leaflet – An Open-Source JavaScript Library for
+Mobile-Friendly Interactive Maps." [Online]. Available: https://leafletjs.com/
+(truy cập 06/2026).
+
+[23] T.-Y. Lin, M. Maire, S. Belongie, et al., "Microsoft COCO: Common Objects
+in Context," in *Proc. European Conference on Computer Vision (ECCV)*, 2014,
+pp. 740–755.
