@@ -49,4 +49,13 @@ export const api = {
   getMapState:   ()       => get('/map/state'),
   markObject:    (id)     => post(`/map/mark/${id}`),
   unmarkObject:  ()       => post('/map/unmark'),
+
+  // --- ROI config (UC4.2 — chinh vung quan tam tren UI) ---
+  getRois:       (camId)  => get(`/rois/${camId ? '?camera_id=' + camId : ''}`),
+  createRoi:     (body)   => post('/rois/', body),
+  updateRoi:     (id, b)  => put(`/rois/${id}`, b),
+  deleteRoi:     (id)     => del(`/rois/${id}`),
+  // Anh nen tinh (1 khung) de ve ROI — truc tiep backend nhu streamUrl.
+  // Them ts de bo qua cache khi refresh.
+  snapshotUrl:   (camId)  => `http://${window.location.hostname}:8000/stream/${camId}/snapshot?t=${Date.now()}`,
 }

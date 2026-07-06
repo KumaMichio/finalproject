@@ -7,7 +7,7 @@ from datetime import datetime
 
 from sqlalchemy import (
     Column, Integer, Text, REAL, Boolean, DateTime, ForeignKey, Index,
-    create_engine,
+    create_engine, inspect, text,
 )
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 
@@ -114,8 +114,11 @@ class ROI(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     camera_id = Column(Text, ForeignKey("cameras.id"))
     name = Column(Text, nullable=False)
-    polygon = Column(Text, nullable=False)              # JSON: [[x,y], …]
-    alert_types = Column(Text, default="entry")         # entry,exit,loiter,speed
+    polygon = Column(Text, nullable=False)              # JSON: [[x,y], …] (toa do px goc camera)
+    kind = Column(Text, default="alert_zone")           # alert_zone | lane
+    alert_types = Column(Text, default="entry")         # entry,exit,loiter,speed (kind=alert_zone)
+    allowed_classes = Column(Text, nullable=True)       # JSON: ["car","bus"] (kind=lane)
+    allowed_direction = Column(Text, nullable=True)     # JSON: [dx,dy] huong hop le (kind=lane)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -135,6 +138,27 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 def init_db():
     """Tao tat ca bang neu chua ton tai."""
     Base.metadata.create_all(bind=engine)
+    _migrate_roi_columns()
+
+
+def _migrate_roi_columns():
+    """Them cot moi cho bang `rois` da ton tai tu ban cu (SQLite khong co
+    Alembic trong du an). Idempotent: chi ALTER khi cot chua co."""
+    insp = inspect(engine)
+    if "rois" not in insp.get_table_names():
+        return
+    cols = {c["name"] for c in insp.get_columns("rois")}
+    stmts = []
+    if "kind" not in cols:
+        stmts.append("ALTER TABLE rois ADD COLUMN kind TEXT DEFAULT 'alert_zone'")
+    if "allowed_classes" not in cols:
+        stmts.append("ALTER TABLE rois ADD COLUMN allowed_classes TEXT")
+    if "allowed_direction" not in cols:
+        stmts.append("ALTER TABLE rois ADD COLUMN allowed_direction TEXT")
+    if stmts:
+        with engine.begin() as conn:
+            for s in stmts:
+                conn.execute(text(s))
 
 
 def get_db():

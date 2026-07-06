@@ -10,7 +10,7 @@ import asyncio
 import logging
 
 from fastapi import APIRouter, HTTPException
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, Response
 
 from services.stream_service import frame_buffer
 from config import STREAM_FPS
@@ -69,6 +69,17 @@ async def video_stream(camera_id: str):
             "Pragma": "no-cache",
         },
     )
+
+
+@router.get("/{camera_id}/snapshot")
+async def stream_snapshot(camera_id: str):
+    """Tra ve MOT khung hinh JPEG moi nhat cua camera — dung lam anh nen cho
+    trinh ve ROI tren UI (khong dung MJPEG dong)."""
+    jpeg_bytes = frame_buffer.get_latest(camera_id)
+    if jpeg_bytes is None:
+        raise HTTPException(404, f"Chua co khung hinh cho camera {camera_id}")
+    return Response(content=jpeg_bytes, media_type="image/jpeg",
+                    headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
 
 
 @router.get("/")

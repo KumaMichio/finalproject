@@ -61,6 +61,12 @@ export default function Dashboard() {
             </button>
           )}
           <button
+            onClick={() => navigate('/config')}
+            className="text-xs text-gray-400 hover:text-white transition-colors"
+          >
+            Cấu hình ROI
+          </button>
+          <button
             onClick={() => navigate('/alerts')}
             className="text-xs text-gray-400 hover:text-white transition-colors"
           >

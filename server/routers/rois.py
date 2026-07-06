@@ -11,6 +11,18 @@ from models.schemas import ROICreate, ROIUpdate, ROIResponse
 router = APIRouter()
 
 
+def _hot_reload_rois():
+    """Day thay doi ROI vao pipeline dang chay (khong can restart)."""
+    try:
+        from services.ai_processor import get_ai_processor
+        ai = get_ai_processor()
+        if ai is not None:
+            ai.reload_rois_from_db()
+    except Exception:
+        # Khong chan API neu pipeline chua chay / loi day nong
+        pass
+
+
 @router.get("/", response_model=list[ROIResponse])
 def get_rois(camera_id: str | None = None, db: Session = Depends(get_db)):
     q = db.query(ROI)
@@ -33,6 +45,7 @@ def create_roi(data: ROICreate, db: Session = Depends(get_db)):
     db.add(roi)
     db.commit()
     db.refresh(roi)
+    _hot_reload_rois()
     return roi
 
 
@@ -46,6 +59,7 @@ def update_roi(roi_id: int, data: ROIUpdate, db: Session = Depends(get_db)):
             setattr(roi, key, value)
     db.commit()
     db.refresh(roi)
+    _hot_reload_rois()
     return roi
 
 
@@ -56,4 +70,5 @@ def delete_roi(roi_id: int, db: Session = Depends(get_db)):
         raise HTTPException(404, f"ROI {roi_id} not found")
     db.delete(roi)
     db.commit()
+    _hot_reload_rois()
     return {"detail": f"ROI {roi_id} deleted"}

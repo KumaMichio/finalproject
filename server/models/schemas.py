@@ -119,13 +119,19 @@ class TrackingHistoryResponse(BaseModel):
 class ROICreate(BaseModel):
     camera_id: str
     name: str
-    polygon: str          # JSON string: "[[x,y],[x,y],...]"
+    polygon: str                       # JSON string: "[[x,y],[x,y],...]" (px goc camera)
+    kind: str = "alert_zone"           # alert_zone | lane
     alert_types: str = "entry"
+    allowed_classes: Optional[str] = None    # JSON: '["car","bus"]'
+    allowed_direction: Optional[str] = None  # JSON: '[dx,dy]'
 
 class ROIUpdate(BaseModel):
     name: Optional[str] = None
     polygon: Optional[str] = None
+    kind: Optional[str] = None
     alert_types: Optional[str] = None
+    allowed_classes: Optional[str] = None
+    allowed_direction: Optional[str] = None
     is_active: Optional[bool] = None
 
 class ROIResponse(BaseModel):
@@ -133,7 +139,10 @@ class ROIResponse(BaseModel):
     camera_id: str
     name: str
     polygon: str
+    kind: str = "alert_zone"
     alert_types: str
+    allowed_classes: Optional[str] = None
+    allowed_direction: Optional[str] = None
     is_active: bool
     created_at: datetime
 

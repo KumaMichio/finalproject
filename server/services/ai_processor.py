@@ -253,6 +253,10 @@ class AIProcessor:
             from modules.traffic_light_classifier import TrafficLightColorClassifier
             self.traffic_light_classifier = TrafficLightColorClassifier(tl_points)
 
+        # ROI (UC4.2): DB la nguon su that. Seed tu YAML lan dau roi nap tu DB,
+        # sau do moi thay doi tu UI (/api/rois) duoc day nong qua reload_rois_from_db().
+        self._init_rois()
+
         # Goal Classifier — huong re (left/right/straight/u_turn). Generic,
         # khong phu thuoc map/georef, hoat dong tu bbox history nen tai luon
         # bat ke nguon nao (~4ms cho 30 xe, da benchmark).
@@ -1033,6 +1037,126 @@ class AIProcessor:
             self.marked_global_id = None
             self._marked_route = []
         return {"ok": True, "message": "Da bo danh dau"}
+
+    # ------------------------------------------------------------------
+    # ROI live-editing (UC4.2)
+    # DB la nguon su that; seed tu YAML lan dau; day nong vao pipeline khi
+    # nguoi van hanh chinh ROI tren UI (khong can restart server).
+    # ------------------------------------------------------------------
+
+    def _init_rois(self):
+        """Cuoi _initialize(): seed DB tu YAML (theo tung 'kind' con thieu) roi
+        nap ROI hieu luc tu DB va day vao pipeline."""
+        try:
+            from models.database import SessionLocal, ROI
+            db = SessionLocal()
+            try:
+                have_alert = db.query(ROI).filter(ROI.kind == "alert_zone").count() > 0
+                have_lane = db.query(ROI).filter(ROI.kind == "lane").count() > 0
+                if not (have_alert and have_lane):
+                    self._seed_rois_db_from_yaml(
+                        db, seed_alert=not have_alert, seed_lane=not have_lane)
+            finally:
+                db.close()
+            self.reload_rois_from_db()
+        except Exception as e:
+            logger.warning("Init ROIs from DB failed (%s) - giu ROI tu YAML", e)
+
+    def _seed_rois_db_from_yaml(self, db, seed_alert=True, seed_lane=True):
+        """Chuyen ROI tu YAML (alert_system.rois + incident_detector.lane_zones)
+        thanh cac dong bang `rois` — de DB tro thanh nguon su that."""
+        from models.database import ROI
+        n = 0
+        if seed_alert:
+            for cam_id, zones in (getattr(self.alert_system, "rois", {}) or {}).items():
+                for z in zones:
+                    poly = z.get("polygon") if isinstance(z, dict) else None
+                    if not poly:
+                        continue
+                    at = z.get("alert_types", ["entry"])
+                    db.add(ROI(
+                        camera_id=cam_id,
+                        name=(z.get("name") or f"zone_{n}"),
+                        polygon=json.dumps(poly),
+                        kind="alert_zone",
+                        alert_types=",".join(at) if isinstance(at, list) else (at or "entry"),
+                    ))
+                    n += 1
+        if seed_lane:
+            for cam_id, zones in (getattr(self.incident_detector, "lane_zones", {}) or {}).items():
+                for z in zones:
+                    poly = z.get("polygon") if isinstance(z, dict) else None
+                    if not poly:
+                        continue
+                    db.add(ROI(
+                        camera_id=cam_id,
+                        name=(z.get("name") or f"lane_{n}"),
+                        polygon=json.dumps(poly),
+                        kind="lane",
+                        allowed_classes=json.dumps(z["allowed_classes"]) if z.get("allowed_classes") else None,
+                        allowed_direction=json.dumps(z["allowed_direction"]) if z.get("allowed_direction") else None,
+                    ))
+                    n += 1
+        db.commit()
+        logger.info("Seeded %d ROI(s) from YAML into DB", n)
+
+    def reload_rois_from_db(self):
+        """Doc ROI is_active tu DB, parse JSON, day nong vao pipeline. Goi tu
+        router /api/rois sau moi thay doi."""
+        from models.database import SessionLocal, ROI
+        db = SessionLocal()
+        try:
+            rows = db.query(ROI).filter(ROI.is_active == True).all()  # noqa: E712
+            rois_by_camera: dict = {}
+            for r in rows:
+                try:
+                    poly = json.loads(r.polygon)
+                except Exception:
+                    continue
+                item = {"kind": r.kind or "alert_zone", "name": r.name, "polygon": poly}
+                if item["kind"] == "lane":
+                    if r.allowed_classes:
+                        try:
+                            item["allowed_classes"] = json.loads(r.allowed_classes)
+                        except Exception:
+                            pass
+                    if r.allowed_direction:
+                        try:
+                            item["allowed_direction"] = json.loads(r.allowed_direction)
+                        except Exception:
+                            pass
+                else:
+                    item["alert_types"] = (r.alert_types or "entry").split(",")
+                rois_by_camera.setdefault(r.camera_id, []).append(item)
+            self.apply_rois(rois_by_camera)
+        finally:
+            db.close()
+
+    def apply_rois(self, rois_by_camera: dict):
+        """Day ROI da parse vao alert_system (alert zones) + incident_detector
+        (lane zones). Reassignment attribute la atomic duoi GIL nen an toan voi
+        main loop dang doc."""
+        alert_rois: dict = {}
+        lane_zones: dict = {}
+        for cam_id, items in (rois_by_camera or {}).items():
+            for it in items:
+                if it.get("kind") == "lane":
+                    zone = {"name": it.get("name"), "polygon": it["polygon"]}
+                    if it.get("allowed_classes"):
+                        zone["allowed_classes"] = it["allowed_classes"]
+                    if it.get("allowed_direction"):
+                        zone["allowed_direction"] = it["allowed_direction"]
+                    lane_zones.setdefault(cam_id, []).append(zone)
+                else:
+                    alert_rois.setdefault(cam_id, []).append(
+                        {"name": it.get("name"), "polygon": it["polygon"]})
+        with self._lock:
+            if getattr(self, "alert_system", None) is not None:
+                self.alert_system.set_rois(alert_rois)
+            if getattr(self, "incident_detector", None) is not None:
+                self.incident_detector.set_lane_zones(lane_zones)
+        logger.info("Applied ROIs: %d alert-cam / %d lane-cam",
+                    len(alert_rois), len(lane_zones))
 
 
 # Singleton

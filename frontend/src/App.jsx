@@ -5,6 +5,7 @@ import IncidentDetail from './pages/IncidentDetail'
 import AlertManagement from './pages/AlertManagement'
 import ObjectHistory from './pages/ObjectHistory'
 import MapView from './pages/MapView'
+import ROIConfig from './pages/ROIConfig'
 
 export default function App() {
   return (
@@ -14,6 +15,7 @@ export default function App() {
       <Route path="/alerts"               element={<AlertManagement />} />
       <Route path="/object/:global_id"    element={<ObjectHistory />} />
       <Route path="/map"                  element={<MapView />} />
+      <Route path="/config"               element={<ROIConfig />} />
     </Routes>
   )
 }

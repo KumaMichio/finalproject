@@ -117,6 +117,20 @@ class IncidentDetector:
     # Public API
     # ------------------------------------------------------------------
 
+    def set_lane_zones(self, zones_by_camera: dict):
+        """Cập nhật vùng làn cho check ĐI SAI LÀN lúc runtime (không cần khởi
+        tạo lại module). Gọi từ AIProcessor.apply_rois() khi người vận hành
+        chỉnh ROI trên UI.
+
+        Args:
+            zones_by_camera: {camera_id: [{'name', 'polygon': [[x,y],...],
+                             'allowed_classes'?: [...], 'allowed_direction'?: [dx,dy]}]}
+        """
+        self.lane_zones = zones_by_camera or {}
+        total = sum(len(z) for z in self.lane_zones.values())
+        logger.info("Lane zones updated: %d zones / %d cameras",
+                    total, len(self.lane_zones))
+
     def update(self, global_tracks: list, camera_id: str,
                predictions: dict = None, rois: dict = None,
                traffic_light_state: str = None) -> list:
