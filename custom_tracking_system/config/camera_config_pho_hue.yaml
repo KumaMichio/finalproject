@@ -43,6 +43,15 @@ incident_detection:
     - VEHICLE_PROXIMITY
     - PREDICTED_COLLISION
     - OVERSPEED
+    # RED_LIGHT_VIOLATION: tat de KHOP dung bao cao (Chuong 6.1: "red-light tam
+    # tat, re-enable la future work"). Ly do ky thuat: tren clip 12h.10.9.22.mp4
+    # den chi Red o khung ~84-95 roi tat han (idx>=96 -> None), xe dung dung den
+    # nen red-light gan nhu khong kich hoat tren video that; ngoai ra bo phan
+    # loai doc 1 diem pixel co the false-positive bat ngo ngay truoc hoi dong.
+    # Tren video that headline UC2 = "di sai lan" (LANE_VIOLATION, van bat).
+    # DE BAT LAI (sau khi verify tren may GPU, xem docs/demo_checklist.md):
+    # bo dong duoi + chay doi chieu canh bao that trong ~1 phut video thoang.
+    - RED_LIGHT_VIOLATION
 
   # Toa do tam 2 bong den (pixel, video 1600x1200) — do tay tu video
   # 12h.10.9.22.mp4 bang scripts/eval/test_traffic_light_feasibility.py
