@@ -225,6 +225,20 @@ class AIProcessor:
         }
         self.global_tracker = GlobalTracker(self.reid_extractor, camera_topology=camera_topology)
 
+        # Demo 1 camera: ReID xuyen-camera (OSNet) khong con y nghia — moi track
+        # chi ton tai trong 1 luong video. Chay OSNet moi REID_INTERVAL=3 frame
+        # cho tung track la chi phi CPU nang nhat (~20 forward/frame khi giao
+        # thong dong). Voi 1 camera, throttle that manh: track van giu global_id
+        # qua cache _track_to_global (chi ReID 1 lan luc xuat hien), giup FPS tren
+        # may CPU tang dang ke ma khong doi ket qua theo doi/ban do.
+        if len(self._cam_ids) <= 1:
+            self.REID_INTERVAL = 10_000_000
+            logger.info(
+                "Single-camera source (%s): throttle cross-camera ReID "
+                "(REID_INTERVAL=%d) de tang FPS.",
+                self._cam_ids, self.REID_INTERVAL,
+            )
+
         try:
             calibration = CalibrationStore.load_from_config(self.config_path)
         except Exception as e:

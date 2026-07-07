@@ -25,7 +25,13 @@ async def _mjpeg_generator(camera_id: str):
     while True:
         jpeg_bytes = await frame_buffer.wait_for_frame(camera_id, timeout=2.0)
         if jpeg_bytes is None:
-            # Gui 1 frame trong (1x1 pixel) de giu connection song
+            # Chua co frame MOI trong 2s (pipeline cham, vd chay CPU ~0.5 fps):
+            # gui lai frame THAT gan nhat de trinh duyet giu hinh (choppy nhung
+            # van thay canh), thay vi 1x1 pixel lam <img> bi keo dan thanh o xam.
+            jpeg_bytes = frame_buffer.get_latest(camera_id)
+        if jpeg_bytes is None:
+            # Chua tung co frame nao (pipeline vua khoi dong): gui 1x1 pixel de
+            # giu connection song.
             jpeg_bytes = (
                 b'\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x00\x00\x01\x00\x01\x00\x00'
                 b'\xff\xdb\x00C\x00\x08\x06\x06\x07\x06\x05\x08\x07\x07\x07\t\t'

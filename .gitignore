@@ -92,6 +92,9 @@ custom_tracking_system/data/
 runs/
 custom_tracking_system/yolo26n.pt
 
+# Video demo do setup.bat stage sang path ASCII (tai tao duoc, ~14MB)
+data/demo_pho_hue.mp4
+
 # ============================================================
 #  Virtual environments
 # ============================================================

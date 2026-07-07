@@ -33,7 +33,9 @@ export default function MapView() {
 
   // Init Leaflet map once
   useEffect(() => {
-    const map = L.map(mapDivRef.current, { preferCanvas: true }).setView([21.0, 105.8], 16)
+    // View khoi tao ngay tai nga tu Pho Hue - Tran Khat Chan (giam "nhay" ban do
+    // truoc khi map state ve). Se duoc fitBounds sat hon o effect ben duoi.
+    const map = L.map(mapDivRef.current, { preferCanvas: true }).setView([21.0085, 105.8514], 17)
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap', maxZoom: 19,
     }).addTo(map)
@@ -73,10 +75,19 @@ export default function MapView() {
     routeLayer.clearLayers()
     camLayer.clearLayers()
 
-    // Recenter once on the first known position (works for any georeferenced map)
+    // Focus dung nga tu MOT LAN: fitBounds om khung camera + tat ca xe co lat/lon
+    // (zoom toi da 18 de khong zoom qua sat khi chi co 1 diem). Khung nay chinh la
+    // vung giao lo dang co phuong tien -> ban do focus dung nga tu.
     if (!centeredRef.current) {
-      const first = (state.cameras || [])[0] || (state.tracks || []).find(t => t.lat)
-      if (first) { map.setView([first.lat, first.lon], 17); centeredRef.current = true }
+      const pts = []
+      ;(state.cameras || []).forEach(c => { if (c.lat != null) pts.push([c.lat, c.lon]) })
+      ;(state.tracks || []).forEach(t => { if (t.lat != null) pts.push([t.lat, t.lon]) })
+      if (pts.length === 1) {
+        map.setView(pts[0], 18); centeredRef.current = true
+      } else if (pts.length > 1) {
+        map.fitBounds(L.latLngBounds(pts), { maxZoom: 18, padding: [40, 40] })
+        centeredRef.current = true
+      }
     }
 
     ;(state.cameras || []).forEach(cam => {

@@ -25,8 +25,11 @@ import logging
 import time
 from contextlib import asynccontextmanager
 
+from pathlib import Path
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 
 from models.database import init_db
 from routers import cameras, tracks, alerts, rois, stats, websocket, stream, scenarios, maproute
@@ -123,11 +126,11 @@ app.include_router(maproute.router, prefix="/api/map", tags=["Map"])
 
 
 # ---------------------------------------------------------------------------
-# Root
+# Info (health) — chuyen tu "/" sang "/api/info" de "/" phuc vu SPA (neu da build)
 # ---------------------------------------------------------------------------
 
-@app.get("/")
-async def root(request: Request):
+@app.get("/api/info")
+async def info(request: Request):
     from services.ai_processor import get_ai_processor
 
     ai = get_ai_processor()
@@ -141,6 +144,57 @@ async def root(request: Request):
         "ai_pipeline": ai_status,
         "docs": "/docs",
     }
+
+
+# ---------------------------------------------------------------------------
+# Frontend (SPA) — serve ban build tinh cua React neu co (frontend/dist).
+#
+# Cho phep chay TOAN BO he thong tren 1 port (8000) bang 1 lenh (run_demo.bat):
+# khong can Vite dev server. Cac router /api, /ws, /stream da include o tren
+# nen duoc uu tien; catch-all GET duoi day chi bat cac path con lai va tra ve
+# index.html de react-router (BrowserRouter: /, /map, /config, ...) hoat dong
+# khi refresh / deep-link. Neu chua build (dev/CARLA chay Vite rieng o :3000),
+# khoi nay bi bo qua va "/" tra ve JSON info nhu truoc.
+# ---------------------------------------------------------------------------
+
+_FRONTEND_DIST = Path(__file__).resolve().parent.parent / "frontend" / "dist"
+_SERVE_SPA = _FRONTEND_DIST.is_dir() and (_FRONTEND_DIST / "index.html").is_file()
+
+if _SERVE_SPA:
+    from fastapi.responses import JSONResponse
+    from fastapi.staticfiles import StaticFiles
+
+    _INDEX_HTML = _FRONTEND_DIST / "index.html"
+    _ASSETS_DIR = _FRONTEND_DIST / "assets"
+
+    # File tinh co ban chi (JS/CSS/img) — dung StaticFiles de co content-type +
+    # cache header chuan.
+    if _ASSETS_DIR.is_dir():
+        app.mount("/assets", StaticFiles(directory=_ASSETS_DIR), name="assets")
+
+    # Cac prefix cua backend — KHONG duoc tra index.html cho chung. Dung
+    # exception-handler 404 (thay vi catch-all route) de KHONG chan viec
+    # FastAPI tu redirect '/api/x' -> '/api/x/' (307) cho cac router dinh nghia
+    # co dau '/' cuoi; frontend goi '/api/cameras' (khong slash) van chay dung.
+    _BACKEND_PREFIXES = ("/api", "/ws", "/stream", "/docs", "/redoc", "/openapi.json")
+
+    @app.exception_handler(404)
+    async def spa_fallback(request: Request, exc):
+        path = request.url.path
+        if path.startswith(_BACKEND_PREFIXES):
+            return JSONResponse({"detail": "Not Found"}, status_code=404)
+        # File tinh o goc dist (favicon, vite.svg, ...)
+        if path != "/":
+            candidate = (_FRONTEND_DIST / path.lstrip("/")).resolve()
+            if candidate.is_file() and _FRONTEND_DIST in candidate.parents:
+                return FileResponse(candidate)
+        # SPA route (/, /map, /config, /alerts, ...) -> index.html cho react-router
+        return FileResponse(_INDEX_HTML)
+
+else:
+    @app.get("/")
+    async def root(request: Request):
+        return await info(request)
 
 
 # ---------------------------------------------------------------------------
