@@ -16,8 +16,20 @@ REM ================================================================
 
 set ROOT=%~dp0
 set PY=%ROOT%custom_tracking_system\venv_tracking\Scripts\python.exe
-set VIDEO=%ROOT%data\demo_pho_hue.mp4
 set CONFIG=%ROOT%custom_tracking_system\config\camera_config_pho_hue.yaml
+
+REM Video nguon: truyen duong dan lam tham so 1 de doi clip, vd:
+REM    run_demo.bat "D:\clip_khac.mp4"
+REM Khong truyen -> dung video demo mac dinh (Pho Hue) do setup.bat stage.
+REM LUU Y: lan/den/vach + ban do dang gan cung cho view Pho Hue (CAM_PHO_HUE_REAL).
+REM   - Clip KHAC cua CUNG camera Pho Hue -> chay dung het (toa do van khop).
+REM   - Video dia diem KHAC -> detect/track/du doan huong van chay, nhung vi pham
+REM     lan/den va ban do se KHONG dung (can config calibration/ROI rieng).
+if not "%~1"=="" (
+    set "VIDEO=%~1"
+) else (
+    set "VIDEO=%ROOT%data\demo_pho_hue.mp4"
+)
 
 echo.
 echo  ============================================
@@ -37,8 +49,9 @@ if not exist "%ROOT%frontend\dist\index.html" (
     pause & exit /b 1
 )
 if not exist "%VIDEO%" (
-    echo [ERROR] Chua co video demo: %VIDEO%
-    echo         Chay:  setup.bat   truoc.
+    echo [ERROR] Khong tim thay video: %VIDEO%
+    echo         - Neu dung mac dinh: chay setup.bat truoc de stage video demo.
+    echo         - Neu tu truyen: kiem tra lai duong dan ^(bo trong dau ngoac kep^).
     pause & exit /b 1
 )
 if not exist "%CONFIG%" (
