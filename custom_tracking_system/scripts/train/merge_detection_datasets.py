@@ -32,12 +32,17 @@ FLAT_VAL_RATIO = 0.15
 FLAT_SPLIT_SEED = 42
 
 
-def _flat_split_stems(src_root: Path) -> dict[str, list[str]]:
+def _is_excluded(stem: str, exclude_prefixes: list[str]) -> bool:
+    return any(stem.startswith(pfx) for pfx in exclude_prefixes)
+
+
+def _flat_split_stems(src_root: Path, exclude_prefixes: list[str]) -> dict[str, list[str]]:
     images_dir = src_root / 'images'
     labels_dir = src_root / 'labels'
     stems = [
         p.stem for p in sorted(images_dir.glob('*.jpg'))
         if (labels_dir / (p.stem + '.txt')).exists()
+        and not _is_excluded(p.stem, exclude_prefixes)
     ]
     rng = random.Random(FLAT_SPLIT_SEED)
     rng.shuffle(stems)
@@ -49,7 +54,8 @@ def _flat_split_stems(src_root: Path) -> dict[str, list[str]]:
     }
 
 
-def merge_split(name: str, src_root: Path, out_root: Path, split: str) -> int:
+def merge_split(name: str, src_root: Path, out_root: Path, split: str,
+                exclude_prefixes: list[str]) -> int:
     src_images = src_root / 'images' / split
     src_labels = src_root / 'labels' / split
 
@@ -60,6 +66,7 @@ def merge_split(name: str, src_root: Path, out_root: Path, split: str) -> int:
         stems = [
             p.stem for p in sorted(src_images.glob('*.jpg'))
             if (src_labels / (p.stem + '.txt')).exists()
+            and not _is_excluded(p.stem, exclude_prefixes)
         ]
         flat_images, flat_labels = src_images, src_labels
     else:
@@ -69,7 +76,7 @@ def merge_split(name: str, src_root: Path, out_root: Path, split: str) -> int:
         flat_images, flat_labels = src_root / 'images', src_root / 'labels'
         if not flat_images.exists():
             return 0
-        stems = _flat_split_stems(src_root)[split]
+        stems = _flat_split_stems(src_root, exclude_prefixes)[split]
 
     if not stems:
         return 0
@@ -107,6 +114,14 @@ def main():
                               "visdrone=data/visdrone_vn carla=data/carla_det")
     parser.add_argument('--out', default='data/visdrone_carla_vn',
                          help='output dataset directory')
+    parser.add_argument('--exclude-prefix', nargs='+', default=None,
+                         help='drop every source image whose filename stem '
+                              'STARTS WITH any of these prefixes, so an entire '
+                              'location/clip is held out of BOTH train and val '
+                              '(e.g. --exclude-prefix "Ngã_tư_Xã_Đàn" keeps the '
+                              'Xã Đàn intersection fully unseen for a location-'
+                              'disjoint held-out test). Match the on-disk stem, '
+                              'i.e. before the name= prefix is added.')
     parser.add_argument('--yaml', default=None,
                          help='path to write the ultralytics dataset config '
                               '(default: <out>.yaml)')
@@ -122,6 +137,10 @@ def main():
     out_root = Path(args.out)
     yaml_path = Path(args.yaml) if args.yaml else Path(str(out_root) + '.yaml')
     names = args.names if args.names else VN_CLASS_NAMES
+    exclude_prefixes = args.exclude_prefix or []
+
+    if exclude_prefixes:
+        print(f"Excluding stems starting with: {exclude_prefixes}")
 
     for split in ('train', 'val'):
         total = 0
@@ -129,7 +148,7 @@ def main():
             if '=' not in entry:
                 raise SystemExit(f"--datasets entries must be name=path, got: {entry}")
             name, src = entry.split('=', 1)
-            n = merge_split(name, Path(src), out_root, split)
+            n = merge_split(name, Path(src), out_root, split, exclude_prefixes)
             print(f"  [{split}] {name}: {n} images")
             total += n
         print(f"[{split}] total: {total} images -> {out_root / 'images' / split}")
