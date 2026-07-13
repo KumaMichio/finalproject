@@ -1,0 +1,11 @@
+{
+  "note": "Bang chung DINH TINH: yolo11s_vn chay tren frame Xa Dan (dia diem KHAC Pho Hue). conf=0.35. Chua doi chieu nhan nguoi -> chi minh hoa truc quan, khong phai so mAP.",
+  "n_images": 12,
+  "class_box_counts": {
+    "car": 325,
+    "motorcycle": 556,
+    "person": 28,
+    "bus": 5,
+    "truck": 4
+  }
+}

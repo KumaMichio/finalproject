@@ -1,0 +1,83 @@
+{
+  "generated": "2026-07-12 20:12",
+  "description": "Accuracy THẬT của Goal Classifier = dự đoán model vs nhãn NGƯỜI kiểm (mẫu phân tầng từ test set held-out). Đây là con số phòng thủ được cho báo cáo.",
+  "n_verified": 200,
+  "honest_accuracy": 0.65,
+  "honest_accuracy_wilson95": [
+    0.5816,
+    0.7127
+  ],
+  "auto_label_correct": 0.755,
+  "auto_label_noise": 0.245,
+  "model_vs_auto_sanity": 0.705,
+  "labels": [
+    "straight",
+    "left",
+    "right",
+    "u_turn"
+  ],
+  "confusion_matrix_human_rows_model_cols": [
+    [
+      96,
+      27,
+      29,
+      1
+    ],
+    [
+      6,
+      23,
+      3,
+      0
+    ],
+    [
+      4,
+      0,
+      10,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      1
+    ]
+  ],
+  "per_class": {
+    "straight": {
+      "n": 153,
+      "model_recall": 0.6275,
+      "wilson95": [
+        0.549,
+        0.7
+      ],
+      "auto_correct": 0.7516
+    },
+    "left": {
+      "n": 32,
+      "model_recall": 0.7188,
+      "wilson95": [
+        0.546,
+        0.844
+      ],
+      "auto_correct": 0.8125
+    },
+    "right": {
+      "n": 14,
+      "model_recall": 0.7143,
+      "wilson95": [
+        0.454,
+        0.883
+      ],
+      "auto_correct": 0.7143
+    },
+    "u_turn": {
+      "n": 1,
+      "model_recall": 1.0,
+      "wilson95": [
+        0.207,
+        1.0
+      ],
+      "auto_correct": 0.0
+    }
+  }
+}

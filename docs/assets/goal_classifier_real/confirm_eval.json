@@ -1,0 +1,59 @@
+{
+  "note": "Xác nhận model đã lưu tái lập số liệu test + CI. Đo vs nhãn AUTO-LABEL (chưa phải accuracy thật vs người — cần verify_goal_labels.py).",
+  "n_test": 1334,
+  "reproduced": {
+    "accuracy": 0.6012,
+    "balanced_accuracy": 0.5418,
+    "f1_macro": 0.5226,
+    "ece": 0.1006
+  },
+  "reference_metrics_json": {
+    "accuracy": 0.6012,
+    "balanced_accuracy": 0.5418,
+    "f1_macro": 0.5226,
+    "ece": 0.1006
+  },
+  "reproducible_match": true,
+  "accuracy_wilson95": [
+    0.5747,
+    0.6271
+  ],
+  "balanced_accuracy_bootstrap95": [
+    0.4985,
+    0.5911
+  ],
+  "per_class_recall_ci": {
+    "left": {
+      "n": 294,
+      "recall": 0.6054421768707483,
+      "wilson95": [
+        0.549,
+        0.66
+      ]
+    },
+    "right": {
+      "n": 250,
+      "recall": 0.584,
+      "wilson95": [
+        0.522,
+        0.643
+      ]
+    },
+    "straight": {
+      "n": 754,
+      "recall": 0.616710875331565,
+      "wilson95": [
+        0.581,
+        0.651
+      ]
+    },
+    "u_turn": {
+      "n": 36,
+      "recall": 0.3611111111111111,
+      "wilson95": [
+        0.225,
+        0.524
+      ]
+    }
+  }
+}

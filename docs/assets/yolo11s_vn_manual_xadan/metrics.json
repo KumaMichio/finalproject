@@ -1,0 +1,43 @@
+{
+  "eval_set": "yolo11s_vn_manual_xadan",
+  "note": "Nhan NGUOI KIEM (human GT) tren nga tu Xa Dan - Pham Ngoc Thach, KHAC canh demo Pho Hue. GIA TRI: thay nhan auto-label nhieu bang nhan NGUOI -> khep diem yeu lon nhat cua so 89.5% cu (auto-label + test-de-train). CAVEAT TRUNG THUC: canh Xa Dan CUNG nam trong tap train (2 video Nga_tu_Xa_Dan_Pham_Ngoc_Thach trong data/auto_label) -> DAY KHONG PHAI tong quat hoa OOD, chi la in-domain, khac scene, do vs human GT. Tong quat hoa THAT can clip NGOAI dataset (Tang C).",
+  "weights": "yolo11s_vn.pt",
+  "n_images": 30,
+  "n_boxes": 2514,
+  "class_box_counts": {
+    "person": 55,
+    "car": 813,
+    "motorcycle": 1618,
+    "bus": 4,
+    "truck": 24
+  },
+  "mAP50": 0.9325,
+  "mAP50_95": 0.6798,
+  "precision": 0.9457,
+  "recall": 0.8332,
+  "per_class": {
+    "person": {
+      "mAP50": 0.8575,
+      "mAP50_95": 0.5327
+    },
+    "car": {
+      "mAP50": 0.9605,
+      "mAP50_95": 0.6941
+    },
+    "motorcycle": {
+      "mAP50": 0.9201,
+      "mAP50_95": 0.6368
+    },
+    "bus": {
+      "mAP50": 0.995,
+      "mAP50_95": 0.9285
+    },
+    "truck": {
+      "mAP50": 0.9293,
+      "mAP50_95": 0.6069
+    }
+  },
+  "location": "Xa Dan - Pham Ngoc Thach (khac Pho Hue)",
+  "label_source": "human-verified (teacher yolo11x-ITD pre-label + human correction)",
+  "domain_status": "in-domain (Xa Dan co trong train pool), khac scene voi demo Pho Hue, NHAN NGUOI"
+}
