@@ -1,0 +1,70 @@
+{
+  "n": 200,
+  "note": "TẤT CẢ đo vs nhãn NGƯỜI (hand-verify), không dùng nhãn auto.",
+  "accuracy": 0.65,
+  "accuracy_wilson95": [
+    0.5816,
+    0.7127
+  ],
+  "balanced_accuracy": 0.7651,
+  "f1_macro": 0.5815,
+  "ece": 0.1304,
+  "per_class": {
+    "straight": {
+      "support": 153,
+      "precision": 0.9057,
+      "recall": 0.6275,
+      "f1": 0.7413
+    },
+    "left": {
+      "support": 32,
+      "precision": 0.46,
+      "recall": 0.7188,
+      "f1": 0.561
+    },
+    "right": {
+      "support": 14,
+      "precision": 0.2381,
+      "recall": 0.7143,
+      "f1": 0.3571
+    },
+    "u_turn": {
+      "support": 1,
+      "precision": 0.5,
+      "recall": 1.0,
+      "f1": 0.6667
+    }
+  },
+  "confusion_matrix_true_rows_pred_cols": [
+    [
+      96,
+      27,
+      29,
+      1
+    ],
+    [
+      6,
+      23,
+      3,
+      0
+    ],
+    [
+      4,
+      0,
+      10,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      1
+    ]
+  ],
+  "labels": [
+    "straight",
+    "left",
+    "right",
+    "u_turn"
+  ]
+}

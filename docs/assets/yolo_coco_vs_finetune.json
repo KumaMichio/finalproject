@@ -1,0 +1,24 @@
+{
+  "eval": "xadan_manual_human",
+  "n_images": 30,
+  "coco_stock": {
+    "mAP50": 0.522,
+    "per_class": {
+      "person": 0.1927,
+      "car": 0.8136,
+      "motorcycle": 0.3159,
+      "bus": 1.0,
+      "truck": 0.288
+    }
+  },
+  "finetuned": {
+    "mAP50": 0.9031,
+    "per_class": {
+      "person": 0.7497,
+      "car": 0.9554,
+      "motorcycle": 0.9083,
+      "bus": 1.0,
+      "truck": 0.9024
+    }
+  }
+}
