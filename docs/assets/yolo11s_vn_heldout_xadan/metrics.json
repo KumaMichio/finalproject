@@ -1,0 +1,40 @@
+{
+  "eval_set": "yolo11s_vn_heldout_xadan",
+  "note": "Xã Đàn HELD-OUT khỏi train — test location-disjoint, nhãn người",
+  "weights": "yolo11s_vn_heldout.pt",
+  "n_images": 30,
+  "n_boxes": 2514,
+  "class_box_counts": {
+    "person": 55,
+    "car": 813,
+    "motorcycle": 1618,
+    "bus": 4,
+    "truck": 24
+  },
+  "mAP50": 0.9042,
+  "mAP50_95": 0.6545,
+  "precision": 0.9303,
+  "recall": 0.8321,
+  "per_class": {
+    "person": {
+      "mAP50": 0.7113,
+      "mAP50_95": 0.4616
+    },
+    "car": {
+      "mAP50": 0.9535,
+      "mAP50_95": 0.6878
+    },
+    "motorcycle": {
+      "mAP50": 0.9295,
+      "mAP50_95": 0.6691
+    },
+    "bus": {
+      "mAP50": 0.995,
+      "mAP50_95": 0.8955
+    },
+    "truck": {
+      "mAP50": 0.9316,
+      "mAP50_95": 0.5586
+    }
+  }
+}
